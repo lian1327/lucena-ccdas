@@ -1,0 +1,25 @@
+# Python
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.sqlite3
+
+# Secrets
+.env
+.env.local
+*.env
+
+# Django runtime
+backend/media/
+backend/staticfiles/
+
+# Frontend
+node_modules/
+frontend/dist/
+
+# Editors / OS
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store

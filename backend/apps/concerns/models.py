@@ -24,7 +24,18 @@ class Category(models.Model):
         validators=[MinValueValidator(0.5), MaxValueValidator(1.5)],
         help_text="Multiplier for the severity component of the priority score (0.50–1.50).",
     )
-    sla_days = models.PositiveSmallIntegerField(default=7, help_text="Target resolution time in days.")
+    class ServiceClass(models.TextChoices):
+        SIMPLE = "simple", "Simple (3 working days)"
+        COMPLEX = "complex", "Complex (7 working days)"
+        HIGHLY_TECHNICAL = "highly_technical", "Highly technical (20 working days)"
+
+    service_class = models.CharField(
+        max_length=20, choices=ServiceClass.choices, default=ServiceClass.COMPLEX,
+        help_text="ARTA (RA 11032) processing-time class. Align with the office's Citizen's Charter.",
+    )
+    sla_days = models.PositiveSmallIntegerField(
+        default=7, help_text="Working days to resolve. Set automatically from the service class unless overridden.",
+    )
     is_active = models.BooleanField(default=True)
     sort_order = models.PositiveSmallIntegerField(default=0)
 
@@ -40,6 +51,13 @@ class Subcategory(models.Model):
     """Second level of the taxonomy (e.g. Drainage → Clogged canal). Citizens tap these instead of typing."""
 
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="subcategories")
+    default_department = models.ForeignKey(
+        "cases.Department", null=True, blank=True, on_delete=models.SET_NULL, related_name="+",
+        help_text="Overrides the category's office (e.g. Fallen tree → CDRRMO).",
+    )
+    default_division = models.ForeignKey(
+        "cases.Division", null=True, blank=True, on_delete=models.SET_NULL, related_name="+",
+    )
     code = models.SlugField(max_length=50, unique=True)
     name = models.CharField(max_length=100)
     name_fil = models.CharField("Name (Filipino)", max_length=100, blank=True)
@@ -74,6 +92,7 @@ class Concern(models.Model):
         WALK_IN = "walk_in", "Walk-in"
         BARANGAY = "barangay", "Barangay Report"
         HOTLINE = "hotline", "Hotline / Call"
+        HOTLINE_8888 = "8888", "8888 Citizens' Complaint Center"
 
     class Severity(models.IntegerChoices):
         MINOR = 1, "Minor"
@@ -108,6 +127,12 @@ class Concern(models.Model):
     source_reference = models.CharField(
         max_length=300, blank=True, help_text="Where staff got it: FB post/comment link, logbook entry no., caller name, etc."
     )
+    external_ticket_no = models.CharField(max_length=60, blank=True, help_text="e.g. 8888 ticket number")
+    external_feedback_due_at = models.DateTimeField(
+        null=True, blank=True, help_text="8888: concrete and specific feedback due within 72 hours of receipt."
+    )
+    external_feedback_sent_at = models.DateTimeField(null=True, blank=True)
+    external_feedback = models.TextField(blank=True)
     encoded_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="encoded_concerns",
         help_text="Staff who encoded a walk-in/FB/barangay report on the citizen's behalf.",

@@ -191,18 +191,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * @description Staff case inbox. Scope is enforced by role (see scoping.py):
-         *     barangay → own barangay (minus complaints about barangay officials); dept staff → own office;
-         *     city admin / mayor → everything. Mayor's office is read-only.
-         */
+        /** @description Staff case inbox and workflow. Visibility and every action are decided in scoping.py. */
         get: operations["v1_staff_concerns_list"];
         put?: never;
-        /**
-         * @description Staff case inbox. Scope is enforced by role (see scoping.py):
-         *     barangay → own barangay (minus complaints about barangay officials); dept staff → own office;
-         *     city admin / mayor → everything. Mayor's office is read-only.
-         */
+        /** @description Staff case inbox and workflow. Visibility and every action are decided in scoping.py. */
         post: operations["v1_staff_concerns_create"];
         delete?: never;
         options?: never;
@@ -217,11 +209,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * @description Staff case inbox. Scope is enforced by role (see scoping.py):
-         *     barangay → own barangay (minus complaints about barangay officials); dept staff → own office;
-         *     city admin / mayor → everything. Mayor's office is read-only.
-         */
+        /** @description Staff case inbox and workflow. Visibility and every action are decided in scoping.py. */
         get: operations["v1_staff_concerns_retrieve"];
         put?: never;
         post?: never;
@@ -231,7 +219,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/staff/concerns/{id}/assign/": {
+    "/api/v1/staff/concerns/{id}/assign-division/": {
         parameters: {
             query?: never;
             header?: never;
@@ -240,12 +228,76 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * @description Staff case inbox. Scope is enforced by role (see scoping.py):
-         *     barangay → own barangay (minus complaints about barangay officials); dept staff → own office;
-         *     city admin / mayor → everything. Mayor's office is read-only.
-         */
-        post: operations["v1_staff_concerns_assign_create"];
+        /** @description Staff case inbox and workflow. Visibility and every action are decided in scoping.py. */
+        post: operations["v1_staff_concerns_assign_division_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/concerns/{id}/assign-person/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Staff case inbox and workflow. Visibility and every action are decided in scoping.py. */
+        post: operations["v1_staff_concerns_assign_person_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/concerns/{id}/close/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Staff case inbox and workflow. Visibility and every action are decided in scoping.py. */
+        post: operations["v1_staff_concerns_close_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/concerns/{id}/complete/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Staff case inbox and workflow. Visibility and every action are decided in scoping.py. */
+        post: operations["v1_staff_concerns_complete_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/concerns/{id}/endorse/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Staff case inbox and workflow. Visibility and every action are decided in scoping.py. */
+        post: operations["v1_staff_concerns_endorse_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -261,12 +313,76 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * @description Staff case inbox. Scope is enforced by role (see scoping.py):
-         *     barangay → own barangay (minus complaints about barangay officials); dept staff → own office;
-         *     city admin / mayor → everything. Mayor's office is read-only.
-         */
+        /** @description Staff case inbox and workflow. Visibility and every action are decided in scoping.py. */
         post: operations["v1_staff_concerns_escalate_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/concerns/{id}/extend/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Staff case inbox and workflow. Visibility and every action are decided in scoping.py. */
+        post: operations["v1_staff_concerns_extend_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/concerns/{id}/feedback-8888/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Staff case inbox and workflow. Visibility and every action are decided in scoping.py. */
+        post: operations["v1_staff_concerns_feedback_8888_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/concerns/{id}/follow-up/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Staff case inbox and workflow. Visibility and every action are decided in scoping.py. */
+        post: operations["v1_staff_concerns_follow_up_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/concerns/{id}/inspect/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Staff case inbox and workflow. Visibility and every action are decided in scoping.py. */
+        post: operations["v1_staff_concerns_inspect_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -282,11 +398,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * @description Staff case inbox. Scope is enforced by role (see scoping.py):
-         *     barangay → own barangay (minus complaints about barangay officials); dept staff → own office;
-         *     city admin / mayor → everything. Mayor's office is read-only.
-         */
+        /** @description Staff case inbox and workflow. Visibility and every action are decided in scoping.py. */
         post: operations["v1_staff_concerns_link_duplicate_create"];
         delete?: never;
         options?: never;
@@ -303,11 +415,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * @description Staff case inbox. Scope is enforced by role (see scoping.py):
-         *     barangay → own barangay (minus complaints about barangay officials); dept staff → own office;
-         *     city admin / mayor → everything. Mayor's office is read-only.
-         */
+        /** @description Staff case inbox and workflow. Visibility and every action are decided in scoping.py. */
         post: operations["v1_staff_concerns_notes_create"];
         delete?: never;
         options?: never;
@@ -315,7 +423,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/staff/concerns/{id}/status/": {
+    "/api/v1/staff/concerns/{id}/reject/": {
         parameters: {
             query?: never;
             header?: never;
@@ -324,12 +432,42 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * @description Staff case inbox. Scope is enforced by role (see scoping.py):
-         *     barangay → own barangay (minus complaints about barangay officials); dept staff → own office;
-         *     city admin / mayor → everything. Mayor's office is read-only.
-         */
-        post: operations["v1_staff_concerns_status_create"];
+        /** @description Staff case inbox and workflow. Visibility and every action are decided in scoping.py. */
+        post: operations["v1_staff_concerns_reject_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/concerns/{id}/reopen/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Staff case inbox and workflow. Visibility and every action are decided in scoping.py. */
+        post: operations["v1_staff_concerns_reopen_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/concerns/{id}/route/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Staff case inbox and workflow. Visibility and every action are decided in scoping.py. */
+        post: operations["v1_staff_concerns_route_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -345,12 +483,25 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * @description Staff case inbox. Scope is enforced by role (see scoping.py):
-         *     barangay → own barangay (minus complaints about barangay officials); dept staff → own office;
-         *     city admin / mayor → everything. Mayor's office is read-only.
-         */
+        /** @description Staff case inbox and workflow. Visibility and every action are decided in scoping.py. */
         post: operations["v1_staff_concerns_unlink_duplicate_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/concerns/{id}/validate/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Staff case inbox and workflow. Visibility and every action are decided in scoping.py. */
+        post: operations["v1_staff_concerns_validate_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -366,11 +517,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * @description Staff case inbox. Scope is enforced by role (see scoping.py):
-         *     barangay → own barangay (minus complaints about barangay officials); dept staff → own office;
-         *     city admin / mayor → everything. Mayor's office is read-only.
-         */
+        /** @description Staff case inbox and workflow. Visibility and every action are decided in scoping.py. */
         post: operations["v1_staff_concerns_verify_create"];
         delete?: never;
         options?: never;
@@ -386,6 +533,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["v1_staff_departments_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/divisions/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["v1_staff_divisions_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -417,7 +580,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description People in an office, for the 'assign to' dropdown. */
+        /** @description People in an office (optionally a division), for the 'assign to' dropdown. */
         get: operations["v1_staff_users_list"];
         put?: never;
         post?: never;
@@ -439,21 +602,28 @@ export interface components {
          * @enum {string}
          */
         AffectedScaleEnum: "self" | "household" | "street" | "barangay";
-        AssignRequest: {
-            department: number;
-            assigned_to?: number | null;
-            /** Format: date-time */
-            due_at?: string | null;
+        AssignDivisionRequest: {
+            division: number;
+            remarks?: string;
+        };
+        AssignPersonRequest: {
+            person: number;
             remarks?: string;
         };
         Attachment: {
             readonly id: number;
-            kind?: components["schemas"]["KindEnum"];
+            kind?: components["schemas"]["AttachmentKindEnum"];
             readonly url: string;
             caption?: string;
             /** Format: date-time */
             readonly uploaded_at: string;
         };
+        /**
+         * @description * `report` - Report photo (from reporter)
+         *     * `resolution` - Resolution photo (proof of fix)
+         * @enum {string}
+         */
+        AttachmentKindEnum: "report" | "resolution";
         /** @enum {unknown} */
         BlankEnum: "";
         /** @description Adds role/scope claims so the frontend can route without an extra request. */
@@ -462,14 +632,40 @@ export interface components {
             password: string;
         };
         CaseInfo: {
-            readonly department_id: number;
-            department: string;
+            level?: components["schemas"]["CaseInfoLevelEnum"];
+            level_display: string;
+            stage: string;
+            /** @description Empty for barangay-level cases. */
+            readonly department_id: number | null;
+            department?: string;
+            readonly division_id: number | null;
+            division?: string;
             readonly assigned_to_id: number | null;
             readonly assigned_to: string | null;
             /** Format: date-time */
             readonly assigned_at: string;
             /** Format: date-time */
             due_at?: string | null;
+            /** Format: date-time */
+            original_due_at?: string | null;
+            /** Format: date-time */
+            extended_at?: string | null;
+            extension_reason?: string;
+            readonly max_extension_due: string | null;
+            /** Format: date-time */
+            inspected_at?: string | null;
+            readonly inspected_by: string | null;
+            inspection_findings?: string;
+            action_plan?: string;
+            /** Format: date */
+            scheduled_for?: string | null;
+            /** Format: date-time */
+            work_completed_at?: string | null;
+            readonly work_completed_by: string | null;
+            completion_remarks?: string;
+            /** Format: date-time */
+            validated_at?: string | null;
+            readonly validated_by: string | null;
             escalation_level?: components["schemas"]["EscalationLevelEnum"];
             escalation_level_display: string;
             /** Format: date-time */
@@ -478,6 +674,18 @@ export interface components {
             resolution_summary?: string;
             /** Format: date-time */
             resolved_at?: string | null;
+            readonly endorsements: components["schemas"]["Endorsement"][];
+        };
+        /**
+         * @description * `city` - City office
+         *     * `barangay` - Barangay-level
+         *     * `external` - Endorsed to external agency
+         * @enum {string}
+         */
+        CaseInfoLevelEnum: "city" | "barangay" | "external";
+        CompleteRequest: {
+            remarks: string;
+            photos?: string[];
         };
         /**
          * @description * `web` - Web Portal
@@ -486,9 +694,10 @@ export interface components {
          *     * `walk_in` - Walk-in
          *     * `barangay` - Barangay Report
          *     * `hotline` - Hotline / Call
+         *     * `8888` - 8888 Citizens' Complaint Center
          * @enum {string}
          */
-        ConcernChannelEnum: "web" | "facebook" | "messenger" | "walk_in" | "barangay" | "hotline";
+        ConcernChannelEnum: "web" | "facebook" | "messenger" | "walk_in" | "barangay" | "hotline" | "8888";
         /**
          * @description * `submitted` - Submitted
          *     * `under_review` - Under Review
@@ -504,7 +713,61 @@ export interface components {
             readonly id: number;
             code: string;
             name: string;
+            kind?: components["schemas"]["DepartmentKindEnum"];
         };
+        /**
+         * @description * `internal` - LGU office
+         *     * `external` - External agency (endorsement only)
+         * @enum {string}
+         */
+        DepartmentKindEnum: "internal" | "external";
+        Division: {
+            readonly id: number;
+            code: string;
+            name: string;
+            department: number;
+        };
+        EndorseRequest: {
+            agency: number;
+            letter_reference?: string;
+            contact_person?: string;
+            remarks?: string;
+        };
+        Endorsement: {
+            readonly id: number;
+            agency: string;
+            status?: components["schemas"]["EndorsementStatusEnum"];
+            status_display: string;
+            /** Format: date-time */
+            readonly endorsed_at: string;
+            readonly endorsed_by: string | null;
+            /** @description Endorsement letter / memo no. */
+            letter_reference?: string;
+            contact_person?: string;
+            agency_response?: string;
+            /** Format: date-time */
+            next_follow_up_at?: string | null;
+            readonly follow_up_due: boolean;
+            /** Format: int64 */
+            follow_up_count?: number;
+            readonly follow_ups: components["schemas"]["FollowUp"][];
+        };
+        EndorsementFollowUpRequest: {
+            method: components["schemas"]["MethodEnum"];
+            notes: string;
+            status?: (components["schemas"]["EndorsementStatusEnum"] | components["schemas"]["NullEnum"]) | null;
+            agency_response?: string;
+            public_message?: string;
+        };
+        /**
+         * @description * `endorsed` - Endorsed, awaiting response
+         *     * `acknowledged` - Acknowledged by agency
+         *     * `scheduled` - Agency scheduled action
+         *     * `completed` - Agency reports completed
+         *     * `declined` - Declined / not their jurisdiction
+         * @enum {string}
+         */
+        EndorsementStatusEnum: "endorsed" | "acknowledged" | "scheduled" | "completed" | "declined";
         EscalateRequest: {
             reason: string;
         };
@@ -516,6 +779,23 @@ export interface components {
          * @enum {integer}
          */
         EscalationLevelEnum: 0 | 1 | 2 | 3;
+        ExtendRequest: {
+            /** Format: date */
+            new_due_date: string;
+            reason: string;
+        };
+        Feedback8888Request: {
+            feedback: string;
+        };
+        FollowUp: {
+            readonly id: number;
+            /** Format: date-time */
+            readonly at: string;
+            readonly by: string;
+            /** @description call / letter / email / visit / meeting */
+            method?: string;
+            notes: string;
+        };
         History: {
             readonly id: number;
             from_status?: components["schemas"]["ConcernStatusEnum"] | components["schemas"]["BlankEnum"];
@@ -523,16 +803,17 @@ export interface components {
             status_display: string;
             remarks?: string;
             is_public?: boolean;
-            readonly changed_by: string | null;
+            readonly changed_by: string;
             /** Format: date-time */
             readonly created_at: string;
         };
-        /**
-         * @description * `report` - Report photo (from reporter)
-         *     * `resolution` - Resolution photo (proof of fix)
-         * @enum {string}
-         */
-        KindEnum: "report" | "resolution";
+        InspectRequest: {
+            findings: string;
+            action_plan?: string;
+            /** Format: date */
+            scheduled_for?: string | null;
+            public_message?: string;
+        };
         LinkDuplicateRequest: {
             master_reference: string;
         };
@@ -559,8 +840,21 @@ export interface components {
             readonly role: components["schemas"]["RoleEnum"];
             readonly role_display: string;
             readonly barangay: string;
+            readonly barangay_id: number | null;
             readonly department: string;
+            readonly department_id: number | null;
+            readonly division: string;
+            readonly division_id: number | null;
         };
+        /**
+         * @description * `call` - call
+         *     * `letter` - letter
+         *     * `email` - email
+         *     * `visit` - visit
+         *     * `meeting` - meeting
+         * @enum {string}
+         */
+        MethodEnum: "call" | "letter" | "email" | "visit" | "meeting";
         Note: {
             readonly id: number;
             readonly author: string;
@@ -570,6 +864,11 @@ export interface components {
         };
         NoteCreateRequest: {
             body: string;
+        };
+        /** @enum {unknown} */
+        NullEnum: null;
+        OptionalRemarksRequest: {
+            remarks?: string;
         };
         PaginatedStaffConcernListList: {
             /** @example 123 */
@@ -588,10 +887,24 @@ export interface components {
         };
         Permissions: {
             can_act: boolean;
-            can_verify: boolean;
-            can_assign: boolean;
-            can_assign_any: boolean;
-            can_resolve: boolean;
+            verify: boolean;
+            route: boolean;
+            route_any_office: boolean;
+            endorse: boolean;
+            assign_division: boolean;
+            assign_person: boolean;
+            inspect: boolean;
+            complete: boolean;
+            validate: boolean;
+            extend: boolean;
+            escalate: boolean;
+            reject: boolean;
+            close: boolean;
+            reopen: boolean;
+            notes: boolean;
+            link: boolean;
+            feedback_8888: boolean;
+            follow_up: boolean;
         };
         PriorityBreakdown: {
             /** Format: double */
@@ -734,16 +1047,38 @@ export interface components {
             readonly timeline: components["schemas"]["PublicTimeline"][];
             /** @description Proof-of-fix photos from staff. Citizen-uploaded photos are never public (faces, homes, plates). */
             readonly resolution_photos: string[];
+            /** @description ARTA transparency: the citizen sees the committed date. */
+            readonly target_date: string | null;
+            readonly deadline_extended: boolean;
+            readonly endorsed_to: string | null;
+        };
+        RemarksRequest: {
+            remarks: string;
         };
         /**
          * @description * `citizen` - Citizen
+         *     * `pacd` - Public Assistance & Complaints Desk
          *     * `barangay` - Barangay Personnel
-         *     * `dept_staff` - Department Staff
+         *     * `dept_head` - Department Head
+         *     * `division_chief` - Division Chief / Supervisor
+         *     * `dept_staff` - Field Personnel (Engineer / Crew)
          *     * `city_admin` - City Administrator
          *     * `mayor` - Mayor's Office
          * @enum {string}
          */
-        RoleEnum: "citizen" | "barangay" | "dept_staff" | "city_admin" | "mayor";
+        RoleEnum: "citizen" | "pacd" | "barangay" | "dept_head" | "division_chief" | "dept_staff" | "city_admin" | "mayor";
+        /**
+         * @description * `city` - city
+         *     * `barangay` - barangay
+         * @enum {string}
+         */
+        RouteLevelEnum: "city" | "barangay";
+        RouteRequest: {
+            level: components["schemas"]["RouteLevelEnum"];
+            department?: number | null;
+            division?: number | null;
+            remarks?: string;
+        };
         /**
          * @description * `1` - Minor
          *     * `2` - Moderate
@@ -774,16 +1109,32 @@ export interface components {
             /** @description Complaint concerns barangay officials — hidden from barangay personnel, routed to City. */
             involves_barangay_officials?: boolean;
             channel?: components["schemas"]["ConcernChannelEnum"];
+            channel_display: string;
             /** Format: date-time */
             readonly created_at: string;
+            level?: string;
+            stage?: string;
             department?: string;
+            /** @default false */
+            department_is_external: boolean;
+            division?: string;
             readonly assigned_to: string | null;
             /** Format: date-time */
             due_at?: string;
+            readonly extended: boolean;
             /** @default 0 */
             escalation_level: number;
             /** @default 0 */
             readonly duplicate_count: number;
+            /** @description e.g. 8888 ticket number */
+            external_ticket_no?: string;
+            /**
+             * Format: date-time
+             * @description 8888: concrete and specific feedback due within 72 hours of receipt.
+             */
+            external_feedback_due_at?: string | null;
+            /** Format: date-time */
+            external_feedback_sent_at?: string | null;
             description: string;
             category_code?: string;
             subcategory_code?: string;
@@ -802,10 +1153,10 @@ export interface components {
             reporter_contact?: string;
             reporter_email?: string;
             is_anonymous?: boolean;
-            channel_display: string;
             /** @description Where staff got it: FB post/comment link, logbook entry no., caller name, etc. */
             source_reference?: string;
             readonly encoded_by: string | null;
+            external_feedback?: string;
             readonly verified_by: string | null;
             /** Format: date-time */
             verified_at?: string | null;
@@ -820,8 +1171,8 @@ export interface components {
             readonly case: components["schemas"]["CaseInfo"];
             readonly notes: components["schemas"]["Note"][];
             readonly priority: components["schemas"]["PriorityBreakdown"] | null;
-            readonly allowed_transitions: components["schemas"]["ConcernStatusEnum"][];
             readonly permissions: components["schemas"]["Permissions"];
+            readonly suggested_route: components["schemas"]["SuggestedRoute"];
         };
         StaffConcernList: {
             readonly id: number;
@@ -844,20 +1195,42 @@ export interface components {
             /** @description Complaint concerns barangay officials — hidden from barangay personnel, routed to City. */
             involves_barangay_officials?: boolean;
             channel?: components["schemas"]["ConcernChannelEnum"];
+            channel_display: string;
             /** Format: date-time */
             readonly created_at: string;
+            level?: string;
+            stage?: string;
             department?: string;
+            /** @default false */
+            department_is_external: boolean;
+            division?: string;
             readonly assigned_to: string | null;
             /** Format: date-time */
             due_at?: string;
+            readonly extended: boolean;
             /** @default 0 */
             escalation_level: number;
             /** @default 0 */
             readonly duplicate_count: number;
+            /** @description e.g. 8888 ticket number */
+            external_ticket_no?: string;
+            /**
+             * Format: date-time
+             * @description 8888: concrete and specific feedback due within 72 hours of receipt.
+             */
+            external_feedback_due_at?: string | null;
+            /** Format: date-time */
+            external_feedback_sent_at?: string | null;
         };
         StaffEncodeRequest: {
             channel: components["schemas"]["ConcernChannelEnum"];
             source_reference?: string;
+            external_ticket_no?: string;
+            /**
+             * Format: date-time
+             * @description When the LGU received it (8888: endorsement time).
+             */
+            received_at?: string | null;
             title?: string;
             description: string;
             category?: string | null;
@@ -884,8 +1257,13 @@ export interface components {
         };
         StaffSummary: {
             triage: number;
+            to_route: number;
             danger_unverified: number;
             mine: number;
+            validation: number;
+            endorsed: number;
+            follow_up_due: number;
+            feedback_8888_due: number;
             overdue: number;
             open: number;
             resolved_this_month: number;
@@ -895,14 +1273,15 @@ export interface components {
             /** @description Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only. */
             username: string;
             readonly full_name: string;
+            role?: components["schemas"]["RoleEnum"];
+            role_display: string;
             department?: number | null;
+            division?: number | null;
         };
-        StatusUpdateRequest: {
-            status: components["schemas"]["ConcernStatusEnum"];
-            remarks?: string;
-            /** @default true */
-            is_public: boolean;
-            photos?: string[];
+        SuggestedRoute: {
+            department_id: number | null;
+            department: string | null;
+            division_id: number | null;
         };
         TokenBlacklistRequest: {
             refresh: string;
@@ -913,6 +1292,11 @@ export interface components {
         };
         TokenRefreshRequest: {
             refresh: string;
+        };
+        ValidateRequest: {
+            approve: boolean;
+            remarks?: string;
+            photos?: string[];
         };
         VerifyRequest: {
             category: string;
@@ -1168,7 +1552,7 @@ export interface operations {
                 /** @description Search reference no., title, landmark, description */
                 q?: string;
                 /** @description Inbox view (default: open) */
-                tab?: "all" | "closed" | "mine" | "open" | "overdue" | "triage";
+                tab?: "all" | "closed" | "endorsed" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
             };
             header?: never;
             path?: never;
@@ -1195,7 +1579,7 @@ export interface operations {
                 /** @description Search reference no., title, landmark, description */
                 q?: string;
                 /** @description Inbox view (default: open) */
-                tab?: "all" | "closed" | "mine" | "open" | "overdue" | "triage";
+                tab?: "all" | "closed" | "endorsed" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
             };
             header?: never;
             path?: never;
@@ -1203,9 +1587,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["StaffEncodeRequest"];
                 "multipart/form-data": components["schemas"]["StaffEncodeRequest"];
-                "application/x-www-form-urlencoded": components["schemas"]["StaffEncodeRequest"];
             };
         };
         responses: {
@@ -1228,7 +1610,7 @@ export interface operations {
                 /** @description Search reference no., title, landmark, description */
                 q?: string;
                 /** @description Inbox view (default: open) */
-                tab?: "all" | "closed" | "mine" | "open" | "overdue" | "triage";
+                tab?: "all" | "closed" | "endorsed" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
             };
             header?: never;
             path: {
@@ -1249,7 +1631,7 @@ export interface operations {
             };
         };
     };
-    v1_staff_concerns_assign_create: {
+    v1_staff_concerns_assign_division_create: {
         parameters: {
             query?: {
                 barangay?: number;
@@ -1258,7 +1640,7 @@ export interface operations {
                 /** @description Search reference no., title, landmark, description */
                 q?: string;
                 /** @description Inbox view (default: open) */
-                tab?: "all" | "closed" | "mine" | "open" | "overdue" | "triage";
+                tab?: "all" | "closed" | "endorsed" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
             };
             header?: never;
             path: {
@@ -1269,9 +1651,151 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AssignRequest"];
-                "multipart/form-data": components["schemas"]["AssignRequest"];
-                "application/x-www-form-urlencoded": components["schemas"]["AssignRequest"];
+                "application/json": components["schemas"]["AssignDivisionRequest"];
+                "multipart/form-data": components["schemas"]["AssignDivisionRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["AssignDivisionRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffConcernDetail"];
+                };
+            };
+        };
+    };
+    v1_staff_concerns_assign_person_create: {
+        parameters: {
+            query?: {
+                barangay?: number;
+                category?: string;
+                include_duplicates?: boolean;
+                /** @description Search reference no., title, landmark, description */
+                q?: string;
+                /** @description Inbox view (default: open) */
+                tab?: "all" | "closed" | "endorsed" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
+            };
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this concern. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssignPersonRequest"];
+                "multipart/form-data": components["schemas"]["AssignPersonRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["AssignPersonRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffConcernDetail"];
+                };
+            };
+        };
+    };
+    v1_staff_concerns_close_create: {
+        parameters: {
+            query?: {
+                barangay?: number;
+                category?: string;
+                include_duplicates?: boolean;
+                /** @description Search reference no., title, landmark, description */
+                q?: string;
+                /** @description Inbox view (default: open) */
+                tab?: "all" | "closed" | "endorsed" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
+            };
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this concern. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["OptionalRemarksRequest"];
+                "multipart/form-data": components["schemas"]["OptionalRemarksRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["OptionalRemarksRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffConcernDetail"];
+                };
+            };
+        };
+    };
+    v1_staff_concerns_complete_create: {
+        parameters: {
+            query?: {
+                barangay?: number;
+                category?: string;
+                include_duplicates?: boolean;
+                /** @description Search reference no., title, landmark, description */
+                q?: string;
+                /** @description Inbox view (default: open) */
+                tab?: "all" | "closed" | "endorsed" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
+            };
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this concern. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["CompleteRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffConcernDetail"];
+                };
+            };
+        };
+    };
+    v1_staff_concerns_endorse_create: {
+        parameters: {
+            query?: {
+                barangay?: number;
+                category?: string;
+                include_duplicates?: boolean;
+                /** @description Search reference no., title, landmark, description */
+                q?: string;
+                /** @description Inbox view (default: open) */
+                tab?: "all" | "closed" | "endorsed" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
+            };
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this concern. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EndorseRequest"];
+                "multipart/form-data": components["schemas"]["EndorseRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["EndorseRequest"];
             };
         };
         responses: {
@@ -1294,7 +1818,7 @@ export interface operations {
                 /** @description Search reference no., title, landmark, description */
                 q?: string;
                 /** @description Inbox view (default: open) */
-                tab?: "all" | "closed" | "mine" | "open" | "overdue" | "triage";
+                tab?: "all" | "closed" | "endorsed" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
             };
             header?: never;
             path: {
@@ -1321,6 +1845,150 @@ export interface operations {
             };
         };
     };
+    v1_staff_concerns_extend_create: {
+        parameters: {
+            query?: {
+                barangay?: number;
+                category?: string;
+                include_duplicates?: boolean;
+                /** @description Search reference no., title, landmark, description */
+                q?: string;
+                /** @description Inbox view (default: open) */
+                tab?: "all" | "closed" | "endorsed" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
+            };
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this concern. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExtendRequest"];
+                "multipart/form-data": components["schemas"]["ExtendRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["ExtendRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffConcernDetail"];
+                };
+            };
+        };
+    };
+    v1_staff_concerns_feedback_8888_create: {
+        parameters: {
+            query?: {
+                barangay?: number;
+                category?: string;
+                include_duplicates?: boolean;
+                /** @description Search reference no., title, landmark, description */
+                q?: string;
+                /** @description Inbox view (default: open) */
+                tab?: "all" | "closed" | "endorsed" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
+            };
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this concern. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Feedback8888Request"];
+                "multipart/form-data": components["schemas"]["Feedback8888Request"];
+                "application/x-www-form-urlencoded": components["schemas"]["Feedback8888Request"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffConcernDetail"];
+                };
+            };
+        };
+    };
+    v1_staff_concerns_follow_up_create: {
+        parameters: {
+            query?: {
+                barangay?: number;
+                category?: string;
+                include_duplicates?: boolean;
+                /** @description Search reference no., title, landmark, description */
+                q?: string;
+                /** @description Inbox view (default: open) */
+                tab?: "all" | "closed" | "endorsed" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
+            };
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this concern. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EndorsementFollowUpRequest"];
+                "multipart/form-data": components["schemas"]["EndorsementFollowUpRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["EndorsementFollowUpRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffConcernDetail"];
+                };
+            };
+        };
+    };
+    v1_staff_concerns_inspect_create: {
+        parameters: {
+            query?: {
+                barangay?: number;
+                category?: string;
+                include_duplicates?: boolean;
+                /** @description Search reference no., title, landmark, description */
+                q?: string;
+                /** @description Inbox view (default: open) */
+                tab?: "all" | "closed" | "endorsed" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
+            };
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this concern. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InspectRequest"];
+                "multipart/form-data": components["schemas"]["InspectRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["InspectRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffConcernDetail"];
+                };
+            };
+        };
+    };
     v1_staff_concerns_link_duplicate_create: {
         parameters: {
             query?: {
@@ -1330,7 +1998,7 @@ export interface operations {
                 /** @description Search reference no., title, landmark, description */
                 q?: string;
                 /** @description Inbox view (default: open) */
-                tab?: "all" | "closed" | "mine" | "open" | "overdue" | "triage";
+                tab?: "all" | "closed" | "endorsed" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
             };
             header?: never;
             path: {
@@ -1366,7 +2034,7 @@ export interface operations {
                 /** @description Search reference no., title, landmark, description */
                 q?: string;
                 /** @description Inbox view (default: open) */
-                tab?: "all" | "closed" | "mine" | "open" | "overdue" | "triage";
+                tab?: "all" | "closed" | "endorsed" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
             };
             header?: never;
             path: {
@@ -1393,7 +2061,7 @@ export interface operations {
             };
         };
     };
-    v1_staff_concerns_status_create: {
+    v1_staff_concerns_reject_create: {
         parameters: {
             query?: {
                 barangay?: number;
@@ -1402,7 +2070,7 @@ export interface operations {
                 /** @description Search reference no., title, landmark, description */
                 q?: string;
                 /** @description Inbox view (default: open) */
-                tab?: "all" | "closed" | "mine" | "open" | "overdue" | "triage";
+                tab?: "all" | "closed" | "endorsed" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
             };
             header?: never;
             path: {
@@ -1413,7 +2081,81 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "multipart/form-data": components["schemas"]["StatusUpdateRequest"];
+                "application/json": components["schemas"]["RemarksRequest"];
+                "multipart/form-data": components["schemas"]["RemarksRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["RemarksRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffConcernDetail"];
+                };
+            };
+        };
+    };
+    v1_staff_concerns_reopen_create: {
+        parameters: {
+            query?: {
+                barangay?: number;
+                category?: string;
+                include_duplicates?: boolean;
+                /** @description Search reference no., title, landmark, description */
+                q?: string;
+                /** @description Inbox view (default: open) */
+                tab?: "all" | "closed" | "endorsed" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
+            };
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this concern. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RemarksRequest"];
+                "multipart/form-data": components["schemas"]["RemarksRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["RemarksRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffConcernDetail"];
+                };
+            };
+        };
+    };
+    v1_staff_concerns_route_create: {
+        parameters: {
+            query?: {
+                barangay?: number;
+                category?: string;
+                include_duplicates?: boolean;
+                /** @description Search reference no., title, landmark, description */
+                q?: string;
+                /** @description Inbox view (default: open) */
+                tab?: "all" | "closed" | "endorsed" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
+            };
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this concern. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RouteRequest"];
+                "multipart/form-data": components["schemas"]["RouteRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["RouteRequest"];
             };
         };
         responses: {
@@ -1436,7 +2178,7 @@ export interface operations {
                 /** @description Search reference no., title, landmark, description */
                 q?: string;
                 /** @description Inbox view (default: open) */
-                tab?: "all" | "closed" | "mine" | "open" | "overdue" | "triage";
+                tab?: "all" | "closed" | "endorsed" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
             };
             header?: never;
             path: {
@@ -1457,6 +2199,40 @@ export interface operations {
             };
         };
     };
+    v1_staff_concerns_validate_create: {
+        parameters: {
+            query?: {
+                barangay?: number;
+                category?: string;
+                include_duplicates?: boolean;
+                /** @description Search reference no., title, landmark, description */
+                q?: string;
+                /** @description Inbox view (default: open) */
+                tab?: "all" | "closed" | "endorsed" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
+            };
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this concern. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["ValidateRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffConcernDetail"];
+                };
+            };
+        };
+    };
     v1_staff_concerns_verify_create: {
         parameters: {
             query?: {
@@ -1466,7 +2242,7 @@ export interface operations {
                 /** @description Search reference no., title, landmark, description */
                 q?: string;
                 /** @description Inbox view (default: open) */
-                tab?: "all" | "closed" | "mine" | "open" | "overdue" | "triage";
+                tab?: "all" | "closed" | "endorsed" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
             };
             header?: never;
             path: {
@@ -1495,7 +2271,9 @@ export interface operations {
     };
     v1_staff_departments_list: {
         parameters: {
-            query?: never;
+            query?: {
+                kind?: "external" | "internal";
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -1508,6 +2286,27 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Department"][];
+                };
+            };
+        };
+    };
+    v1_staff_divisions_list: {
+        parameters: {
+            query: {
+                department: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Division"][];
                 };
             };
         };
@@ -1535,6 +2334,7 @@ export interface operations {
         parameters: {
             query: {
                 department: number;
+                division?: number;
             };
             header?: never;
             path?: never;

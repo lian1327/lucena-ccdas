@@ -6,14 +6,15 @@ from .models import Category, Concern, ConcernAttachment, StatusHistory, Subcate
 class SubcategoryInline(admin.TabularInline):
     model = Subcategory
     extra = 0
+    fields = ("code", "name", "name_fil", "default_department", "default_division", "is_active", "sort_order")
     prepopulated_fields = {"code": ("name",)}
 
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
     inlines = [SubcategoryInline]
-    list_display = ("name", "code", "default_department", "severity_weight", "sla_days", "is_active", "sort_order")
-    list_editable = ("severity_weight", "sla_days", "is_active", "sort_order")
+    list_display = ("name", "code", "default_department", "service_class", "sla_days", "severity_weight", "is_active")
+    list_editable = ("service_class", "sla_days", "severity_weight", "is_active")
     prepopulated_fields = {"code": ("name",)}
 
 

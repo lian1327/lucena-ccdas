@@ -4,8 +4,9 @@ import { api } from "./client";
 import type { SubmitConcernInput } from "./public";
 import type {
   Channel,
-  ConcernStatus,
   Department,
+  Division,
+  EndorsementStatus,
   Severity,
   StaffConcernDetail,
   StaffConcernPage,
@@ -13,7 +14,8 @@ import type {
   StaffUser,
 } from "./types";
 
-export type InboxTab = "triage" | "mine" | "overdue" | "open" | "closed" | "all";
+export type InboxTab =
+  | "triage" | "to_route" | "mine" | "validation" | "endorsed" | "overdue" | "open" | "closed" | "all";
 export type InboxParams = { tab: InboxTab; q?: string; page?: number };
 
 export const staffKeys = {
@@ -21,8 +23,9 @@ export const staffKeys = {
   summary: ["staff", "summary"] as const,
   list: (p: InboxParams) => ["staff", "concerns", p] as const,
   detail: (id: number) => ["staff", "concern", id] as const,
-  departments: ["staff", "departments"] as const,
-  users: (dept: number) => ["staff", "users", dept] as const,
+  departments: (kind?: string) => ["staff", "departments", kind ?? "all"] as const,
+  divisions: (dept: number) => ["staff", "divisions", dept] as const,
+  users: (dept: number, div?: number) => ["staff", "users", dept, div ?? 0] as const,
 };
 
 export function useStaffSummary() {
@@ -53,25 +56,38 @@ export function useStaffConcern(id: number) {
   });
 }
 
-export function useDepartments() {
+export function useDepartments(kind?: "internal" | "external") {
   return useQuery({
-    queryKey: staffKeys.departments,
-    queryFn: async () => (await api.get<Department[]>("/staff/departments/")).data,
+    queryKey: staffKeys.departments(kind),
+    queryFn: async () => (await api.get<Department[]>("/staff/departments/", { params: { kind } })).data,
     staleTime: 60 * 60 * 1000,
   });
 }
 
-export function useDepartmentUsers(departmentId: number | undefined) {
+export function useDivisions(departmentId: number | null | undefined) {
   return useQuery({
-    queryKey: staffKeys.users(departmentId ?? 0),
+    queryKey: staffKeys.divisions(departmentId ?? 0),
+    queryFn: async () => (await api.get<Division[]>("/staff/divisions/", { params: { department: departmentId } })).data,
+    enabled: !!departmentId,
+    staleTime: 60 * 60 * 1000,
+  });
+}
+
+export function useOfficeUsers(departmentId: number | null | undefined, divisionId?: number | null) {
+  return useQuery({
+    queryKey: staffKeys.users(departmentId ?? 0, divisionId ?? undefined),
     queryFn: async () =>
-      (await api.get<StaffUser[]>("/staff/users/", { params: { department: departmentId } })).data,
+      (
+        await api.get<StaffUser[]>("/staff/users/", {
+          params: { department: departmentId, division: divisionId || undefined },
+        })
+      ).data,
     enabled: !!departmentId,
     staleTime: 10 * 60 * 1000,
   });
 }
 
-/** Every workflow action returns the updated detail; we drop it into the cache and refresh lists/counts. */
+/** Every workflow action returns the updated detail; drop it into the cache and refresh lists/counts. */
 function useCaseAction<TVars>(id: number, path: string, toBody: (v: TVars) => unknown = (v) => v) {
   const qc = useQueryClient();
   return useMutation({
@@ -85,43 +101,59 @@ function useCaseAction<TVars>(id: number, path: string, toBody: (v: TVars) => un
   });
 }
 
+function toFormData(v: Record<string, unknown>): FormData {
+  const fd = new FormData();
+  for (const [k, val] of Object.entries(v)) {
+    if (val === undefined || val === null) continue;
+    if (Array.isArray(val)) val.forEach((f) => fd.append(k, f as Blob));
+    else fd.append(k, String(val));
+  }
+  return fd;
+}
+
 export const useVerify = (id: number) =>
   useCaseAction<{ category: string; subcategory: string | null; severity: Severity; remarks?: string }>(id, "verify");
-
-export const useAssign = (id: number) =>
-  useCaseAction<{ department: number; assigned_to: number | null; due_at: string | null; remarks?: string }>(
-    id,
-    "assign",
-  );
-
-export type StatusInput = { status: ConcernStatus; remarks: string; is_public: boolean; photos?: File[] };
-export const useSetStatus = (id: number) =>
-  useCaseAction<StatusInput>(id, "status", (v) => {
-    const fd = new FormData();
-    fd.append("status", v.status);
-    fd.append("remarks", v.remarks);
-    fd.append("is_public", String(v.is_public));
-    v.photos?.forEach((p) => fd.append("photos", p));
-    return fd;
-  });
-
+export const useRoute = (id: number) =>
+  useCaseAction<{ level: "city" | "barangay"; department?: number | null; division?: number | null; remarks?: string }>(id, "route");
+export const useEndorse = (id: number) =>
+  useCaseAction<{ agency: number; letter_reference?: string; contact_person?: string; remarks?: string }>(id, "endorse");
+export const useAssignDivision = (id: number) => useCaseAction<{ division: number; remarks?: string }>(id, "assign-division");
+export const useAssignPerson = (id: number) => useCaseAction<{ person: number; remarks?: string }>(id, "assign-person");
+export const useInspect = (id: number) =>
+  useCaseAction<{ findings: string; action_plan?: string; scheduled_for?: string | null; public_message?: string }>(id, "inspect");
+export const useComplete = (id: number) =>
+  useCaseAction<{ remarks: string; photos: File[] }>(id, "complete", (v) => toFormData(v));
+export const useValidate = (id: number) =>
+  useCaseAction<{ approve: boolean; remarks?: string; photos?: File[] }>(id, "validate", (v) => toFormData(v));
+export const useExtend = (id: number) => useCaseAction<{ new_due_date: string; reason: string }>(id, "extend");
+export const useFollowUp = (id: number) =>
+  useCaseAction<{
+    method: string; notes: string; status?: EndorsementStatus | null; agency_response?: string; public_message?: string;
+  }>(id, "follow-up");
+export const useFeedback8888 = (id: number) => useCaseAction<{ feedback: string }>(id, "feedback-8888");
+export const useReject = (id: number) => useCaseAction<{ remarks: string }>(id, "reject");
+export const useClose = (id: number) => useCaseAction<{ remarks?: string }>(id, "close");
+export const useReopen = (id: number) => useCaseAction<{ remarks: string }>(id, "reopen");
 export const useEscalate = (id: number) => useCaseAction<{ reason: string }>(id, "escalate");
 export const useAddNote = (id: number) => useCaseAction<{ body: string }>(id, "notes");
 export const useLinkDuplicate = (id: number) => useCaseAction<{ master_reference: string }>(id, "link-duplicate");
 export const useUnlinkDuplicate = (id: number) => useCaseAction<void>(id, "unlink-duplicate", () => ({}));
 
-export type EncodeInput = SubmitConcernInput & { channel: Channel; source_reference?: string };
+export type EncodeInput = SubmitConcernInput & {
+  channel: Channel; source_reference?: string; external_ticket_no?: string; received_at?: string | null;
+};
 
 export function useEncodeConcern() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: EncodeInput) => {
+      const { images, ...rest } = input;
       const fd = new FormData();
-      for (const [k, v] of Object.entries(input)) {
-        if (k === "images" || v === undefined || v === null || v === "") continue;
+      for (const [k, v] of Object.entries(rest)) {
+        if (v === undefined || v === null || v === "") continue;
         fd.append(k, String(v));
       }
-      input.images?.forEach((f) => fd.append("images", f));
+      images?.forEach((f) => fd.append("images", f));
       return (await api.post<StaffConcernDetail>("/staff/concerns/", fd)).data;
     },
     onSuccess: (data) => {

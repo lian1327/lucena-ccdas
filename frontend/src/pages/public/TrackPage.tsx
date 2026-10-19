@@ -68,6 +68,15 @@ export function TrackPage() {
               <dd className="col-7 col-sm-8">{c.barangay}</dd>
               <dt className="col-5 col-sm-4 text-secondary">Handling office</dt>
               <dd className="col-7 col-sm-8">{c.assigned_office ?? "Not yet assigned"}</dd>
+              {c.target_date && (
+                <>
+                  <dt className="col-5 col-sm-4 text-secondary">Target na petsa</dt>
+                  <dd className="col-7 col-sm-8">
+                    {fmt(c.target_date).split(",").slice(0, 2).join(",")}
+                    {c.deadline_extended && <span className="badge text-bg-secondary ms-1">na-extend</span>}
+                  </dd>
+                </>
+              )}
               <dt className="col-5 col-sm-4 text-secondary">Submitted</dt>
               <dd className="col-7 col-sm-8">{fmt(c.created_at)}</dd>
               {c.resolved_at && (
@@ -77,6 +86,12 @@ export function TrackPage() {
                 </>
               )}
             </dl>
+            {c.endorsed_to && (
+              <Alert variant="secondary" className="small">
+                Ang problemang ito ay sakop ng <strong>{c.endorsed_to}</strong>. Inendorso ito ng City Hall at patuloy
+                na sinusubaybayan; makikita mo rito ang mga update.
+              </Alert>
+            )}
             {c.linked_to_reference && (
               <Alert variant="info" className="small">
                 This was reported by others too and is being handled together with{" "}

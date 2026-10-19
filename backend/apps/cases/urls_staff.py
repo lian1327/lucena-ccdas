@@ -9,6 +9,7 @@ router.register("concerns", v.StaffConcernViewSet, basename="staff-concern")
 urlpatterns = [
     path("summary/", v.StaffSummaryView.as_view(), name="staff-summary"),
     path("departments/", v.DepartmentListView.as_view(), name="staff-departments"),
+    path("divisions/", v.DivisionListView.as_view(), name="staff-divisions"),
     path("users/", v.StaffUserListView.as_view(), name="staff-users"),
     path("", include(router.urls)),
 ]

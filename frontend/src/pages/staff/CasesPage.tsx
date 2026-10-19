@@ -4,19 +4,13 @@ import { Link, useSearchParams } from "react-router-dom";
 
 import { apiErrorMessage } from "@/api/client";
 import { useStaffConcerns, useStaffSummary, type InboxTab } from "@/api/staff";
-import type { StaffConcern } from "@/api/types";
+import type { Role, StaffConcern } from "@/api/types";
+import { useAuth } from "@/auth/AuthContext";
+import { STAGE_LABEL, tabsFor } from "@/features/cases/roleViews";
 import { FullPageSpinner } from "@/components/FullPageSpinner";
 import { PriorityBadge } from "@/components/PriorityBadge";
 import { StatusBadge } from "@/components/StatusBadge";
 import { dueLabel, timeAgo } from "@/utils/format";
-
-const TABS: { key: InboxTab; label: string; count?: "triage" | "mine" | "overdue" | "open" }[] = [
-  { key: "triage", label: "Triage", count: "triage" },
-  { key: "mine", label: "Sa opisina ko", count: "mine" },
-  { key: "overdue", label: "Overdue", count: "overdue" },
-  { key: "open", label: "Lahat ng bukas", count: "open" },
-  { key: "closed", label: "Tapos na" },
-];
 
 function CaseRow({ c }: { c: StaffConcern }) {
   const due = dueLabel(c.due_at);
@@ -34,6 +28,10 @@ function CaseRow({ c }: { c: StaffConcern }) {
           {!c.is_verified && <Badge bg="light" text="dark" className="border">Hindi pa verified</Badge>}
           {c.is_overdue && <Badge bg="danger">Overdue</Badge>}
           {c.escalation_level > 0 && <Badge bg="dark">Escalated L{c.escalation_level}</Badge>}
+          {c.channel === "8888" && !c.external_feedback_sent_at && <Badge bg="warning" text="dark">8888 feedback due</Badge>}
+          {c.level === "external" && <Badge bg="dark">Endorsed: {c.department}</Badge>}
+          {c.level === "barangay" && <Badge bg="info" text="dark">Barangay-level</Badge>}
+          {c.stage === "for_validation" && <Badge bg="success">For validation</Badge>}
           {c.duplicate_count > 0 && (
             <Badge bg="secondary" title="Iba pang nag-report ng parehong problema">
               +{c.duplicate_count} report
@@ -49,12 +47,15 @@ function CaseRow({ c }: { c: StaffConcern }) {
           </span>
           {c.category && <span>{c.subcategory ?? c.category}</span>}
           <span>{timeAgo(c.created_at)} na</span>
-          {c.department && (
+          {c.department && c.level !== "external" && (
             <span>
               <i className="bi bi-building me-1" aria-hidden />
-              {c.department}
+              {c.division ?? c.department}
               {c.assigned_to && ` · ${c.assigned_to}`}
             </span>
+          )}
+          {c.stage && c.stage !== "for_validation" && c.stage !== "endorsed" && c.status !== "closed" && (
+            <span className="text-body-secondary fst-italic">{STAGE_LABEL[c.stage] ?? c.stage}</span>
           )}
           {due && <span className={due.overdue ? "text-danger fw-semibold" : ""}>{due.text}</span>}
         </div>
@@ -67,8 +68,10 @@ function CaseRow({ c }: { c: StaffConcern }) {
 }
 
 export function CasesPage() {
+  const { user } = useAuth();
+  const tabs = tabsFor(user?.role as Role | undefined);
   const [params, setParams] = useSearchParams();
-  const tab = (params.get("tab") as InboxTab) || "triage";
+  const tab = (params.get("tab") as InboxTab) || tabs[0].key;
   const page = Number(params.get("page") || 1);
   const q = params.get("q") ?? "";
   const [search, setSearch] = useState(q);
@@ -94,14 +97,14 @@ export function CasesPage() {
       </div>
 
       <Nav variant="tabs" className="mb-3 flex-nowrap overflow-auto text-nowrap">
-        {TABS.map((t) => {
+        {tabs.map((t) => {
           const n = t.count ? summary.data?.[t.count] : undefined;
           return (
             <Nav.Item key={t.key}>
               <Nav.Link active={tab === t.key} onClick={() => go({ tab: t.key, page: undefined })}>
                 {t.label}
                 {n !== undefined && n > 0 && (
-                  <Badge bg={t.key === "overdue" ? "danger" : "secondary"} pill className="ms-1">
+                  <Badge bg={t.danger ? "danger" : "secondary"} pill className="ms-1">
                     {n}
                   </Badge>
                 )}
@@ -120,7 +123,7 @@ export function CasesPage() {
       >
         <InputGroup>
           <Form.Control
-            placeholder="Hanapin: reference no., pamagat, palatandaan…"
+            placeholder="Hanapin: reference no., 8888 ticket, pamagat, palatandaan…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -130,6 +133,9 @@ export function CasesPage() {
         </InputGroup>
       </Form>
 
+      {tab === "to_route" && (
+        <p className="small text-secondary">Na-verify na pero hindi pa naipapasa. Magsisimula ang ARTA target sa pagpasa.</p>
+      )}
       {tab === "triage" && (
         <p className="small text-secondary">
           Bagong reports na hindi pa nasusuri. Nauuna ang may <strong>panganib</strong>, saka ang may pinakamataas na

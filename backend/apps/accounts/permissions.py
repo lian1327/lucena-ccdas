@@ -2,7 +2,9 @@ from rest_framework.permissions import BasePermission
 
 from .models import User
 
-STAFF_ROLES = (User.Role.BARANGAY, User.Role.DEPT_STAFF, User.Role.CITY_ADMIN, User.Role.MAYOR)
+R = User.Role
+STAFF_ROLES = (R.PACD, R.BARANGAY, R.DEPT_HEAD, R.DIVISION_CHIEF, R.DEPT_STAFF, R.CITY_ADMIN, R.MAYOR)
+DEPARTMENT_ROLES = (R.DEPT_HEAD, R.DIVISION_CHIEF, R.DEPT_STAFF)
 EXECUTIVE_ROLES = (User.Role.CITY_ADMIN, User.Role.MAYOR)
 
 

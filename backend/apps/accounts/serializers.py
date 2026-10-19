@@ -15,6 +15,7 @@ class CCADSSTokenObtainPairSerializer(TokenObtainPairSerializer):
         token["role"] = user.role
         token["barangay_id"] = user.barangay_id
         token["department_id"] = user.department_id
+        token["division_id"] = user.division_id
         return token
 
 
@@ -23,11 +24,13 @@ class MeSerializer(serializers.ModelSerializer):
     role_display = serializers.CharField(source="get_role_display", read_only=True)
     barangay = serializers.CharField(source="barangay.name", default=None, read_only=True)
     department = serializers.CharField(source="department.name", default=None, read_only=True)
+    division = serializers.CharField(source="division.name", default=None, read_only=True)
 
     class Meta:
         model = User
         fields = ["id", "username", "email", "first_name", "last_name", "full_name",
-                  "role", "role_display", "barangay", "department"]
+                  "role", "role_display", "barangay", "barangay_id", "department", "department_id",
+                  "division", "division_id"]
         read_only_fields = fields
 
     def get_full_name(self, obj) -> str:

@@ -5,8 +5,11 @@ from django.db import models
 class User(AbstractUser):
     class Role(models.TextChoices):
         CITIZEN = "citizen", "Citizen"
+        PACD = "pacd", "Public Assistance & Complaints Desk"
         BARANGAY = "barangay", "Barangay Personnel"
-        DEPT_STAFF = "dept_staff", "Department Staff"
+        DEPT_HEAD = "dept_head", "Department Head"
+        DIVISION_CHIEF = "division_chief", "Division Chief / Supervisor"
+        DEPT_STAFF = "dept_staff", "Field Personnel (Engineer / Crew)"
         CITY_ADMIN = "city_admin", "City Administrator"
         MAYOR = "mayor", "Mayor's Office"
 
@@ -16,6 +19,8 @@ class User(AbstractUser):
                                  on_delete=models.SET_NULL, related_name="users")
     department = models.ForeignKey("cases.Department", null=True, blank=True,
                                    on_delete=models.SET_NULL, related_name="staff")
+    division = models.ForeignKey("cases.Division", null=True, blank=True,
+                                 on_delete=models.SET_NULL, related_name="staff")
 
     def __str__(self):
         return f"{self.username} ({self.get_role_display()})"

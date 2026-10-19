@@ -136,6 +136,7 @@ SPECTACULAR_SETTINGS = {
         "ENUM_NAME_OVERRIDES": {
         "ConcernStatusEnum": "apps.concerns.models.Concern.Status",
         "ConcernChannelEnum": "apps.concerns.models.Concern.Channel",
+        "EndorsementStatusEnum": "apps.cases.models.Endorsement.Status",
     },
 }
 

@@ -224,6 +224,9 @@ class PublicTrackSerializer(serializers.ModelSerializer):
     timeline = serializers.SerializerMethodField()
     linked_to_reference = serializers.CharField(source="duplicate_of.reference_no", default=None)
     resolution_photos = serializers.SerializerMethodField()
+    target_date = serializers.SerializerMethodField()
+    deadline_extended = serializers.SerializerMethodField()
+    endorsed_to = serializers.SerializerMethodField()
 
     class Meta:
         model = Concern
@@ -231,14 +234,35 @@ class PublicTrackSerializer(serializers.ModelSerializer):
         fields = [
             "reference_no", "title", "category", "subcategory", "barangay", "status", "status_display",
             "assigned_office", "linked_to_reference", "created_at", "resolved_at", "timeline",
-            "resolution_photos",
+            "resolution_photos", "target_date", "deadline_extended", "endorsed_to",
         ]
 
     def get_assigned_office(self, obj) -> str | None:
+        case = self._case(obj)
+        if not case:
+            return None
+        if case.level == "barangay":
+            return f"Barangay {obj.barangay.name}"
+        return case.department.name if case.department else None
+
+    def _case(self, obj):
         case = getattr(obj, "case", None)
-        if not case and obj.duplicate_of_id:  # linked report: show the office handling the original
+        if not case and obj.duplicate_of_id:
             case = getattr(obj.duplicate_of, "case", None)
-        return case.department.name if case else None
+        return case
+
+    def get_target_date(self, obj) -> str | None:
+        """ARTA transparency: the citizen sees the committed date."""
+        case = self._case(obj)
+        return case.due_at.isoformat() if case and case.due_at and obj.is_open else None
+
+    def get_deadline_extended(self, obj) -> bool:
+        case = self._case(obj)
+        return bool(case and case.extended_at)
+
+    def get_endorsed_to(self, obj) -> str | None:
+        case = self._case(obj)
+        return case.department.name if case and case.level == "external" and case.department else None
 
     def get_resolution_photos(self, obj) -> list[str]:
         """Proof-of-fix photos from staff. Citizen-uploaded photos are never public (faces, homes, plates)."""

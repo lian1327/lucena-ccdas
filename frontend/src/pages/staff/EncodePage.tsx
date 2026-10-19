@@ -12,6 +12,7 @@ const CHANNELS: { value: Channel; label: string; hint: string }[] = [
   { value: "messenger", label: "Messenger", hint: "Pangalan ng sender o petsa ng mensahe" },
   { value: "barangay", label: "Barangay report", hint: "hal. Brgy. blotter / logbook no." },
   { value: "hotline", label: "Hotline / tawag", hint: "Oras ng tawag, numerong tumawag" },
+  { value: "8888", label: "8888 Citizens' Complaint Center", hint: "Pangalan ng DILG focal person / email" },
 ];
 
 /** Staff encode concerns received outside the portal, so every channel lands in one inbox with the same taxonomy. */
@@ -20,6 +21,8 @@ export function EncodePage() {
   const navigate = useNavigate();
   const [channel, setChannel] = useState<Channel>("walk_in");
   const [source, setSource] = useState("");
+  const [ticket, setTicket] = useState("");
+  const [receivedAt, setReceivedAt] = useState("");
   const hint = CHANNELS.find((c) => c.value === channel)?.hint;
 
   return (
@@ -64,12 +67,30 @@ export function EncodePage() {
                     onChange={(e) => setSource(e.target.value)}
                   />
                 </Col>
+                {channel === "8888" && (
+                  <>
+                    <Col md={5}>
+                      <Form.Label className="small fw-semibold" htmlFor="ticket">8888 ticket no.</Form.Label>
+                      <Form.Control id="ticket" value={ticket} onChange={(e) => setTicket(e.target.value)} />
+                    </Col>
+                    <Col md={7}>
+                      <Form.Label className="small fw-semibold" htmlFor="received">Natanggap ng LGU (para sa 72-oras na feedback)</Form.Label>
+                      <Form.Control id="received" type="datetime-local" value={receivedAt} onChange={(e) => setReceivedAt(e.target.value)} />
+                    </Col>
+                  </>
+                )}
               </Row>
             </Card.Body>
           </Card>
         }
         onSubmit={async (payload) => {
-          const created = await encode.mutateAsync({ ...payload, channel, source_reference: source.trim() });
+          const created = await encode.mutateAsync({
+            ...payload,
+            channel,
+            source_reference: source.trim(),
+            external_ticket_no: channel === "8888" ? ticket.trim() : undefined,
+            received_at: channel === "8888" && receivedAt ? new Date(receivedAt).toISOString() : undefined,
+          });
           navigate(`/staff/cases/${created.id}`, { replace: true });
         }}
       />

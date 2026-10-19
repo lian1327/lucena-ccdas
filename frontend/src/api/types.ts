@@ -24,7 +24,9 @@ export type JwtClaims = {
   exp: number;
 };
 
-export const STAFF_ROLES: Role[] = ["barangay", "dept_staff", "city_admin", "mayor"];
+export const STAFF_ROLES: Role[] = [
+  "pacd", "barangay", "dept_head", "division_chief", "dept_staff", "city_admin", "mayor",
+];
 export const EXECUTIVE_ROLES: Role[] = ["city_admin", "mayor"];
 
 export type Subcategory = S["PublicSubcategory"];
@@ -36,6 +38,11 @@ export type StaffConcernDetail = S["StaffConcernDetail"];
 export type StaffConcernPage = S["PaginatedStaffConcernListList"];
 export type StaffSummary = S["StaffSummary"];
 export type Department = S["Department"];
+export type Division = S["Division"];
+export type Permissions = S["Permissions"];
+export type CaseInfo = S["CaseInfo"];
+export type EndorsementInfo = S["Endorsement"];
+export type EndorsementStatus = S["EndorsementStatusEnum"];
 export type StaffUser = S["StaffUser"];
 export type Channel = S["ConcernChannelEnum"];
 export type Severity = S["SeverityEnum"];

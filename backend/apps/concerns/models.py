@@ -105,6 +105,13 @@ class Concern(models.Model):
 
     # Intake
     channel = models.CharField(max_length=20, choices=Channel.choices, default=Channel.WEB)
+    source_reference = models.CharField(
+        max_length=300, blank=True, help_text="Where staff got it: FB post/comment link, logbook entry no., caller name, etc."
+    )
+    encoded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="encoded_concerns",
+        help_text="Staff who encoded a walk-in/FB/barangay report on the citizen's behalf.",
+    )
     severity = models.PositiveSmallIntegerField(choices=Severity.choices, default=Severity.MODERATE)
     affected_count = models.PositiveIntegerField(default=1, help_text="Estimated number of affected citizens.")
     danger_now = models.BooleanField(
@@ -180,6 +187,11 @@ class Concern(models.Model):
         return self.status in self.OPEN_STATUSES
 
     @property
+    def is_overdue(self):
+        case = getattr(self, "case", None)
+        return bool(self.is_open and case and case.due_at and case.due_at < timezone.now())
+
+    @property
     def priority_tier(self):
         s = float(self.priority_score)
         if s >= 75:
@@ -197,7 +209,12 @@ def attachment_path(instance, filename):
 
 
 class ConcernAttachment(models.Model):
+    class Kind(models.TextChoices):
+        REPORT = "report", "Report photo (from reporter)"
+        RESOLUTION = "resolution", "Resolution photo (proof of fix)"
+
     concern = models.ForeignKey(Concern, on_delete=models.CASCADE, related_name="attachments")
+    kind = models.CharField(max_length=12, choices=Kind.choices, default=Kind.REPORT)
     file = models.ImageField(upload_to=attachment_path)
     caption = models.CharField(max_length=150, blank=True)
     uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)

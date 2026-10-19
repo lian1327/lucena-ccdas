@@ -8,7 +8,8 @@ type NavItem = { to: string; icon: string; label: string; ready: boolean; execut
 
 const NAV: NavItem[] = [
   { to: "/staff", icon: "speedometer2", label: "Dashboard", ready: true },
-  { to: "/staff/cases", icon: "inboxes", label: "Cases", ready: false },
+  { to: "/staff/cases", icon: "inboxes", label: "Mga Kaso", ready: true },
+  { to: "/staff/encode", icon: "pencil-square", label: "I-encode", ready: true },
   { to: "/staff/map", icon: "geo-alt", label: "GIS Map", ready: false },
   { to: "/staff/analytics", icon: "bar-chart", label: "Analytics", ready: false },
   { to: "/staff/executive", icon: "briefcase", label: "Executive", ready: false, executiveOnly: true },
@@ -48,11 +49,11 @@ export function StaffLayout() {
       </Navbar>
 
       <div className="d-flex flex-grow-1">
-        <aside className="bg-white border-end p-2 d-none d-md-block" style={{ width: 220 }}>
+        <aside className="bg-white border-end p-2 d-none d-md-block" style={{ width: 220, flexShrink: 0 }}>
           <Nav className="flex-column gap-1">
             {NAV.filter((n) => !n.executiveOnly || isExec).map((n) =>
               n.ready ? (
-                <Nav.Link key={n.to} as={NavLink} to={n.to} end className="rounded px-3">
+                <Nav.Link key={n.to} as={NavLink} to={n.to} end={n.to === "/staff"} className="rounded px-3">
                   <i className={`bi bi-${n.icon} me-2`} aria-hidden />
                   {n.label}
                 </Nav.Link>
@@ -65,7 +66,15 @@ export function StaffLayout() {
             )}
           </Nav>
         </aside>
-        <main className="flex-grow-1 p-3 p-md-4">
+        <main className="flex-grow-1 p-3 p-md-4" style={{ minWidth: 0 }}>
+          <Nav className="d-md-none mb-3 gap-1 flex-nowrap overflow-auto">
+            {NAV.filter((n) => n.ready && (!n.executiveOnly || isExec)).map((n) => (
+              <Nav.Link key={n.to} as={NavLink} to={n.to} end={n.to === "/staff"} className="btn btn-sm btn-light border text-nowrap">
+                <i className={`bi bi-${n.icon} me-1`} aria-hidden />
+                {n.label}
+              </Nav.Link>
+            ))}
+          </Nav>
           <Outlet />
         </main>
       </div>

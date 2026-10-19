@@ -133,6 +133,10 @@ SPECTACULAR_SETTINGS = {
     "DESCRIPTION": "LGU Citizen Concern Analytics and Decision Support System",
     "VERSION": "1.0.0",
     "COMPONENT_SPLIT_REQUEST": True,
+        "ENUM_NAME_OVERRIDES": {
+        "ConcernStatusEnum": "apps.concerns.models.Concern.Status",
+        "ConcernChannelEnum": "apps.concerns.models.Concern.Channel",
+    },
 }
 
 CORS_ALLOWED_ORIGINS = ["http://localhost:5173"]

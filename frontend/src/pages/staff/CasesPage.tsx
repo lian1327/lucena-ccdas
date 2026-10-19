@@ -1,0 +1,169 @@
+import { useEffect, useState } from "react";
+import { Alert, Badge, Button, Card, Form, InputGroup, Nav } from "react-bootstrap";
+import { Link, useSearchParams } from "react-router-dom";
+
+import { apiErrorMessage } from "@/api/client";
+import { useStaffConcerns, useStaffSummary, type InboxTab } from "@/api/staff";
+import type { StaffConcern } from "@/api/types";
+import { FullPageSpinner } from "@/components/FullPageSpinner";
+import { PriorityBadge } from "@/components/PriorityBadge";
+import { StatusBadge } from "@/components/StatusBadge";
+import { dueLabel, timeAgo } from "@/utils/format";
+
+const TABS: { key: InboxTab; label: string; count?: "triage" | "mine" | "overdue" | "open" }[] = [
+  { key: "triage", label: "Triage", count: "triage" },
+  { key: "mine", label: "Sa opisina ko", count: "mine" },
+  { key: "overdue", label: "Overdue", count: "overdue" },
+  { key: "open", label: "Lahat ng bukas", count: "open" },
+  { key: "closed", label: "Tapos na" },
+];
+
+function CaseRow({ c }: { c: StaffConcern }) {
+  const due = dueLabel(c.due_at);
+  return (
+    <Card as={Link} to={`/staff/cases/${c.id}`} className="text-decoration-none text-body mb-2 case-row">
+      <Card.Body className="py-2 px-3">
+        <div className="d-flex flex-wrap align-items-center gap-2 mb-1">
+          <PriorityBadge tier={c.priority_tier} score={c.priority_score} />
+          {c.danger_now && (
+            <Badge bg="danger" title="Sinabi ng nag-report na may panganib">
+              <i className="bi bi-exclamation-triangle-fill me-1" aria-hidden />
+              Panganib
+            </Badge>
+          )}
+          {!c.is_verified && <Badge bg="light" text="dark" className="border">Hindi pa verified</Badge>}
+          {c.is_overdue && <Badge bg="danger">Overdue</Badge>}
+          {c.escalation_level > 0 && <Badge bg="dark">Escalated L{c.escalation_level}</Badge>}
+          {c.duplicate_count > 0 && (
+            <Badge bg="secondary" title="Iba pang nag-report ng parehong problema">
+              +{c.duplicate_count} report
+            </Badge>
+          )}
+          <span className="ms-auto small text-secondary">{c.reference_no}</span>
+        </div>
+        <div className="fw-semibold">{c.title}</div>
+        <div className="small text-secondary d-flex flex-wrap gap-x-3 column-gap-3">
+          <span>
+            <i className="bi bi-geo-alt me-1" aria-hidden />
+            {c.barangay}
+          </span>
+          {c.category && <span>{c.subcategory ?? c.category}</span>}
+          <span>{timeAgo(c.created_at)} na</span>
+          {c.department && (
+            <span>
+              <i className="bi bi-building me-1" aria-hidden />
+              {c.department}
+              {c.assigned_to && ` · ${c.assigned_to}`}
+            </span>
+          )}
+          {due && <span className={due.overdue ? "text-danger fw-semibold" : ""}>{due.text}</span>}
+        </div>
+        <div className="mt-1">
+          <StatusBadge status={c.status} label={c.status_display} />
+        </div>
+      </Card.Body>
+    </Card>
+  );
+}
+
+export function CasesPage() {
+  const [params, setParams] = useSearchParams();
+  const tab = (params.get("tab") as InboxTab) || "triage";
+  const page = Number(params.get("page") || 1);
+  const q = params.get("q") ?? "";
+  const [search, setSearch] = useState(q);
+  useEffect(() => setSearch(q), [q]);
+
+  const summary = useStaffSummary();
+  const list = useStaffConcerns({ tab, q, page });
+
+  const go = (next: Record<string, string | number | undefined>) => {
+    const p = new URLSearchParams(params);
+    Object.entries(next).forEach(([k, v]) => (v === undefined || v === "" ? p.delete(k) : p.set(k, String(v))));
+    setParams(p);
+  };
+
+  return (
+    <>
+      <div className="d-flex flex-wrap align-items-center gap-2 mb-3">
+        <h1 className="h4 fw-bold mb-0 me-auto">Mga Kaso</h1>
+        <Link to="/staff/encode" className="btn btn-primary btn-sm">
+          <i className="bi bi-plus-lg me-1" aria-hidden />
+          I-encode ang report
+        </Link>
+      </div>
+
+      <Nav variant="tabs" className="mb-3 flex-nowrap overflow-auto text-nowrap">
+        {TABS.map((t) => {
+          const n = t.count ? summary.data?.[t.count] : undefined;
+          return (
+            <Nav.Item key={t.key}>
+              <Nav.Link active={tab === t.key} onClick={() => go({ tab: t.key, page: undefined })}>
+                {t.label}
+                {n !== undefined && n > 0 && (
+                  <Badge bg={t.key === "overdue" ? "danger" : "secondary"} pill className="ms-1">
+                    {n}
+                  </Badge>
+                )}
+              </Nav.Link>
+            </Nav.Item>
+          );
+        })}
+      </Nav>
+
+      <Form
+        className="mb-3"
+        onSubmit={(e) => {
+          e.preventDefault();
+          go({ q: search.trim(), page: undefined });
+        }}
+      >
+        <InputGroup>
+          <Form.Control
+            placeholder="Hanapin: reference no., pamagat, palatandaan…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <Button type="submit" variant="outline-secondary" aria-label="Hanapin">
+            <i className="bi bi-search" />
+          </Button>
+        </InputGroup>
+      </Form>
+
+      {tab === "triage" && (
+        <p className="small text-secondary">
+          Bagong reports na hindi pa nasusuri. Nauuna ang may <strong>panganib</strong>, saka ang may pinakamataas na
+          priority.
+        </p>
+      )}
+
+      {list.isLoading ? (
+        <FullPageSpinner />
+      ) : list.isError ? (
+        <Alert variant="danger">{apiErrorMessage(list.error)}</Alert>
+      ) : list.data!.results.length === 0 ? (
+        <Card body className="text-center text-secondary">
+          <i className="bi bi-inbox fs-2 d-block" aria-hidden />
+          Walang kaso dito.
+        </Card>
+      ) : (
+        <div style={{ opacity: list.isPlaceholderData ? 0.6 : 1 }}>
+          {list.data!.results.map((c) => (
+            <CaseRow key={c.id} c={c} />
+          ))}
+          <div className="d-flex justify-content-between align-items-center mt-3 small">
+            <Button size="sm" variant="outline-secondary" disabled={!list.data!.previous} onClick={() => go({ page: page - 1 })}>
+              ‹ Nauna
+            </Button>
+            <span className="text-secondary">
+              Pahina {page} · {list.data!.count} kaso
+            </span>
+            <Button size="sm" variant="outline-secondary" disabled={!list.data!.next} onClick={() => go({ page: page + 1 })}>
+              Susunod ›
+            </Button>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}

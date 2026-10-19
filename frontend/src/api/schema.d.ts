@@ -184,6 +184,249 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/staff/concerns/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Staff case inbox. Scope is enforced by role (see scoping.py):
+         *     barangay → own barangay (minus complaints about barangay officials); dept staff → own office;
+         *     city admin / mayor → everything. Mayor's office is read-only.
+         */
+        get: operations["v1_staff_concerns_list"];
+        put?: never;
+        /**
+         * @description Staff case inbox. Scope is enforced by role (see scoping.py):
+         *     barangay → own barangay (minus complaints about barangay officials); dept staff → own office;
+         *     city admin / mayor → everything. Mayor's office is read-only.
+         */
+        post: operations["v1_staff_concerns_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/concerns/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Staff case inbox. Scope is enforced by role (see scoping.py):
+         *     barangay → own barangay (minus complaints about barangay officials); dept staff → own office;
+         *     city admin / mayor → everything. Mayor's office is read-only.
+         */
+        get: operations["v1_staff_concerns_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/concerns/{id}/assign/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Staff case inbox. Scope is enforced by role (see scoping.py):
+         *     barangay → own barangay (minus complaints about barangay officials); dept staff → own office;
+         *     city admin / mayor → everything. Mayor's office is read-only.
+         */
+        post: operations["v1_staff_concerns_assign_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/concerns/{id}/escalate/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Staff case inbox. Scope is enforced by role (see scoping.py):
+         *     barangay → own barangay (minus complaints about barangay officials); dept staff → own office;
+         *     city admin / mayor → everything. Mayor's office is read-only.
+         */
+        post: operations["v1_staff_concerns_escalate_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/concerns/{id}/link-duplicate/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Staff case inbox. Scope is enforced by role (see scoping.py):
+         *     barangay → own barangay (minus complaints about barangay officials); dept staff → own office;
+         *     city admin / mayor → everything. Mayor's office is read-only.
+         */
+        post: operations["v1_staff_concerns_link_duplicate_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/concerns/{id}/notes/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Staff case inbox. Scope is enforced by role (see scoping.py):
+         *     barangay → own barangay (minus complaints about barangay officials); dept staff → own office;
+         *     city admin / mayor → everything. Mayor's office is read-only.
+         */
+        post: operations["v1_staff_concerns_notes_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/concerns/{id}/status/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Staff case inbox. Scope is enforced by role (see scoping.py):
+         *     barangay → own barangay (minus complaints about barangay officials); dept staff → own office;
+         *     city admin / mayor → everything. Mayor's office is read-only.
+         */
+        post: operations["v1_staff_concerns_status_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/concerns/{id}/unlink-duplicate/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Staff case inbox. Scope is enforced by role (see scoping.py):
+         *     barangay → own barangay (minus complaints about barangay officials); dept staff → own office;
+         *     city admin / mayor → everything. Mayor's office is read-only.
+         */
+        post: operations["v1_staff_concerns_unlink_duplicate_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/concerns/{id}/verify/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Staff case inbox. Scope is enforced by role (see scoping.py):
+         *     barangay → own barangay (minus complaints about barangay officials); dept staff → own office;
+         *     city admin / mayor → everything. Mayor's office is read-only.
+         */
+        post: operations["v1_staff_concerns_verify_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/departments/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["v1_staff_departments_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/summary/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["v1_staff_summary_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/users/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description People in an office, for the 'assign to' dropdown. */
+        get: operations["v1_staff_users_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -196,10 +439,110 @@ export interface components {
          * @enum {string}
          */
         AffectedScaleEnum: "self" | "household" | "street" | "barangay";
+        AssignRequest: {
+            department: number;
+            assigned_to?: number | null;
+            /** Format: date-time */
+            due_at?: string | null;
+            remarks?: string;
+        };
+        Attachment: {
+            readonly id: number;
+            kind?: components["schemas"]["KindEnum"];
+            readonly url: string;
+            caption?: string;
+            /** Format: date-time */
+            readonly uploaded_at: string;
+        };
+        /** @enum {unknown} */
+        BlankEnum: "";
         /** @description Adds role/scope claims so the frontend can route without an extra request. */
         CCADSSTokenObtainPairRequest: {
             username: string;
             password: string;
+        };
+        CaseInfo: {
+            readonly department_id: number;
+            department: string;
+            readonly assigned_to_id: number | null;
+            readonly assigned_to: string | null;
+            /** Format: date-time */
+            readonly assigned_at: string;
+            /** Format: date-time */
+            due_at?: string | null;
+            escalation_level?: components["schemas"]["EscalationLevelEnum"];
+            escalation_level_display: string;
+            /** Format: date-time */
+            escalated_at?: string | null;
+            escalation_reason?: string;
+            resolution_summary?: string;
+            /** Format: date-time */
+            resolved_at?: string | null;
+        };
+        /**
+         * @description * `web` - Web Portal
+         *     * `facebook` - Facebook Comment
+         *     * `messenger` - Messenger
+         *     * `walk_in` - Walk-in
+         *     * `barangay` - Barangay Report
+         *     * `hotline` - Hotline / Call
+         * @enum {string}
+         */
+        ConcernChannelEnum: "web" | "facebook" | "messenger" | "walk_in" | "barangay" | "hotline";
+        /**
+         * @description * `submitted` - Submitted
+         *     * `under_review` - Under Review
+         *     * `assigned` - Assigned
+         *     * `in_progress` - In Progress
+         *     * `resolved` - Resolved
+         *     * `closed` - Closed
+         *     * `rejected` - Rejected
+         * @enum {string}
+         */
+        ConcernStatusEnum: "submitted" | "under_review" | "assigned" | "in_progress" | "resolved" | "closed" | "rejected";
+        Department: {
+            readonly id: number;
+            code: string;
+            name: string;
+        };
+        EscalateRequest: {
+            reason: string;
+        };
+        /**
+         * @description * `0` - Not escalated
+         *     * `1` - Department Head
+         *     * `2` - City Administrator
+         *     * `3` - Mayor's Office
+         * @enum {integer}
+         */
+        EscalationLevelEnum: 0 | 1 | 2 | 3;
+        History: {
+            readonly id: number;
+            from_status?: components["schemas"]["ConcernStatusEnum"] | components["schemas"]["BlankEnum"];
+            status: components["schemas"]["ConcernStatusEnum"];
+            status_display: string;
+            remarks?: string;
+            is_public?: boolean;
+            readonly changed_by: string | null;
+            /** Format: date-time */
+            readonly created_at: string;
+        };
+        /**
+         * @description * `report` - Report photo (from reporter)
+         *     * `resolution` - Resolution photo (proof of fix)
+         * @enum {string}
+         */
+        KindEnum: "report" | "resolution";
+        LinkDuplicateRequest: {
+            master_reference: string;
+        };
+        LinkedReport: {
+            readonly id: number;
+            readonly reference_no: string;
+            status?: components["schemas"]["ConcernStatusEnum"];
+            /** Format: date-time */
+            readonly created_at: string;
+            channel?: components["schemas"]["ConcernChannelEnum"];
         };
         Me: {
             readonly id: number;
@@ -217,6 +560,53 @@ export interface components {
             readonly role_display: string;
             readonly barangay: string;
             readonly department: string;
+        };
+        Note: {
+            readonly id: number;
+            readonly author: string;
+            body: string;
+            /** Format: date-time */
+            readonly created_at: string;
+        };
+        NoteCreateRequest: {
+            body: string;
+        };
+        PaginatedStaffConcernListList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["StaffConcernList"][];
+        };
+        Permissions: {
+            can_act: boolean;
+            can_verify: boolean;
+            can_assign: boolean;
+            can_assign_any: boolean;
+            can_resolve: boolean;
+        };
+        PriorityBreakdown: {
+            /** Format: double */
+            severity_component: number;
+            /** Format: double */
+            affected_component: number;
+            /** Format: double */
+            duplicate_component: number;
+            /** Format: double */
+            delay_component: number;
+            duplicate_count: number;
+            /** Format: double */
+            days_open: number;
+            /** Format: double */
+            total: number;
         };
         PublicBarangay: {
             readonly id: number;
@@ -320,7 +710,7 @@ export interface components {
             name_fil?: string;
         };
         PublicTimeline: {
-            status: components["schemas"]["StatusEnum"];
+            status: components["schemas"]["ConcernStatusEnum"];
             status_display: string;
             remarks?: string;
             /** Format: date-time */
@@ -333,7 +723,7 @@ export interface components {
             category?: string;
             subcategory?: string;
             barangay: string;
-            readonly status: components["schemas"]["StatusEnum"];
+            readonly status: components["schemas"]["ConcernStatusEnum"];
             status_display: string;
             readonly assigned_office: string | null;
             linked_to_reference?: string;
@@ -342,6 +732,8 @@ export interface components {
             /** Format: date-time */
             resolved_at?: string | null;
             readonly timeline: components["schemas"]["PublicTimeline"][];
+            /** @description Proof-of-fix photos from staff. Citizen-uploaded photos are never public (faces, homes, plates). */
+            readonly resolution_photos: string[];
         };
         /**
          * @description * `citizen` - Citizen
@@ -353,16 +745,165 @@ export interface components {
          */
         RoleEnum: "citizen" | "barangay" | "dept_staff" | "city_admin" | "mayor";
         /**
-         * @description * `submitted` - Submitted
-         *     * `under_review` - Under Review
-         *     * `assigned` - Assigned
-         *     * `in_progress` - In Progress
-         *     * `resolved` - Resolved
-         *     * `closed` - Closed
-         *     * `rejected` - Rejected
-         * @enum {string}
+         * @description * `1` - Minor
+         *     * `2` - Moderate
+         *     * `3` - Serious
+         *     * `4` - Severe
+         *     * `5` - Critical
+         * @enum {integer}
          */
-        StatusEnum: "submitted" | "under_review" | "assigned" | "in_progress" | "resolved" | "closed" | "rejected";
+        SeverityEnum: 1 | 2 | 3 | 4 | 5;
+        StaffConcernDetail: {
+            readonly id: number;
+            readonly reference_no: string;
+            title: string;
+            category?: string;
+            subcategory?: string;
+            barangay: string;
+            /** @description Landmark / street */
+            location_description?: string;
+            status?: components["schemas"]["ConcernStatusEnum"];
+            status_display: string;
+            /** Format: double */
+            priority_score: number;
+            priority_tier: string;
+            /** @description Citizen answered: is anyone in danger right now? (severity hint, not a score) */
+            danger_now?: boolean;
+            is_verified?: boolean;
+            is_overdue: boolean;
+            /** @description Complaint concerns barangay officials — hidden from barangay personnel, routed to City. */
+            involves_barangay_officials?: boolean;
+            channel?: components["schemas"]["ConcernChannelEnum"];
+            /** Format: date-time */
+            readonly created_at: string;
+            department?: string;
+            readonly assigned_to: string | null;
+            /** Format: date-time */
+            due_at?: string;
+            /** @default 0 */
+            escalation_level: number;
+            /** @default 0 */
+            readonly duplicate_count: number;
+            description: string;
+            category_code?: string;
+            subcategory_code?: string;
+            severity?: components["schemas"]["SeverityEnum"];
+            severity_display: string;
+            /**
+             * Format: int64
+             * @description Estimated number of affected citizens.
+             */
+            affected_count?: number;
+            /** Format: decimal */
+            latitude?: string | null;
+            /** Format: decimal */
+            longitude?: string | null;
+            reporter_name?: string;
+            reporter_contact?: string;
+            reporter_email?: string;
+            is_anonymous?: boolean;
+            channel_display: string;
+            /** @description Where staff got it: FB post/comment link, logbook entry no., caller name, etc. */
+            source_reference?: string;
+            readonly encoded_by: string | null;
+            readonly verified_by: string | null;
+            /** Format: date-time */
+            verified_at?: string | null;
+            /** Format: date-time */
+            acknowledged_at?: string | null;
+            /** Format: date-time */
+            resolved_at?: string | null;
+            duplicate_of?: string;
+            readonly duplicates: components["schemas"]["LinkedReport"][];
+            readonly attachments: components["schemas"]["Attachment"][];
+            readonly history: components["schemas"]["History"][];
+            readonly case: components["schemas"]["CaseInfo"];
+            readonly notes: components["schemas"]["Note"][];
+            readonly priority: components["schemas"]["PriorityBreakdown"] | null;
+            readonly allowed_transitions: components["schemas"]["ConcernStatusEnum"][];
+            readonly permissions: components["schemas"]["Permissions"];
+        };
+        StaffConcernList: {
+            readonly id: number;
+            readonly reference_no: string;
+            title: string;
+            category?: string;
+            subcategory?: string;
+            barangay: string;
+            /** @description Landmark / street */
+            location_description?: string;
+            status?: components["schemas"]["ConcernStatusEnum"];
+            status_display: string;
+            /** Format: double */
+            priority_score: number;
+            priority_tier: string;
+            /** @description Citizen answered: is anyone in danger right now? (severity hint, not a score) */
+            danger_now?: boolean;
+            is_verified?: boolean;
+            is_overdue: boolean;
+            /** @description Complaint concerns barangay officials — hidden from barangay personnel, routed to City. */
+            involves_barangay_officials?: boolean;
+            channel?: components["schemas"]["ConcernChannelEnum"];
+            /** Format: date-time */
+            readonly created_at: string;
+            department?: string;
+            readonly assigned_to: string | null;
+            /** Format: date-time */
+            due_at?: string;
+            /** @default 0 */
+            escalation_level: number;
+            /** @default 0 */
+            readonly duplicate_count: number;
+        };
+        StaffEncodeRequest: {
+            channel: components["schemas"]["ConcernChannelEnum"];
+            source_reference?: string;
+            title?: string;
+            description: string;
+            category?: string | null;
+            subcategory?: string | null;
+            /** @description Citizen answered: is anyone in danger right now? (severity hint, not a score) */
+            danger_now?: boolean;
+            /** @default street */
+            affected_scale: components["schemas"]["AffectedScaleEnum"];
+            /** @description Complaint concerns barangay officials — hidden from barangay personnel, routed to City. */
+            involves_barangay_officials?: boolean;
+            barangay: number;
+            /** Format: decimal */
+            latitude?: string | null;
+            /** Format: decimal */
+            longitude?: string | null;
+            /** @description Landmark / street */
+            location_description: string;
+            reporter_name?: string;
+            reporter_contact?: string;
+            reporter_email?: string;
+            is_anonymous?: boolean;
+            consent_given?: boolean;
+            images?: string[];
+        };
+        StaffSummary: {
+            triage: number;
+            danger_unverified: number;
+            mine: number;
+            overdue: number;
+            open: number;
+            resolved_this_month: number;
+        };
+        StaffUser: {
+            readonly id: number;
+            /** @description Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only. */
+            username: string;
+            readonly full_name: string;
+            department?: number | null;
+        };
+        StatusUpdateRequest: {
+            status: components["schemas"]["ConcernStatusEnum"];
+            remarks?: string;
+            /** @default true */
+            is_public: boolean;
+            photos?: string[];
+        };
         TokenBlacklistRequest: {
             refresh: string;
         };
@@ -372,6 +913,12 @@ export interface components {
         };
         TokenRefreshRequest: {
             refresh: string;
+        };
+        VerifyRequest: {
+            category: string;
+            subcategory?: string | null;
+            severity: components["schemas"]["SeverityEnum"];
+            remarks?: string;
         };
     };
     responses: never;
@@ -606,6 +1153,401 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PublicStats"];
+                };
+            };
+        };
+    };
+    v1_staff_concerns_list: {
+        parameters: {
+            query?: {
+                barangay?: number;
+                category?: string;
+                include_duplicates?: boolean;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Search reference no., title, landmark, description */
+                q?: string;
+                /** @description Inbox view (default: open) */
+                tab?: "all" | "closed" | "mine" | "open" | "overdue" | "triage";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedStaffConcernListList"];
+                };
+            };
+        };
+    };
+    v1_staff_concerns_create: {
+        parameters: {
+            query?: {
+                barangay?: number;
+                category?: string;
+                include_duplicates?: boolean;
+                /** @description Search reference no., title, landmark, description */
+                q?: string;
+                /** @description Inbox view (default: open) */
+                tab?: "all" | "closed" | "mine" | "open" | "overdue" | "triage";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StaffEncodeRequest"];
+                "multipart/form-data": components["schemas"]["StaffEncodeRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["StaffEncodeRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffConcernDetail"];
+                };
+            };
+        };
+    };
+    v1_staff_concerns_retrieve: {
+        parameters: {
+            query?: {
+                barangay?: number;
+                category?: string;
+                include_duplicates?: boolean;
+                /** @description Search reference no., title, landmark, description */
+                q?: string;
+                /** @description Inbox view (default: open) */
+                tab?: "all" | "closed" | "mine" | "open" | "overdue" | "triage";
+            };
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this concern. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffConcernDetail"];
+                };
+            };
+        };
+    };
+    v1_staff_concerns_assign_create: {
+        parameters: {
+            query?: {
+                barangay?: number;
+                category?: string;
+                include_duplicates?: boolean;
+                /** @description Search reference no., title, landmark, description */
+                q?: string;
+                /** @description Inbox view (default: open) */
+                tab?: "all" | "closed" | "mine" | "open" | "overdue" | "triage";
+            };
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this concern. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssignRequest"];
+                "multipart/form-data": components["schemas"]["AssignRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["AssignRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffConcernDetail"];
+                };
+            };
+        };
+    };
+    v1_staff_concerns_escalate_create: {
+        parameters: {
+            query?: {
+                barangay?: number;
+                category?: string;
+                include_duplicates?: boolean;
+                /** @description Search reference no., title, landmark, description */
+                q?: string;
+                /** @description Inbox view (default: open) */
+                tab?: "all" | "closed" | "mine" | "open" | "overdue" | "triage";
+            };
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this concern. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EscalateRequest"];
+                "multipart/form-data": components["schemas"]["EscalateRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["EscalateRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffConcernDetail"];
+                };
+            };
+        };
+    };
+    v1_staff_concerns_link_duplicate_create: {
+        parameters: {
+            query?: {
+                barangay?: number;
+                category?: string;
+                include_duplicates?: boolean;
+                /** @description Search reference no., title, landmark, description */
+                q?: string;
+                /** @description Inbox view (default: open) */
+                tab?: "all" | "closed" | "mine" | "open" | "overdue" | "triage";
+            };
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this concern. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkDuplicateRequest"];
+                "multipart/form-data": components["schemas"]["LinkDuplicateRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["LinkDuplicateRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffConcernDetail"];
+                };
+            };
+        };
+    };
+    v1_staff_concerns_notes_create: {
+        parameters: {
+            query?: {
+                barangay?: number;
+                category?: string;
+                include_duplicates?: boolean;
+                /** @description Search reference no., title, landmark, description */
+                q?: string;
+                /** @description Inbox view (default: open) */
+                tab?: "all" | "closed" | "mine" | "open" | "overdue" | "triage";
+            };
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this concern. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NoteCreateRequest"];
+                "multipart/form-data": components["schemas"]["NoteCreateRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["NoteCreateRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffConcernDetail"];
+                };
+            };
+        };
+    };
+    v1_staff_concerns_status_create: {
+        parameters: {
+            query?: {
+                barangay?: number;
+                category?: string;
+                include_duplicates?: boolean;
+                /** @description Search reference no., title, landmark, description */
+                q?: string;
+                /** @description Inbox view (default: open) */
+                tab?: "all" | "closed" | "mine" | "open" | "overdue" | "triage";
+            };
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this concern. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["StatusUpdateRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffConcernDetail"];
+                };
+            };
+        };
+    };
+    v1_staff_concerns_unlink_duplicate_create: {
+        parameters: {
+            query?: {
+                barangay?: number;
+                category?: string;
+                include_duplicates?: boolean;
+                /** @description Search reference no., title, landmark, description */
+                q?: string;
+                /** @description Inbox view (default: open) */
+                tab?: "all" | "closed" | "mine" | "open" | "overdue" | "triage";
+            };
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this concern. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffConcernDetail"];
+                };
+            };
+        };
+    };
+    v1_staff_concerns_verify_create: {
+        parameters: {
+            query?: {
+                barangay?: number;
+                category?: string;
+                include_duplicates?: boolean;
+                /** @description Search reference no., title, landmark, description */
+                q?: string;
+                /** @description Inbox view (default: open) */
+                tab?: "all" | "closed" | "mine" | "open" | "overdue" | "triage";
+            };
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this concern. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VerifyRequest"];
+                "multipart/form-data": components["schemas"]["VerifyRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["VerifyRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffConcernDetail"];
+                };
+            };
+        };
+    };
+    v1_staff_departments_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Department"][];
+                };
+            };
+        };
+    };
+    v1_staff_summary_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffSummary"];
+                };
+            };
+        };
+    };
+    v1_staff_users_list: {
+        parameters: {
+            query: {
+                department: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffUser"][];
                 };
             };
         };

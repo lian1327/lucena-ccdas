@@ -10,7 +10,10 @@ import { HomePage } from "@/pages/public/HomePage";
 import { PrivacyPage } from "@/pages/public/PrivacyPage";
 import { ReportPage } from "@/pages/public/ReportPage";
 import { TrackPage } from "@/pages/public/TrackPage";
+import { CaseDetailPage } from "@/pages/staff/CaseDetailPage";
+import { CasesPage } from "@/pages/staff/CasesPage";
 import { DashboardPage } from "@/pages/staff/DashboardPage";
+import { EncodePage } from "@/pages/staff/EncodePage";
 
 export const router = createBrowserRouter([
   {
@@ -32,7 +35,12 @@ export const router = createBrowserRouter([
       {
         path: "/staff",
         element: <StaffLayout />,
-        children: [{ index: true, element: <DashboardPage /> }],
+        children: [
+          { index: true, element: <DashboardPage /> },
+          { path: "cases", element: <CasesPage /> },
+          { path: "cases/:id", element: <CaseDetailPage /> },
+          { path: "encode", element: <EncodePage /> },
+        ],
       },
     ],
   },

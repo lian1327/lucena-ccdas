@@ -223,6 +223,7 @@ class PublicTrackSerializer(serializers.ModelSerializer):
     assigned_office = serializers.SerializerMethodField()
     timeline = serializers.SerializerMethodField()
     linked_to_reference = serializers.CharField(source="duplicate_of.reference_no", default=None)
+    resolution_photos = serializers.SerializerMethodField()
 
     class Meta:
         model = Concern
@@ -230,11 +231,19 @@ class PublicTrackSerializer(serializers.ModelSerializer):
         fields = [
             "reference_no", "title", "category", "subcategory", "barangay", "status", "status_display",
             "assigned_office", "linked_to_reference", "created_at", "resolved_at", "timeline",
+            "resolution_photos",
         ]
 
     def get_assigned_office(self, obj) -> str | None:
         case = getattr(obj, "case", None)
+        if not case and obj.duplicate_of_id:  # linked report: show the office handling the original
+            case = getattr(obj.duplicate_of, "case", None)
         return case.department.name if case else None
+
+    def get_resolution_photos(self, obj) -> list[str]:
+        """Proof-of-fix photos from staff. Citizen-uploaded photos are never public (faces, homes, plates)."""
+        source = obj.duplicate_of if obj.duplicate_of_id else obj
+        return [a.file.url for a in source.attachments.all() if a.kind == "resolution"]
 
     @extend_schema_field(PublicTimelineSerializer(many=True))
     def get_timeline(self, obj):

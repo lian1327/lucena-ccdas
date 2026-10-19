@@ -12,7 +12,7 @@ export type ConcernCreateRequest = S["PublicConcernCreateRequest"];
 export type ConcernCreateResponse = S["PublicConcernCreate"];
 export type Me = S["Me"];
 export type Role = S["RoleEnum"];
-export type ConcernStatus = S["StatusEnum"];
+export type ConcernStatus = S["ConcernStatusEnum"];
 
 export type JwtClaims = {
   user_id: string | number;
@@ -29,3 +29,14 @@ export const EXECUTIVE_ROLES: Role[] = ["city_admin", "mayor"];
 
 export type Subcategory = S["PublicSubcategory"];
 export type AffectedScale = S["AffectedScaleEnum"];
+
+// ----- staff -----
+export type StaffConcern = S["StaffConcernList"];
+export type StaffConcernDetail = S["StaffConcernDetail"];
+export type StaffConcernPage = S["PaginatedStaffConcernListList"];
+export type StaffSummary = S["StaffSummary"];
+export type Department = S["Department"];
+export type StaffUser = S["StaffUser"];
+export type Channel = S["ConcernChannelEnum"];
+export type Severity = S["SeverityEnum"];
+export type StaffEncodeRequest = S["StaffEncodeRequest"];

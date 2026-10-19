@@ -20,6 +20,7 @@ class CategoryAdmin(admin.ModelAdmin):
 class AttachmentInline(admin.TabularInline):
     model = ConcernAttachment
     extra = 0
+    fields = ("kind", "file", "caption", "uploaded_by", "uploaded_at")
     readonly_fields = ("uploaded_by", "uploaded_at")
 
 

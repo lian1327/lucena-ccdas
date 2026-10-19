@@ -84,6 +84,22 @@ export function TrackPage() {
               </Alert>
             )}
 
+            {c.resolution_photos.length > 0 && (
+              <div className="mb-4">
+                <h3 className="h6">
+                  <i className="bi bi-check2-circle text-success me-1" aria-hidden />
+                  Patunay na naayos na
+                </h3>
+                <div className="d-flex flex-wrap gap-2">
+                  {c.resolution_photos.map((url) => (
+                    <a key={url} href={url} target="_blank" rel="noopener">
+                      <img src={url} alt="Litrato ng naayos na problema" width={140} height={140} className="rounded border object-fit-cover" />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <h3 className="h6">Timeline</h3>
             <ol className="list-unstyled border-start ps-3 mb-0">
               {c.timeline.map((t, i) => (

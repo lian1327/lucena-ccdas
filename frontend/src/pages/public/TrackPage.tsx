@@ -60,7 +60,10 @@ export function TrackPage() {
             </div>
             <dl className="row small mb-4">
               <dt className="col-5 col-sm-4 text-secondary">Category</dt>
-              <dd className="col-7 col-sm-8">{c.category ?? "Being classified"}</dd>
+              <dd className="col-7 col-sm-8">
+                {c.category ?? "Being classified"}
+                {c.subcategory && <span className="text-secondary"> › {c.subcategory}</span>}
+              </dd>
               <dt className="col-5 col-sm-4 text-secondary">Barangay</dt>
               <dd className="col-7 col-sm-8">{c.barangay}</dd>
               <dt className="col-5 col-sm-4 text-secondary">Handling office</dt>

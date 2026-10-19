@@ -188,6 +188,14 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * @description * `self` - self
+         *     * `household` - household
+         *     * `street` - street
+         *     * `barangay` - barangay
+         * @enum {string}
+         */
+        AffectedScaleEnum: "self" | "household" | "street" | "barangay";
         /** @description Adds role/scope claims so the frontend can route without an extra request. */
         CCADSSTokenObtainPairRequest: {
             username: string;
@@ -226,24 +234,20 @@ export interface components {
             description?: string;
             /** @description Bootstrap Icons name, e.g. 'cone-striped' */
             icon?: string;
+            readonly subcategories: components["schemas"]["PublicSubcategory"][];
         };
         PublicConcernCreate: {
-            title: string;
+            title?: string;
             description: string;
             category?: string | null;
-            severity?: components["schemas"]["SeverityEnum"];
-            /**
-             * Format: int64
-             * @description Estimated number of affected citizens.
-             */
-            affected_count?: number;
+            subcategory?: string | null;
             barangay: number;
             /** Format: decimal */
             latitude?: string | null;
             /** Format: decimal */
             longitude?: string | null;
             /** @description Landmark / street */
-            location_description?: string;
+            location_description: string;
             readonly reference_no: string;
             readonly status: string;
             /** Format: date-time */
@@ -251,22 +255,23 @@ export interface components {
             readonly linked_to_existing: boolean;
         };
         PublicConcernCreateRequest: {
-            title: string;
+            title?: string;
             description: string;
             category?: string | null;
-            severity?: components["schemas"]["SeverityEnum"];
-            /**
-             * Format: int64
-             * @description Estimated number of affected citizens.
-             */
-            affected_count?: number;
+            subcategory?: string | null;
+            /** @description Citizen answered: is anyone in danger right now? (severity hint, not a score) */
+            danger_now?: boolean;
+            /** @default street */
+            affected_scale: components["schemas"]["AffectedScaleEnum"];
+            /** @description Complaint concerns barangay officials — hidden from barangay personnel, routed to City. */
+            involves_barangay_officials?: boolean;
             barangay: number;
             /** Format: decimal */
             latitude?: string | null;
             /** Format: decimal */
             longitude?: string | null;
             /** @description Landmark / street */
-            location_description?: string;
+            location_description: string;
             reporter_name?: string;
             reporter_contact?: string;
             reporter_email?: string;
@@ -308,6 +313,12 @@ export interface components {
             resolution_rate: number;
             reports_received: number;
         };
+        PublicSubcategory: {
+            code: string;
+            name: string;
+            /** Name (Filipino) */
+            name_fil?: string;
+        };
         PublicTimeline: {
             status: components["schemas"]["StatusEnum"];
             status_display: string;
@@ -320,6 +331,7 @@ export interface components {
             readonly reference_no: string;
             title: string;
             category?: string;
+            subcategory?: string;
             barangay: string;
             readonly status: components["schemas"]["StatusEnum"];
             status_display: string;
@@ -340,15 +352,6 @@ export interface components {
          * @enum {string}
          */
         RoleEnum: "citizen" | "barangay" | "dept_staff" | "city_admin" | "mayor";
-        /**
-         * @description * `1` - Minor
-         *     * `2` - Moderate
-         *     * `3` - Serious
-         *     * `4` - Severe
-         *     * `5` - Critical
-         * @enum {integer}
-         */
-        SeverityEnum: 1 | 2 | 3 | 4 | 5;
         /**
          * @description * `submitted` - Submitted
          *     * `under_review` - Under Review

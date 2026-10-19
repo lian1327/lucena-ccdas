@@ -54,7 +54,7 @@ export function useTrackConcern(referenceNo: string | undefined) {
   });
 }
 
-export type SubmitConcernInput = ConcernCreateRequest & { images?: File[] };
+export type SubmitConcernInput = Omit<ConcernCreateRequest, "images"> & { images?: File[] };
 
 function toFormData(input: SubmitConcernInput): FormData {
   const fd = new FormData();

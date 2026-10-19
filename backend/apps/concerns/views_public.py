@@ -34,7 +34,7 @@ class PublicMixin:
 
 class PublicCategoryListView(PublicMixin, generics.ListAPIView):
     serializer_class = PublicCategorySerializer
-    queryset = Category.objects.filter(is_active=True)
+    queryset = Category.objects.filter(is_active=True).prefetch_related("subcategories")
     pagination_class = None
 
 
@@ -72,7 +72,7 @@ class PublicTrackView(PublicMixin, generics.RetrieveAPIView):
     def get_object(self):
         ref = self.kwargs["reference_no"].strip().upper()
         return get_object_or_404(
-            Concern.objects.select_related("category", "barangay", "duplicate_of", "case__department"),
+            Concern.objects.select_related("category", "subcategory", "barangay", "duplicate_of", "case__department"),
             reference_no=ref,
         )
 

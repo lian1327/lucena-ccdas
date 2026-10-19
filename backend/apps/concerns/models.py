@@ -36,6 +36,24 @@ class Category(models.Model):
         return self.name
 
 
+class Subcategory(models.Model):
+    """Second level of the taxonomy (e.g. Drainage → Clogged canal). Citizens tap these instead of typing."""
+
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="subcategories")
+    code = models.SlugField(max_length=50, unique=True)
+    name = models.CharField(max_length=100)
+    name_fil = models.CharField("Name (Filipino)", max_length=100, blank=True)
+    is_active = models.BooleanField(default=True)
+    sort_order = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ["category__sort_order", "sort_order", "name"]
+        verbose_name_plural = "subcategories"
+
+    def __str__(self):
+        return f"{self.category.name} › {self.name}"
+
+
 class Concern(models.Model):
     class Status(models.TextChoices):
         SUBMITTED = "submitted", "Submitted"
@@ -76,6 +94,9 @@ class Concern(models.Model):
 
     # Classification
     category = models.ForeignKey(Category, null=True, blank=True, on_delete=models.PROTECT, related_name="concerns")
+    subcategory = models.ForeignKey(
+        Subcategory, null=True, blank=True, on_delete=models.PROTECT, related_name="concerns"
+    )
     category_source = models.CharField(max_length=10, choices=CategorySource.choices, default=CategorySource.CITIZEN)
     predicted_category = models.ForeignKey(
         Category, null=True, blank=True, on_delete=models.SET_NULL, related_name="predicted_concerns"
@@ -86,6 +107,12 @@ class Concern(models.Model):
     channel = models.CharField(max_length=20, choices=Channel.choices, default=Channel.WEB)
     severity = models.PositiveSmallIntegerField(choices=Severity.choices, default=Severity.MODERATE)
     affected_count = models.PositiveIntegerField(default=1, help_text="Estimated number of affected citizens.")
+    danger_now = models.BooleanField(
+        default=False, help_text="Citizen answered: is anyone in danger right now? (severity hint, not a score)"
+    )
+    involves_barangay_officials = models.BooleanField(
+        default=False, help_text="Complaint concerns barangay officials — hidden from barangay personnel, routed to City."
+    )
 
     # Location
     barangay = models.ForeignKey("geo.Barangay", on_delete=models.PROTECT, related_name="concerns")
@@ -111,6 +138,13 @@ class Concern(models.Model):
         help_text="Master report this one was linked to.",
     )
     priority_score = models.DecimalField(max_digits=5, decimal_places=2, default=0, db_index=True)
+
+    # Triage: analytics count only verified concerns (staff-confirmed category, sub-type, severity)
+    is_verified = models.BooleanField(default=False, db_index=True)
+    verified_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
+    verified_at = models.DateTimeField(null=True, blank=True)
 
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)

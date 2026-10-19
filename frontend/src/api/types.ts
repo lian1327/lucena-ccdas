@@ -26,3 +26,6 @@ export type JwtClaims = {
 
 export const STAFF_ROLES: Role[] = ["barangay", "dept_staff", "city_admin", "mayor"];
 export const EXECUTIVE_ROLES: Role[] = ["city_admin", "mayor"];
+
+export type Subcategory = S["PublicSubcategory"];
+export type AffectedScale = S["AffectedScaleEnum"];

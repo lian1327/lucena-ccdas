@@ -1,3 +1,5 @@
+import re
+
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
@@ -6,19 +8,32 @@ from rest_framework import serializers
 
 from apps.geo.models import Barangay
 
-from .models import Category, Concern, ConcernAttachment, StatusHistory
+from .models import Category, Concern, ConcernAttachment, StatusHistory, Subcategory
 from .services import on_concern_submitted
 
-MAX_IMAGES = 5
+MAX_IMAGES = 3
 MAX_IMAGE_MB = 5
 
 
 # ---------- Public reference data ----------
 
+class PublicSubcategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Subcategory
+        fields = ["code", "name", "name_fil"]
+
+
 class PublicCategorySerializer(serializers.ModelSerializer):
+    subcategories = serializers.SerializerMethodField()
+
     class Meta:
         model = Category
-        fields = ["code", "name", "name_fil", "description", "icon"]
+        fields = ["code", "name", "name_fil", "description", "icon", "subcategories"]
+
+    @extend_schema_field(PublicSubcategorySerializer(many=True))
+    def get_subcategories(self, obj):
+        subs = [s for s in obj.subcategories.all() if s.is_active]
+        return PublicSubcategorySerializer(subs, many=True).data
 
 
 class PublicBarangaySerializer(serializers.ModelSerializer):
@@ -29,14 +44,28 @@ class PublicBarangaySerializer(serializers.ModelSerializer):
 
 # ---------- Public submission ----------
 
+PH_MOBILE_RE = re.compile(r"^(09|\+639|639)\d{9}$")
+
+# What citizens pick ("Ilan ang apektado?") → stored estimate. Buckets beat a raw number nobody knows.
+AFFECTED_BUCKETS = {"self": 1, "household": 5, "street": 50, "barangay": 500}
+
+
 class PublicConcernCreateSerializer(serializers.ModelSerializer):
     category = serializers.SlugRelatedField(
         slug_field="code", queryset=Category.objects.filter(is_active=True),
         required=False, allow_null=True,
     )
+    subcategory = serializers.SlugRelatedField(
+        slug_field="code", queryset=Subcategory.objects.filter(is_active=True).select_related("category"),
+        required=False, allow_null=True,
+    )
     barangay = serializers.PrimaryKeyRelatedField(queryset=Barangay.objects.all())
+    affected_scale = serializers.ChoiceField(
+        choices=list(AFFECTED_BUCKETS), write_only=True, required=False, default="street"
+    )
     images = serializers.ListField(
-        child=serializers.ImageField(), write_only=True, required=False, max_length=MAX_IMAGES
+        child=serializers.ImageField(), write_only=True, required=False, max_length=MAX_IMAGES,
+        error_messages={"max_length": f"Hanggang {MAX_IMAGES} litrato lang. (Up to {MAX_IMAGES} photos.)"},
     )
 
     # read-only response fields
@@ -48,40 +77,55 @@ class PublicConcernCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Concern
         fields = [
-            "title", "description", "category", "severity", "affected_count",
+            "title", "description", "category", "subcategory", "danger_now", "affected_scale",
+            "involves_barangay_officials",
             "barangay", "latitude", "longitude", "location_description",
             "reporter_name", "reporter_contact", "reporter_email", "is_anonymous", "consent_given",
             "images",
             "reference_no", "status", "created_at", "linked_to_existing",
         ]
         extra_kwargs = {
+            "title": {"required": False, "allow_blank": True},
+            "location_description": {
+                "required": True, "allow_blank": False,
+                "error_messages": {
+                    "blank": "Ilagay ang palatandaan o kalye. (Add a landmark or street.)",
+                    "required": "Ilagay ang palatandaan o kalye. (Add a landmark or street.)",
+                },
+            },
             "reporter_name": {"write_only": True},
             "reporter_contact": {"write_only": True},
             "reporter_email": {"write_only": True},
             "is_anonymous": {"write_only": True},
             "consent_given": {"write_only": True},
-            "severity": {"required": False},
-            "affected_count": {"required": False},
+            "danger_now": {"write_only": True},
+            "involves_barangay_officials": {"write_only": True},
         }
 
     def get_linked_to_existing(self, obj) -> bool:
         return obj.duplicate_of_id is not None
 
     def validate_title(self, v):
-        v = v.strip()
-        if len(v) < 5:
-            raise serializers.ValidationError("Please give a short but clear title (at least 5 characters).")
-        return v
+        return v.strip()
 
     def validate_description(self, v):
         v = v.strip()
-        if len(v) < 15:
-            raise serializers.ValidationError("Please describe the concern in a bit more detail.")
+        if len(v) < 10:
+            raise serializers.ValidationError("Pakilarawan nang kaunti pa ang problema. (Please add a bit more detail.)")
         return v
 
-    def validate_affected_count(self, v):
-        if v < 1 or v > 100_000:
-            raise serializers.ValidationError("Enter a value between 1 and 100,000.")
+    def validate_location_description(self, v):
+        v = v.strip()
+        if len(v) < 4:
+            raise serializers.ValidationError(
+                "Ilagay ang palatandaan o kalye, hal. 'tapat ng chapel sa Purok 3'. (Add a landmark or street.)"
+            )
+        return v
+
+    def validate_reporter_contact(self, v):
+        v = re.sub(r"[\s-]", "", v or "")
+        if v and not PH_MOBILE_RE.match(v):
+            raise serializers.ValidationError("Gumamit ng 11-digit na mobile number, hal. 09171234567.")
         return v
 
     def validate_images(self, files):
@@ -96,13 +140,19 @@ class PublicConcernCreateSerializer(serializers.ModelSerializer):
                 {"consent_given": "You must agree to the Data Privacy Notice to submit a concern."}
             )
 
+        sub = attrs.get("subcategory")
+        if sub:
+            if attrs.get("category") and attrs["category"].pk != sub.category_id:
+                raise serializers.ValidationError({"subcategory": "This sub-type does not belong to the chosen category."})
+            attrs["category"] = sub.category
+
         lat, lng = attrs.get("latitude"), attrs.get("longitude")
         if (lat is None) != (lng is None):
             raise serializers.ValidationError({"latitude": "Provide both latitude and longitude, or neither."})
         if lat is not None:
             b = getattr(settings, "SERVICE_AREA_BOUNDS", {"lat": (4.5, 21.5), "lng": (116.0, 127.0)})
             if not (b["lat"][0] <= float(lat) <= b["lat"][1] and b["lng"][0] <= float(lng) <= b["lng"][1]):
-                raise serializers.ValidationError({"latitude": "The pinned location is outside the service area."})
+                raise serializers.ValidationError({"latitude": "Ang naka-pin na lokasyon ay labas sa sakop ng lungsod."})
 
         request = self.context.get("request")
         logged_in = bool(request and request.user and request.user.is_authenticated)
@@ -111,21 +161,34 @@ class PublicConcernCreateSerializer(serializers.ModelSerializer):
                 attrs[f] = ""
         elif not logged_in:
             if not attrs.get("reporter_name"):
-                raise serializers.ValidationError({"reporter_name": "Name is required unless reporting anonymously."})
+                raise serializers.ValidationError({"reporter_name": "Ilagay ang pangalan, o piliin ang 'Anonymous'."})
             if not (attrs.get("reporter_contact") or attrs.get("reporter_email")):
                 raise serializers.ValidationError(
-                    {"reporter_contact": "Give a contact number or email so we can update you."}
+                    {"reporter_contact": "Ilagay ang mobile number para ma-update ka namin sa SMS."}
                 )
         return attrs
+
+    @staticmethod
+    def _auto_title(attrs):
+        what = (attrs.get("subcategory") or attrs.get("category"))
+        what = (what.name_fil or what.name) if what else "Concern"
+        return f"{what} – {attrs['location_description']}"[:150]
 
     @transaction.atomic
     def create(self, validated):
         images = validated.pop("images", [])
+        scale = validated.pop("affected_scale", "street")
         request = self.context.get("request")
         user = request.user if (request and request.user.is_authenticated) else None
 
+        if not validated.get("title"):
+            validated["title"] = self._auto_title(validated)
+
         concern = Concern.objects.create(
             **validated,
+            affected_count=AFFECTED_BUCKETS[scale],
+            # Citizen input is a hint only; staff set the real severity during triage.
+            severity=Concern.Severity.SEVERE if validated.get("danger_now") else Concern.Severity.MODERATE,
             channel=Concern.Channel.WEB,
             category_source=Concern.CategorySource.CITIZEN,
             reporter=None if validated.get("is_anonymous") else user,
@@ -154,6 +217,7 @@ class PublicTrackSerializer(serializers.ModelSerializer):
     """Only non-personal fields. No reporter data, no staff names, no internal notes."""
 
     category = serializers.CharField(source="category.name", default=None)
+    subcategory = serializers.CharField(source="subcategory.name", default=None)
     barangay = serializers.CharField(source="barangay.name")
     status_display = serializers.CharField(source="get_status_display")
     assigned_office = serializers.SerializerMethodField()
@@ -164,7 +228,7 @@ class PublicTrackSerializer(serializers.ModelSerializer):
         model = Concern
         read_only_fields = ["status"]
         fields = [
-            "reference_no", "title", "category", "barangay", "status", "status_display",
+            "reference_no", "title", "category", "subcategory", "barangay", "status", "status_display",
             "assigned_office", "linked_to_reference", "created_at", "resolved_at", "timeline",
         ]
 

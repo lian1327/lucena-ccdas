@@ -12,7 +12,7 @@ six people is one problem; the six reporters show up separately as "reports" (a 
 Forecast method (say this at the defense): for each issue, four simple methods are back-tested on the last 4 months
 (one step ahead each time) and the most accurate one is used:
   naive (same as last month) · 3-month average · simple exponential smoothing · Holt (level + trend)
-A seasonal factor from the same month last year is applied once ≥ 24 months of data exist. The range is
+  · same month last year × recent trend (only once ≥ 19 months of data exist; captures the rainy season) The range is
 ±1.28 × the standard deviation of that method's past errors (≈ 80% band). The panel shows the chosen method's error
 next to the naive guess, so nobody has to take the forecast on faith. Months before data collection began are dropped.
 """
@@ -102,17 +102,21 @@ def mean3(series):
     return fitted, statistics.mean(series[-3:])
 
 
+def seasonal(series):
+    """Same month last year × (last 3 months ÷ the same 3 months last year). Needs ≥ 15 months."""
+    if len(series) < 15:
+        return naive(series)
+    fitted = [float(y) for y in series[:15]]
+    for i in range(15, len(series)):
+        base = statistics.mean(series[i - 15:i - 12]) or 1
+        fitted.append(series[i - 12] * statistics.mean(series[i - 3:i]) / base)
+    base = statistics.mean(series[-15:-12]) or 1
+    return fitted, max(0.0, series[-12] * statistics.mean(series[-3:]) / base)
+
+
 METHODS = {"naive": ("Same as last month", naive), "mean3": ("3-month average", mean3),
-           "ses": ("Exponential smoothing", ses), "holt": ("Holt (level + trend)", holt)}
-
-
-def seasonal_factor(series, months_back=12):
-    """Same month last year ÷ last year's average (needs ≥ 24 points), else 1."""
-    if len(series) < 24:
-        return 1.0
-    last_year = series[-24:-12]
-    avg = statistics.mean(last_year) or 1
-    return max(.3, min(3.0, series[-12] / avg))  # month being forecast, one year earlier
+           "ses": ("Exponential smoothing", ses), "holt": ("Holt (level + trend)", holt),
+           "seasonal": ("Same month last year × recent trend", seasonal)}
 
 
 def backtest(series, fn, k=4):
@@ -133,11 +137,11 @@ def forecast(series):
         v = float(series[-1]) if series else 0.0
         return {"estimate": v, "low": 0, "high": math.ceil(v * 1.5 + 1), "method": "naive", "method_label": METHODS["naive"][0],
                 "backtest_mape": None, "naive_mape": None}
-    scores = {k: backtest(series, fn) for k, (_, fn) in METHODS.items()}
+    scores = {k: backtest(series, fn) for k, (_, fn) in METHODS.items() if k != "seasonal" or len(series) >= 19}
     best = min((k for k in scores if scores[k] is not None), key=lambda k: scores[k], default="naive")
     fitted, nxt = METHODS[best][1](series)
-    nxt *= seasonal_factor(series)
-    errors = [y - f for y, f in zip(series[1:], fitted[1:])]
+    skip = 15 if best == "seasonal" else 1
+    errors = [y - f for y, f in zip(series[skip:], fitted[skip:])]
     sd = statistics.pstdev(errors) if len(errors) >= 3 else max(1.0, nxt * .3)
     return {"estimate": round(nxt, 1), "low": max(0, math.floor(nxt - 1.28 * sd)), "high": math.ceil(nxt + 1.28 * sd),
             "method": best, "method_label": METHODS[best][0],
@@ -204,6 +208,18 @@ def overview(month_value=None, now=None):
         for s in series.values():
             s[-1] = round(s[-1] / frac)
 
+    # longer history for forecasting (up to 24 months, so last year's same month can be used)
+    long_start = add_months(start, -23)
+    long_months = [add_months(long_start, i) for i in range(24)]
+    long_series = {c.id: [0] * 24 for c in cats}
+    for cid, t in _problems(long_start, end).values_list("category_id", "created_at"):
+        t = timezone.localtime(t)
+        i = (t.year - long_start.year) * 12 + t.month - long_start.month
+        if 0 <= i < 24 and cid in long_series:
+            long_series[cid][i] += 1
+    for cid in long_series:
+        long_series[cid][-1] = series[cid][-1]  # same partial-month scaling as above
+
     # ---- categories
     cur_c, prev_c = Counter(r["category_id"] for r in cur), Counter(r["category_id"] for r in prev)
     avg3 = {cid: statistics.mean(series[cid][-4:-1]) if len(series[cid]) >= 4 else 0 for cid in series}
@@ -254,8 +270,8 @@ def overview(month_value=None, now=None):
     fc = []
     model_err, naive_err = [], []
     for c in cats:
-        s_use = _trim(series[c.id], months, first)
-        trimmed_from = 12 - len(s_use)
+        s_use = _trim(long_series[c.id], long_months, first)
+        trimmed_from = 24 - len(s_use)
         f = forecast(s_use)
         if f["backtest_mape"] is not None:
             model_err.append(f["backtest_mape"])
@@ -266,8 +282,9 @@ def overview(month_value=None, now=None):
         "months": [m.strftime("%Y-%m") for m in months], "month_labels": [m.strftime("%b %Y") for m in months],
         "categories": fc,
         "method": "Per issue, the most accurate of: same as last month, 3-month average, exponential smoothing, "
-                  "Holt (level + trend), back-tested on the last 4 months; ±80% band from that method's past errors"
-                  + (f". First {trimmed_from} month(s) excluded (data collection had not fully started)." if trimmed_from else "."),
+                  "Holt (level + trend), and same month last year × recent trend (when ≥ 19 months of data), "
+                  "back-tested on the last 4 months; ±80% band from that method's past errors. "
+                  f"History used: {24 - trimmed_from} months.",
         "backtest_mape": round(statistics.mean(model_err), 3) if model_err else None,
         "naive_mape": round(statistics.mean(naive_err), 3) if naive_err else None,
     }
@@ -429,3 +446,99 @@ def insights(o, cats, brgys, cell, cell_prev, series, prev_full):
     rank = {"red": 0, "amber": 1, "info": 2}
     found.sort(key=lambda i: (rank[i["level"]], -abs(i["value"] or 0)))
     return found[:12]
+
+
+# ---------------------------------------------------------------- accomplishment & year-on-year
+MATURE_DAYS = 30
+
+
+def _cohort_rows(start, end):
+    """Problems received in [start, end) with what happened to them (one query)."""
+    return list(_problems(start, end).values("id", "created_at", "resolved_at", "status", "category__code", "case__due_at",
+                                             "case__validated_at"))
+
+
+def cohort_stats(rows, now):
+    """
+    'Of the N problems received, X are accomplished.' Three views:
+      accomplished   ─ resolved/closed as of today (older cohorts naturally score higher)
+      within_30d     ─ resolved within 30 days of the report: same yardstick for every month/year (fair YoY)
+      on_time        ─ resolved by the ARTA target date of its case
+    within_30d is None for a cohort still younger than 30 days (not yet comparable).
+    """
+    n = len(rows)
+    done = [r for r in rows if r["status"] in Concern.DONE_STATUSES and r["resolved_at"]]
+    in30 = [r for r in done if r["resolved_at"] - r["created_at"] <= timedelta(days=MATURE_DAYS)]
+    # decided = already resolved, or its target has passed (an open case not yet due is neither late nor on time)
+    with_target = [r for r in rows if r["case__due_at"] and (r["case__validated_at"] or r["case__due_at"] < now)]
+    on_time = [r for r in with_target if r["case__validated_at"] and r["case__validated_at"] <= r["case__due_at"]]
+    young = [r for r in rows if now - r["created_at"] < timedelta(days=MATURE_DAYS)]
+    mature = n - len(young)
+    days = [(r["resolved_at"] - r["created_at"]).total_seconds() / 86400 for r in done]
+    return {
+        "received": n,
+        "accomplished": len(done),
+        "open": n - len(done),
+        "accomplished_rate": round(len(done) / n, 4) if n else None,
+        "within_30d": len(in30),
+        "within_30d_rate": round(len([r for r in in30 if r not in young]) / mature, 4) if mature and len(young) / max(n, 1) < .5 else None,
+        "on_time_rate": round(len(on_time) / len(with_target), 4) if with_target else None,
+        "median_days": round(statistics.median(days), 1) if days else None,
+    }
+
+
+def _shift_year(d, years=-1):
+    try:
+        return d.replace(year=d.year + years)
+    except ValueError:  # 29 Feb
+        return d.replace(year=d.year + years, day=28)
+
+
+def accomplishment(month_value=None, now=None):
+    now = now or timezone.now()
+    start, end, partial = parse_month(month_value, now)
+    ly_start, ly_end = _shift_year(start), _shift_year(end)
+    ytd_start = start.replace(month=1)
+    ly_ytd_start = _shift_year(ytd_start)
+    first = Concern.objects.filter(is_verified=True).order_by("created_at").values_list("created_at", flat=True).first()
+
+    cur, ly = _cohort_rows(start, end), _cohort_rows(ly_start, ly_end)
+    ytd, ly_ytd = _cohort_rows(ytd_start, end), _cohort_rows(ly_ytd_start, ly_end)
+
+    def block(rows_, s, e):
+        st = cohort_stats(rows_, now)
+        st["has_data"] = bool(first and first <= s + timedelta(days=3))
+        st["label"] = label(s) if (e - s).days <= 31 else f"{s:%b %d, %Y} – {(e - timedelta(seconds=1)):%b %d, %Y}"
+        return st
+
+    # 24 months of cohorts, aligned by calendar month: this year vs. the year before
+    months = [add_months(start, -i) for i in range(11, -1, -1)]
+    trend = []
+    for m in months:
+        a = cohort_stats(_cohort_rows(m, add_months(m, 1)), now)
+        lm = _shift_year(m)
+        b = cohort_stats(_cohort_rows(lm, add_months(lm, 1)), now) if first and first <= lm + timedelta(days=3) else None
+        trend.append({"month": m.strftime("%Y-%m"), "label": m.strftime("%b"), "this_year": a, "last_year": b})
+
+    by_issue = []
+    for c in Category.objects.filter(is_active=True).order_by("id"):
+        a = cohort_stats([r for r in ytd if r["category__code"] == c.code], now)
+        b = cohort_stats([r for r in ly_ytd if r["category__code"] == c.code], now)
+        by_issue.append({"code": c.code, "name": c.name_fil or c.name, "name_en": c.name, "this_year": a, "last_year": b})
+
+    years = []
+    if first:
+        y0 = timezone.localtime(first).year
+        for y in range(y0, timezone.localtime(now).year + 1):
+            ys = timezone.make_aware(datetime(y, 1, 1), timezone.get_current_timezone())
+            ye = min(timezone.make_aware(datetime(y + 1, 1, 1), timezone.get_current_timezone()), now)
+            st = cohort_stats(_cohort_rows(ys, ye), now)
+            st.update(year=y, partial=ye < timezone.make_aware(datetime(y + 1, 1, 1), timezone.get_current_timezone())
+                      or first > ys + timedelta(days=3))
+            years.append(st)
+
+    return {
+        "month": block(cur, start, end), "month_last_year": block(ly, ly_start, ly_end),
+        "ytd": block(ytd, ytd_start, end), "ytd_last_year": block(ly_ytd, ly_ytd_start, ly_end),
+        "trend": trend, "by_issue": by_issue, "years": years, "mature_days": MATURE_DAYS,
+    }

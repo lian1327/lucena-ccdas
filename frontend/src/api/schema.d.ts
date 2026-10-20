@@ -911,6 +911,16 @@ export interface components {
             division?: number | null;
             remarks?: string;
         };
+        Accomplishment: {
+            month: components["schemas"]["CohortBlock"];
+            month_last_year: components["schemas"]["CohortBlock"];
+            ytd: components["schemas"]["CohortBlock"];
+            ytd_last_year: components["schemas"]["CohortBlock"];
+            trend: components["schemas"]["YoyPoint"][];
+            by_issue: components["schemas"]["YoyIssue"][];
+            years: components["schemas"]["CohortYear"][];
+            mature_days: number;
+        };
         AccomplishmentReport: {
             readonly id: number;
             status?: components["schemas"]["AccomplishmentReportStatusEnum"];
@@ -1092,7 +1102,6 @@ export interface components {
             /** Format: date-time */
             returned_at?: string | null;
             return_reason?: string;
-            /** Format: int64 */
             return_count?: number;
             readonly priority_level: components["schemas"]["PriorityLevel"];
             priority_reason?: string;
@@ -1120,6 +1129,52 @@ export interface components {
          * @enum {string}
          */
         CitizenConfirmationEnum: "fixed" | "not_fixed";
+        Cohort: {
+            received: number;
+            accomplished: number;
+            open: number;
+            /** Format: double */
+            accomplished_rate: number | null;
+            within_30d: number;
+            /** Format: double */
+            within_30d_rate: number | null;
+            /** Format: double */
+            on_time_rate: number | null;
+            /** Format: double */
+            median_days: number | null;
+        };
+        CohortBlock: {
+            received: number;
+            accomplished: number;
+            open: number;
+            /** Format: double */
+            accomplished_rate: number | null;
+            within_30d: number;
+            /** Format: double */
+            within_30d_rate: number | null;
+            /** Format: double */
+            on_time_rate: number | null;
+            /** Format: double */
+            median_days: number | null;
+            has_data: boolean;
+            label: string;
+        };
+        CohortYear: {
+            received: number;
+            accomplished: number;
+            open: number;
+            /** Format: double */
+            accomplished_rate: number | null;
+            within_30d: number;
+            /** Format: double */
+            within_30d_rate: number | null;
+            /** Format: double */
+            on_time_rate: number | null;
+            /** Format: double */
+            median_days: number | null;
+            year: number;
+            partial: boolean;
+        };
         /** @description Accomplishment report + before/after photos. */
         CompleteRequest: {
             /** @description Work done (shown to the citizen once validated). */
@@ -1225,7 +1280,6 @@ export interface components {
             /** Format: date-time */
             next_follow_up_at?: string | null;
             readonly follow_up_due: boolean;
-            /** Format: int64 */
             follow_up_count?: number;
             readonly follow_ups: components["schemas"]["FollowUp"][];
         };
@@ -1328,6 +1382,7 @@ export interface components {
             insights: components["schemas"]["Insight"][];
             offices: components["schemas"]["OfficeRow"][];
             city: components["schemas"]["Kpi"];
+            accomplishment: components["schemas"]["Accomplishment"];
         };
         ExtendRequest: {
             /** Format: date */
@@ -1847,17 +1902,10 @@ export interface components {
             name: string;
             name_fil?: string;
             description?: string;
-            /**
-             * Format: int64
-             * @description Calendar hours (emergencies don't wait for working days).
-             */
+            /** @description Calendar hours (emergencies don't wait for working days). */
             response_hours?: number | null;
-            /** Format: int64 */
             response_working_days?: number | null;
-            /**
-             * Format: int64
-             * @description Working days. Empty = use the ARTA class maximum.
-             */
+            /** @description Working days. Empty = use the ARTA class maximum. */
             resolution_cap_days?: number | null;
             /** @description Bootstrap color: danger, warning, info, secondary */
             color?: string;
@@ -2197,10 +2245,7 @@ export interface components {
             subcategory_code?: string;
             severity?: components["schemas"]["SeverityEnum"];
             severity_display: string;
-            /**
-             * Format: int64
-             * @description Estimated number of affected citizens.
-             */
+            /** @description Estimated number of affected citizens. */
             affected_count?: number;
             /** Format: decimal */
             latitude?: string | null;
@@ -2436,6 +2481,19 @@ export interface components {
             name: string;
             open: number;
         };
+        YoyIssue: {
+            code: string;
+            name: string;
+            name_en: string;
+            this_year: components["schemas"]["Cohort"];
+            last_year: components["schemas"]["Cohort"];
+        };
+        YoyPoint: {
+            month: string;
+            label: string;
+            this_year: components["schemas"]["Cohort"];
+            last_year: components["schemas"]["Cohort"] | null;
+        };
     };
     responses: never;
     parameters: never;
@@ -2572,7 +2630,12 @@ export interface operations {
     };
     v1_public_barangays_list: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A search term. */
+                search?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -2591,7 +2654,12 @@ export interface operations {
     };
     v1_public_categories_list: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A search term. */
+                search?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -2905,10 +2973,14 @@ export interface operations {
                 barangay?: number;
                 category?: string;
                 include_duplicates?: boolean;
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
                 /** @description A page number within the paginated result set. */
                 page?: number;
                 /** @description Search reference no., title, landmark, description */
                 q?: string;
+                /** @description A search term. */
+                search?: string;
                 /** @description Inbox view (default: open) */
                 tab?: "all" | "closed" | "endorsed" | "for_acceptance" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
             };
@@ -3674,10 +3746,14 @@ export interface operations {
                 barangay?: number;
                 category?: string;
                 include_duplicates?: boolean;
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
                 /** @description A page number within the paginated result set. */
                 page?: number;
                 /** @description Search reference no., title, landmark, description */
                 q?: string;
+                /** @description A search term. */
+                search?: string;
                 /** @description Inbox view (default: open) */
                 tab?: "all" | "closed" | "endorsed" | "for_acceptance" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
             };
@@ -3804,6 +3880,10 @@ export interface operations {
         parameters: {
             query?: {
                 kind?: "external" | "internal";
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A search term. */
+                search?: string;
             };
             header?: never;
             path?: never;
@@ -3825,6 +3905,10 @@ export interface operations {
         parameters: {
             query: {
                 department: number;
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A search term. */
+                search?: string;
             };
             header?: never;
             path?: never;
@@ -3947,7 +4031,12 @@ export interface operations {
     };
     v1_staff_priority_levels_list: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A search term. */
+                search?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -3988,6 +4077,10 @@ export interface operations {
             query: {
                 department: number;
                 division?: number;
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A search term. */
+                search?: string;
             };
             header?: never;
             path?: never;

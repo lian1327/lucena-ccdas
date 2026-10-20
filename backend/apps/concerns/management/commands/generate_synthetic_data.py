@@ -97,6 +97,9 @@ class Command(BaseCommand):
         p.add_argument("--seed", type=int, default=2026)
         p.add_argument("--purge", action="store_true", help="Delete all synthetic records and exit.")
         p.add_argument("--keep", action="store_true", help="Don't purge previous synthetic data first.")
+        p.add_argument("--improvement", type=float, default=.15,
+                       help="DEMO ASSUMPTION for year-on-year views: offices were this much slower (and stalled more) "
+                            "more than 12 months ago, e.g. before the system was adopted. 0 = no change between years.")
 
     # ------------------------------------------------------------------ setup
     def handle(self, *a, **o):
@@ -109,6 +112,7 @@ class Command(BaseCommand):
             raise CommandError("Run: python manage.py seed_reference_data --lucena --demo-users")
 
         self.rng = random.Random(o["seed"])
+        self.improvement = max(0.0, o["improvement"])
         self.now = timezone.now()
         self.start = self.now - timedelta(days=round(o["months"] * 30.4))
         if not o["keep"]:
@@ -452,7 +456,8 @@ class Command(BaseCommand):
 
         # --- office acceptance (screening)
         desk = self.pick_user("office_desk", dept) or self.pick_user("dept_head", dept)
-        accept_h = ACCEPT_HOURS.get(dept.code, 4) * (.1 if level.code == "P1" else 1)
+        legacy = 1 + (self.improvement if c.created_at < now - timedelta(days=365) else 0)  # see --improvement
+        accept_h = ACCEPT_HOURS.get(dept.code, 4) * (.1 if level.code == "P1" else 1) * legacy
         t_accept = t_route + timedelta(hours=self.lognorm(accept_h, .7))
         t_accept = t_accept if level.code == "P1" else self.office_time(t_accept)
         if t_accept > now:
@@ -475,7 +480,7 @@ class Command(BaseCommand):
         notes.append((t_assign, chief, f"Itinalaga kay {crew.get_full_name() if crew else 'crew'}."))
 
         # --- first response / inspection
-        speed = OFFICE_SPEED.get(dept.code, 1.0)
+        speed = OFFICE_SPEED.get(dept.code, 1.0) * legacy
         period = deadlines.resolution_days(c, level)
         resp_days = min(((case.response_due_at - t_route).total_seconds() / 86400) if case.response_due_at else 2,
                         period * .25)
@@ -508,9 +513,10 @@ class Command(BaseCommand):
         period_days = deadlines.resolution_days(c, level)
         # total elapsed working days from routing to work done; validation adds a few hours after
         work_wd = max(.4, self.lognorm(period_days * speed * .62, .5))
-        stall = STALL.get(dept.code, .05) * (1.5 if c.category.service_class == "highly_technical" else 1)
+        stall = STALL.get(dept.code, .05) * (1.5 if c.category.service_class == "highly_technical" else 1) * (2 * legacy - 1)
         if rng.random() < stall * (.3 if level.code == "P1" else 1):
-            work_wd = 10_000  # never completes within the window
+            # stalled (materials, budget, no action): finishes months late, so recent stalls are still open
+            work_wd = max(work_wd, self.lognorm(80, .5))
         t_done = self.now + timedelta(days=365) if work_wd >= 10_000 else \
             self.office_time(max(t_route + timedelta(days=work_wd * 7 / 5), t_insp + self.hours(2, 30)))
         # extension: filed before the deadline when the crew is going to be late

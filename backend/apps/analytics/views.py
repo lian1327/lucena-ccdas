@@ -557,6 +557,53 @@ class ExecTotalsSerializer(serializers.Serializer):
     barangays_reporting = serializers.IntegerField()
 
 
+class CohortSerializer(serializers.Serializer):
+    received = serializers.IntegerField()
+    accomplished = serializers.IntegerField()
+    open = serializers.IntegerField()
+    accomplished_rate = serializers.FloatField(allow_null=True)
+    within_30d = serializers.IntegerField()
+    within_30d_rate = serializers.FloatField(allow_null=True)
+    on_time_rate = serializers.FloatField(allow_null=True)
+    median_days = serializers.FloatField(allow_null=True)
+
+
+class CohortBlockSerializer(CohortSerializer):
+    has_data = serializers.BooleanField()
+    label = serializers.CharField()
+
+
+class CohortYearSerializer(CohortSerializer):
+    year = serializers.IntegerField()
+    partial = serializers.BooleanField()
+
+
+class YoyPointSerializer(serializers.Serializer):
+    month = serializers.CharField()
+    label = serializers.CharField()
+    this_year = CohortSerializer()
+    last_year = CohortSerializer(allow_null=True)
+
+
+class YoyIssueSerializer(serializers.Serializer):
+    code = serializers.CharField()
+    name = serializers.CharField()
+    name_en = serializers.CharField()
+    this_year = CohortSerializer()
+    last_year = CohortSerializer()
+
+
+class AccomplishmentSerializer(serializers.Serializer):
+    month = CohortBlockSerializer()
+    month_last_year = CohortBlockSerializer()
+    ytd = CohortBlockSerializer()
+    ytd_last_year = CohortBlockSerializer()
+    trend = YoyPointSerializer(many=True)
+    by_issue = YoyIssueSerializer(many=True)
+    years = CohortYearSerializer(many=True)
+    mature_days = serializers.IntegerField()
+
+
 class ExecutiveSerializer(serializers.Serializer):
     month = serializers.CharField()
     label = serializers.CharField()
@@ -573,6 +620,7 @@ class ExecutiveSerializer(serializers.Serializer):
     insights = InsightSerializer(many=True)
     offices = OfficeRowSerializer(many=True)
     city = KpiSerializer()
+    accomplishment = AccomplishmentSerializer()
 
 
 class ExecutiveView(APIView):
@@ -585,7 +633,8 @@ class ExecutiveView(APIView):
     def get(self, request):
         data = executive.overview(request.query_params.get("month"))
         rows, city = kpis.scorecard(data["start"], data["end"], None)
-        return Response({**data, "offices": rows, "city": city})
+        acc = executive.accomplishment(request.query_params.get("month"))
+        return Response({**data, "offices": rows, "city": city, "accomplishment": acc})
 
 
 class ExecutiveBarangayCSV(APIView):

@@ -33,6 +33,7 @@ export default function ExecutiveReportPage() {
   if (q.isError) return <Alert variant="danger">{apiErrorMessage(q.error)}</Alert>;
   const d = q.data!;
   const t = d.totals;
+  const a = d.accomplishment;
   const tbl = { size: "sm" as const, bordered: true, className: "small mb-3", style: { fontVariantNumeric: "tabular-nums" } };
   const sentence = lang === "en"
     ? `In ${d.label}, the city received ${t.problems} problems from ${t.reports} citizen reports across ${t.barangays_reporting} barangays (${change(t.change)} vs ${d.prev_label}). ${t.resolved} were resolved; ${t.open_now} remain open, ${t.overdue_now} of them past their ARTA target. On-time resolution was ${pct(d.city.on_time_rate)} against an 85% target.`
@@ -52,6 +53,24 @@ export default function ExecutiveReportPage() {
 
       <h2 className="h6 fw-bold">{L.summary}</h2>
       <p className="small">{sentence}</p>
+
+      <h2 className="h6 fw-bold">{lang === "en" ? "1b. Accomplishment vs last year" : "1b. Accomplishment kumpara sa nakaraang taon"}</h2>
+      <Table {...tbl}>
+        <thead className="table-light"><tr><th /><th className="text-end">{a.month.label}</th><th className="text-end">{a.month_last_year.label}</th>
+          <th className="text-end">YTD {a.ytd.label.slice(-4)}</th><th className="text-end">YTD {a.ytd_last_year.label.slice(-4)}</th></tr></thead>
+        <tbody>
+          {([
+            [lang === "en" ? "Received" : "Natanggap", (b: typeof a.month) => String(b.received)],
+            [lang === "en" ? "Accomplished" : "Naayos", (b: typeof a.month) => `${b.accomplished} (${pct(b.accomplished_rate)})`],
+            [lang === "en" ? "Resolved within 30 days" : "Naayos ≤30 araw", (b: typeof a.month) => pct(b.within_30d_rate)],
+            ["On-time (ARTA)", (b: typeof a.month) => pct(b.on_time_rate)],
+            [lang === "en" ? "Median days" : "Median na araw", (b: typeof a.month) => String(b.median_days ?? "—")],
+          ] as const).map(([k, f]) => (
+            <tr key={k}><td>{k}</td>{[a.month, a.month_last_year, a.ytd, a.ytd_last_year].map((b, i) =>
+              <td key={i} className="text-end">{b.has_data ? f(b) : "—"}</td>)}</tr>
+          ))}
+        </tbody>
+      </Table>
 
       <h2 className="h6 fw-bold">{L.findings}</h2>
       <div className="mb-3"><InsightList items={d.insights} lang={lang} /></div>

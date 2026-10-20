@@ -7,6 +7,7 @@ import { apiErrorMessage } from "@/api/client";
 import { FullPageSpinner } from "@/components/FullPageSpinner";
 import { ForecastChart } from "@/features/analytics/charts";
 import { InsightList, change } from "@/features/analytics/exec";
+import { AccomplishmentSection } from "@/features/analytics/Accomplishment";
 import { BarangayHeatmap } from "@/features/analytics/Heatmap";
 import { GradeChip, KpiTile, pct } from "@/features/analytics/ui";
 
@@ -59,6 +60,8 @@ export default function ExecutivePage() {
         <Col xs={6} lg={2}><KpiTile label="On-time (ARTA)" value={pct(d.city.on_time_rate)} sub={`index ${d.city.index ?? "—"}`} /></Col>
         <Col xs={6} lg={2}><KpiTile label="May patunay" value={pct(d.city.proof_rate)} sub="before/after + lokasyon" /></Col>
       </Row>
+
+      <AccomplishmentSection a={d.accomplishment} lang={lang} />
 
       <Row className="g-3 mb-3">
         <Col lg={7}>

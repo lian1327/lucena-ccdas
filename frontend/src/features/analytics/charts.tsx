@@ -122,3 +122,29 @@ export function ForecastChart({ labels, series, next }: {
     />
   );
 }
+
+/** Year-on-year: share resolved within 30 days, by calendar month — this year (solid) vs the year before (dashed). */
+export function YoyChart({ points }: {
+  points: { label: string; this_year: { within_30d_rate?: number | null }; last_year?: { within_30d_rate?: number | null } | null }[];
+}) {
+  const v = (x?: number | null) => (x == null ? null : Math.round(x * 100));
+  return (
+    <Line
+      aria-label="Resolved within 30 days, this year vs last year"
+      data={{
+        labels: points.map((p) => p.label),
+        datasets: [
+          { label: "Ngayong taon", data: points.map((p) => v(p.this_year.within_30d_rate)), borderColor: C.office, backgroundColor: C.office, borderWidth: 2, pointRadius: 3, spanGaps: true },
+          { label: "Nakaraang taon", data: points.map((p) => v(p.last_year?.within_30d_rate)), borderColor: C.city, backgroundColor: C.city, borderWidth: 2, borderDash: [5, 4], pointRadius: 2, spanGaps: true },
+        ],
+      }}
+      options={{
+        maintainAspectRatio: false,
+        interaction: { mode: "index", intersect: false },
+        plugins: { legend: { position: "bottom", labels: { boxWidth: 12, font: { size: 11 } } },
+          tooltip: { callbacks: { label: (i) => ` ${i.dataset.label}: ${i.formattedValue}%` } } },
+        scales: { x: { ...axis, grid: { display: false } }, y: { ...axis, min: 50, max: 100, ticks: { ...axis.ticks, callback: (x) => `${x}%` } } },
+      }}
+    />
+  );
+}

@@ -133,15 +133,22 @@ export const useAccept = (id: number) =>
 export const useReturnToPacd = (id: number) => useCaseAction<{ reason: string }>(id, "return-to-pacd");
 export const useSetPriority = (id: number) => useCaseAction<{ priority_level: number; reason: string }>(id, "set-priority");
 export const useRespond = (id: number) =>
-  useCaseAction<{ remarks: string; photos: File[] }>(id, "respond", (v) => toFormData(v));
+  useCaseAction<{ remarks: string; photos: File[]; photo_meta?: string }>(id, "respond", (v) => toFormData(v));
 export const useAssignDivision = (id: number) => useCaseAction<{ division: number; remarks?: string }>(id, "assign-division");
 export const useAssignPerson = (id: number) => useCaseAction<{ person: number; remarks?: string }>(id, "assign-person");
 export const useInspect = (id: number) =>
-  useCaseAction<{ findings: string; action_plan?: string; scheduled_for?: string | null; public_message?: string }>(id, "inspect");
-export const useComplete = (id: number) =>
-  useCaseAction<{ remarks: string; photos: File[] }>(id, "complete", (v) => toFormData(v));
+  useCaseAction<{
+    findings: string; action_plan?: string; scheduled_for?: string | null; public_message?: string;
+    photos?: File[]; photo_meta?: string;
+  }>(id, "inspect", (v) => toFormData(v));
+export type CompleteInput = {
+  remarks: string; photos: File[]; photo_meta: string; before_photos?: File[]; before_meta?: string;
+  started_at?: string; finished_at?: string; crew?: string; other_workers?: string; materials?: string; equipment?: string;
+};
+export const useComplete = (id: number) => useCaseAction<CompleteInput>(id, "complete", (v) => toFormData(v));
 export const useValidate = (id: number) =>
-  useCaseAction<{ approve: boolean; remarks?: string; photos?: File[] }>(id, "validate", (v) => toFormData(v));
+  useCaseAction<{ approve: boolean; remarks?: string; photos?: File[]; photo_meta?: string; override_reason?: string }>(
+    id, "validate", (v) => toFormData(v));
 export const useExtend = (id: number) => useCaseAction<{ new_due_date: string; reason: string }>(id, "extend");
 export const useFollowUp = (id: number) =>
   useCaseAction<{

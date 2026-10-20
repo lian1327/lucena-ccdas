@@ -7,6 +7,7 @@ import { useTrackConcern } from "@/api/public";
 import { apiErrorMessage } from "@/api/client";
 import { FullPageSpinner } from "@/components/FullPageSpinner";
 import { StatusBadge } from "@/components/StatusBadge";
+import { ConfirmFix } from "@/features/report/ConfirmFix";
 
 const fmt = (iso?: string | null) =>
   iso ? new Date(iso).toLocaleString("en-PH", { dateStyle: "medium", timeStyle: "short" }) : "—";
@@ -111,15 +112,26 @@ export function TrackPage() {
                   <i className="bi bi-check2-circle text-success me-1" aria-hidden />
                   Patunay na naayos na
                 </h3>
-                <div className="d-flex flex-wrap gap-2">
-                  {c.resolution_photos.map((url) => (
-                    <a key={url} href={url} target="_blank" rel="noopener">
-                      <img src={url} alt="Litrato ng naayos na problema" width={140} height={140} className="rounded border object-fit-cover" />
-                    </a>
-                  ))}
+                <div className="row g-2">
+                  {([["Bago", c.before_photos], ["Pagkatapos", c.resolution_photos]] as const).map(([label, list]) =>
+                    list.length ? (
+                      <div key={label} className="col-6">
+                        <div className="small text-secondary mb-1">{label}</div>
+                        <div className="d-grid gap-2">
+                          {list.map((url) => (
+                            <a key={url} href={url} target="_blank" rel="noopener">
+                              <img src={url} alt={`Litrato: ${label.toLowerCase()}`} className="w-100 rounded border object-fit-cover" style={{ height: 160 }} />
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null,
+                  )}
                 </div>
               </div>
             )}
+
+            <ConfirmFix c={c} />
 
             <h3 className="h6">Timeline</h3>
             <ol className="list-unstyled border-start ps-3 mb-0">

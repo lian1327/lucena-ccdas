@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "./client";
 import type {
@@ -70,5 +70,15 @@ export function useSubmitConcern() {
   return useMutation({
     mutationFn: async (input: SubmitConcernInput) =>
       (await api.post<ConcernCreateResponse>("/public/concerns/", toFormData(input))).data,
+  });
+}
+
+/** "Naayos ba talaga?" — reporter confirms or disputes the fix. */
+export function useConfirmFix(referenceNo: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (v: { fixed: boolean; feedback?: string; mobile_last4?: string }) =>
+      (await api.post<TrackResult>(`/public/concerns/track/${encodeURIComponent(referenceNo)}/confirm/`, v)).data,
+    onSuccess: (data) => qc.setQueryData(publicKeys.track(referenceNo), data),
   });
 }

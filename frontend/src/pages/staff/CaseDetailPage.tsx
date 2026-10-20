@@ -24,6 +24,7 @@ import {
 import { AcceptPanel, PriorityPanel, RespondPanel } from "@/features/cases/ScreeningPanels";
 import { ErrorText, Panel, Stepper } from "@/features/cases/ui";
 import { UrgencyBadge } from "@/components/UrgencyBadge";
+import { ProofOfWork } from "@/features/evidence/ProofOfWork";
 import { dueLabel, fmtDate, fmtDateTime, timeAgo } from "@/utils/format";
 
 function NotesPanel({ c }: { c: StaffConcernDetail }) {
@@ -135,7 +136,6 @@ export function CaseDetailPage() {
   const c = q.data!;
   const k = c.case;
   const reportPhotos = c.attachments.filter((a) => a.kind === "report");
-  const fixPhotos = c.attachments.filter((a) => a.kind === "resolution");
   const due = dueLabel(k?.due_at);
   const nothingToDo = !Object.entries(c.permissions).some(([key, v]) => v && !["can_act", "notes", "link", "route_any_office"].includes(key));
 
@@ -164,7 +164,7 @@ export function CaseDetailPage() {
       <Stepper c={c} />
 
       <Row className="g-3">
-        <Col lg={7}>
+        <Col lg={7} className="order-last order-lg-first">
           <Card className="mb-3 border-0 shadow-sm">
             <Card.Body>
               <p style={{ whiteSpace: "pre-wrap" }}>{c.description}</p>
@@ -215,10 +215,10 @@ export function CaseDetailPage() {
             </Card.Body>
           </Card>
 
-          {(reportPhotos.length > 0 || fixPhotos.length > 0) && (
+          {reportPhotos.length > 0 && (
             <Card className="mb-3 border-0 shadow-sm">
               <Card.Body>
-                {([["Litrato mula sa nag-report", reportPhotos], ["Patunay ng pagkaayos", fixPhotos]] as const).map(([label, list]) =>
+                {([["Litrato mula sa nag-report", reportPhotos]] as const).map(([label, list]) =>
                   list.length ? (
                     <div key={label} className="mb-2">
                       <div className="small fw-semibold mb-1">{label}</div>
@@ -237,6 +237,7 @@ export function CaseDetailPage() {
           )}
 
           <WorkRecord c={c} />
+          <ProofOfWork c={c} />
 
           <Panel title="Nag-report" icon="person">
             {c.is_anonymous ? (

@@ -10,3 +10,12 @@ aside .nav-link.active {
   background: var(--bs-primary-bg-subtle);
   color: var(--bs-primary-text-emphasis);
 }
+
+/* Printable performance report: hide app chrome, keep the content */
+@media print {
+  .navbar, aside, .d-print-none, nav.d-md-none { display: none !important; }
+  main { padding: 0 !important; }
+  .analytics-report .card { box-shadow: none !important; border: 1px solid #ddd !important; break-inside: avoid; }
+  .analytics-report details { display: none; }
+  body { background: #fff !important; }
+}

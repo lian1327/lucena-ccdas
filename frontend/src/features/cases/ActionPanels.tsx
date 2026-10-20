@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Alert, Badge, Button, ButtonGroup, Form, ListGroup, Modal, ToggleButton } from "react-bootstrap";
 
 import { useCategories } from "@/api/public";
+import { useAuth } from "@/auth/AuthContext";
 import {
   useAssignDivision,
   useAssignPerson,
@@ -26,10 +27,15 @@ import {
   useValidate,
   useVerify,
 } from "@/api/staff";
+import type { CompleteInput } from "@/api/staff";
 import type { EndorsementStatus, Severity, StaffConcernDetail } from "@/api/types";
 import { fmtDate, fmtDateTime } from "@/utils/format";
 
-import { ErrorText, Panel, PhotoPicker, SubmitButton } from "./ui";
+import { EvidencePicker } from "@/features/evidence/EvidencePicker";
+import { evidenceFields, type EvidencePhoto } from "@/features/evidence/capture";
+import { FlagChip } from "@/features/evidence/ui";
+
+import { ErrorText, Panel, SubmitButton } from "./ui";
 
 type P = { c: StaffConcernDetail };
 
@@ -215,15 +221,21 @@ export function InspectPanel({ c }: P) {
   const [findings, setFindings] = useState("");
   const [plan, setPlan] = useState("");
   const [date, setDate] = useState("");
+  const [before, setBefore] = useState<EvidencePhoto[]>([]);
   if (!c.permissions.inspect || c.case?.inspected_at) return null;
   return (
     <Panel title="Site inspection" icon="search" tone="primary"
-      hint="Itala ang nakita at plano. Sasabihan ang nag-report kung kailan ang trabaho.">
-      <Form onSubmit={(e) => { e.preventDefault(); inspect.mutate({ findings, action_plan: plan, scheduled_for: date || null }); }}>
+      hint="Itala ang nakita at plano, at kunan ng BEFORE na litrato sa mismong lugar. Sasabihan ang nag-report kung kailan ang trabaho.">
+      <Form onSubmit={(e) => {
+        e.preventDefault();
+        inspect.mutate({ findings, action_plan: plan, scheduled_for: date || null, ...evidenceFields(before, "photos", "photo_meta") });
+      }}>
         <Form.Control as="textarea" rows={2} className="mb-2" placeholder="Nakita sa inspeksyon" value={findings} onChange={(e) => setFindings(e.target.value)} />
         <Form.Control as="textarea" rows={2} className="mb-2" placeholder="Plano / materyales / tauhan" value={plan} onChange={(e) => setPlan(e.target.value)} />
         <Form.Label className="small fw-semibold">Nakaiskedyul sa</Form.Label>
         <Form.Control type="date" className="mb-3" value={date} onChange={(e) => setDate(e.target.value)} />
+        <EvidencePicker label="BEFORE na litrato" value={before} onChange={setBefore}
+          hint="Kailangan bago maisumite ang 'Tapos na'. Puwede ring kunan mamaya." />
         <SubmitButton pending={inspect.isPending} disabled={!findings.trim()}>I-save ang inspeksyon</SubmitButton>
         <ErrorText err={inspect.error} />
       </Form>
@@ -231,19 +243,99 @@ export function InspectPanel({ c }: P) {
   );
 }
 
-// ---------------- 5. Complete work ----------------
+// ---------------- 5. Complete work = accomplishment report ----------------
+type MaterialRow = { item: string; qty: string; unit: string };
+
+const toLocalInput = (d: Date) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+
 export function CompletePanel({ c }: P) {
   const complete = useComplete(c.id);
+  const k = c.case;
+  const users = useOfficeUsers(k?.department_id, k?.division_id);
+  const { user: me } = useAuth();
   const [remarks, setRemarks] = useState("");
-  const [photos, setPhotos] = useState<File[]>([]);
+  const [after, setAfter] = useState<EvidencePhoto[]>([]);
+  const [before, setBefore] = useState<EvidencePhoto[]>([]);
+  const [started, setStarted] = useState("");
+  const [finished, setFinished] = useState(() => toLocalInput(new Date()));
+  const [crew, setCrew] = useState<number[]>([]);
+  const [others, setOthers] = useState("");
+  const [equipment, setEquipment] = useState("");
+  const [materials, setMaterials] = useState<MaterialRow[]>([{ item: "", qty: "", unit: "" }]);
   if (!c.permissions.complete) return null;
+  const hasBefore = c.attachments.some((a) => a.kind === "before");
+  const ready = remarks.trim() && after.length && (hasBefore || before.length);
+  const setMat = (i: number, patch: Partial<MaterialRow>) =>
+    setMaterials((m) => m.map((row, j) => (j === i ? { ...row, ...patch } : row)));
+
   return (
-    <Panel title="Tapos na ang trabaho" icon="check2-square" tone={c.case?.inspected_at ? "primary" : undefined}
-      hint="Ive-verify pa ito ng supervisor bago makita ng nag-report na naayos na.">
-      <Form onSubmit={(e) => { e.preventDefault(); complete.mutate({ remarks, photos }); }}>
-        <Form.Control as="textarea" rows={2} className="mb-2" placeholder="Ano ang ginawa? (makikita ng nag-report)" value={remarks} onChange={(e) => setRemarks(e.target.value)} />
-        <PhotoPicker label="Litrato ng natapos na trabaho (kailangan)" value={photos} onChange={setPhotos} />
-        <SubmitButton pending={complete.isPending} disabled={!remarks.trim() || !photos.length} variant="success">Isumite para i-validate</SubmitButton>
+    <Panel title="Accomplishment report" icon="clipboard2-check" tone={k?.inspected_at ? "primary" : undefined}
+      hint="Patunay na may ginawa: ano, sino, gamit, at BEFORE/AFTER na litrato sa mismong lugar. Ive-verify pa ng supervisor.">
+      <Form onSubmit={(e) => {
+        e.preventDefault();
+        complete.mutate({
+          remarks,
+          ...evidenceFields(after, "photos", "photo_meta"),
+          ...(before.length ? evidenceFields(before, "before_photos", "before_meta") : {}),
+          started_at: started ? new Date(started).toISOString() : undefined,
+          finished_at: finished ? new Date(finished).toISOString() : undefined,
+          crew: JSON.stringify(crew),
+          other_workers: others,
+          equipment,
+          materials: JSON.stringify(materials.filter((m) => m.item.trim()).map((m) => ({
+            item: m.item.trim(), qty: m.qty ? Number(m.qty) : null, unit: m.unit.trim(),
+          }))),
+        } as CompleteInput);
+      }}>
+        <Form.Label className="small fw-semibold">Ano ang ginawa? <span className="text-danger">*</span></Form.Label>
+        <Form.Control as="textarea" rows={2} className="mb-3" placeholder="Hal. Tinapalan ng cold mix ang 2 butas (1×1 m)." value={remarks}
+          onChange={(e) => setRemarks(e.target.value)} />
+
+        {!hasBefore && (
+          <EvidencePicker label="BEFORE na litrato" required value={before} onChange={setBefore}
+            hint="Walang before na litrato mula sa inspeksyon. Kunan ang kalagayan bago ang trabaho." />
+        )}
+        <EvidencePicker label="AFTER na litrato" required value={after} onChange={setAfter}
+          hint="Parehong anggulo ng before, sa mismong lugar." />
+
+        <div className="row g-2 mb-3">
+          <div className="col-6">
+            <Form.Label className="small fw-semibold">Sinimulan</Form.Label>
+            <Form.Control type="datetime-local" size="sm" value={started} onChange={(e) => setStarted(e.target.value)} />
+          </div>
+          <div className="col-6">
+            <Form.Label className="small fw-semibold">Natapos</Form.Label>
+            <Form.Control type="datetime-local" size="sm" value={finished} onChange={(e) => setFinished(e.target.value)} />
+          </div>
+        </div>
+
+        <Form.Label className="small fw-semibold">Kasama sa crew</Form.Label>
+        <div className="border rounded p-2 mb-2 small" style={{ maxHeight: 140, overflowY: "auto" }}>
+          {users.data?.some((u) => u.id !== me?.id) ? users.data.filter((u) => u.id !== me?.id).map((u) => (
+            <Form.Check key={u.id} id={`crew-${u.id}`} label={`${u.full_name} · ${u.role_display}`}
+              checked={crew.includes(u.id)} onChange={(e) => setCrew((x) => e.target.checked ? [...x, u.id] : x.filter((i) => i !== u.id))} />
+          )) : <span className="text-secondary">Walang ibang tauhan sa listahan. (Kasama ka na bilang nagsumite.)</span>}
+        </div>
+        <Form.Control size="sm" className="mb-3" placeholder="Iba pang trabahador (job order), hiwalay ng kuwit" value={others}
+          onChange={(e) => setOthers(e.target.value)} />
+
+        <Form.Label className="small fw-semibold">Materyales na ginamit</Form.Label>
+        {materials.map((m, i) => (
+          <div key={i} className="d-flex gap-1 mb-1">
+            <Form.Control size="sm" placeholder="Materyales" value={m.item} onChange={(e) => setMat(i, { item: e.target.value })} />
+            <Form.Control size="sm" type="number" min="0" step="any" placeholder="Dami" style={{ width: 80 }} value={m.qty}
+              onChange={(e) => setMat(i, { qty: e.target.value })} />
+            <Form.Control size="sm" placeholder="Unit" style={{ width: 80 }} value={m.unit} onChange={(e) => setMat(i, { unit: e.target.value })} />
+          </div>
+        ))}
+        <Button variant="link" size="sm" className="p-0 mb-3" onClick={() => setMaterials((x) => [...x, { item: "", qty: "", unit: "" }])}>
+          + Magdagdag ng materyales
+        </Button>
+        <Form.Control size="sm" className="mb-3" placeholder="Kagamitan (hal. dump truck, compactor)" value={equipment}
+          onChange={(e) => setEquipment(e.target.value)} />
+
+        <SubmitButton pending={complete.isPending} disabled={!ready} variant="success">Isumite para i-validate</SubmitButton>
+        {!ready && <Form.Text className="d-block">Kailangan: ano ang ginawa, {hasBefore ? "" : "BEFORE at "}AFTER na litrato.</Form.Text>}
         <ErrorText err={complete.error} />
       </Form>
     </Panel>
@@ -256,21 +348,47 @@ export function ValidatePanel({ c }: P) {
   const k = c.case!;
   const external = k?.level === "external";
   const [remarks, setRemarks] = useState(k?.completion_remarks ?? "");
-  const [photos, setPhotos] = useState<File[]>([]);
+  const [photos, setPhotos] = useState<EvidencePhoto[]>([]);
+  const [override, setOverride] = useState("");
   const [returning, setReturning] = useState(false);
   const [why, setWhy] = useState("");
   if (!c.permissions.validate) return null;
   const hasProof = c.attachments.some((a) => a.kind === "resolution");
+  const ev = k.evidence;
+  const reds = ev?.red_flags ?? [];
+  const needOverride = reds.length > 0;
 
   return (
     <Panel title={external ? "I-validate ang aksyon ng ahensya" : "I-validate ang trabaho"} icon="patch-check" tone="success"
       hint={external ? "Kumpirmahin sa lugar na naayos na, at kumuha ng litrato." :
-        <>Isinumite ni <strong>{k.work_completed_by}</strong> · {fmtDateTime(k.work_completed_at)}. Ang pag-validate ang magpapakita ng "Resolved" sa nag-report.</>}>
+        <>Isinumite ni <strong>{k.work_completed_by}</strong> · {fmtDateTime(k.work_completed_at)}. Tingnan ang <a href="#proof">Patunay ng trabaho</a> bago aprubahan.</>}>
+      {!external && ev && (
+        <div className="small mb-2">
+          {ev.verified
+            ? <div className="text-success"><i className="bi bi-shield-check me-1" aria-hidden />Pasado ang photo checks: may before at after, nasa lugar.</div>
+            : (
+              <>
+                {!ev.has_before_after && <div className="text-warning-emphasis"><i className="bi bi-exclamation-triangle me-1" aria-hidden />Kulang: {ev.before ? "" : "walang BEFORE"}{!ev.before && !ev.after ? ", " : ""}{ev.after ? "" : "walang AFTER"}.</div>}
+                {reds.map((f) => <FlagChip key={f.code} f={f} />)}
+                {ev.amber_flags.map((f) => <FlagChip key={f.code} f={f} />)}
+              </>
+            )}
+        </div>
+      )}
       <Form.Label className="small fw-semibold">Mensahe sa nag-report</Form.Label>
       <Form.Control as="textarea" rows={2} className="mb-2" value={remarks} onChange={(e) => setRemarks(e.target.value)} />
-      {(external || !hasProof) && <PhotoPicker label="Litrato (kailangan kung wala pa)" value={photos} onChange={setPhotos} />}
-      <SubmitButton pending={validate.isPending && !returning} variant="success" disabled={!hasProof && !photos.length}
-        onClick={() => validate.mutate({ approve: true, remarks, photos })}>
+      {(external || !hasProof) && <EvidencePicker label="Litrato (kailangan kung wala pa)" value={photos} onChange={setPhotos} />}
+      {needOverride && (
+        <>
+          <Form.Label className="small fw-semibold text-danger">Bakit aaprubahan kahit may red flag? <span className="text-danger">*</span></Form.Label>
+          <Form.Control as="textarea" rows={2} className="mb-1" value={override} onChange={(e) => setOverride(e.target.value)}
+            placeholder="Hal. Personal kong ininspeksyon kahapon; mahina ang GPS sa ilalim ng tulay." />
+          <Form.Text className="d-block mb-2">Itatala ito sa iyong pangalan at makikita ng Department Head at City Administrator.</Form.Text>
+        </>
+      )}
+      <SubmitButton pending={validate.isPending && !returning} variant="success"
+        disabled={(!hasProof && !photos.length) || (needOverride && override.trim().length < 15)}
+        onClick={() => validate.mutate({ approve: true, remarks, ...evidenceFields(photos, "photos", "photo_meta"), override_reason: override })}>
         <i className="bi bi-check2-circle me-1" aria-hidden /> Aprubahan: Naayos na
       </SubmitButton>
       {!external && (

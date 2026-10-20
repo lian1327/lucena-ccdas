@@ -1,5 +1,7 @@
 import { lazy, Suspense } from "react";
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, Navigate } from "react-router-dom";
+
+import { useAuth } from "@/auth/AuthContext";
 
 import { FullPageSpinner } from "@/components/FullPageSpinner";
 
@@ -19,6 +21,20 @@ import { DashboardPage } from "@/pages/staff/DashboardPage";
 import { EncodePage } from "@/pages/staff/EncodePage";
 
 const MapPage = lazy(() => import("@/pages/staff/MapPage"));
+const AnalyticsHome = lazy(() => import("@/pages/staff/AnalyticsHome"));
+const OfficePerformance = lazy(() =>
+  import("@/pages/staff/OfficePerformancePage").then((m) => ({ default: m.OfficePerformancePage })),
+);
+const AccountabilityPage = lazy(() => import("@/pages/staff/AccountabilityPage"));
+const OfficePeoplePage = lazy(() => import("@/pages/staff/OfficePeoplePage"));
+const LedgerPage = lazy(() => import("@/pages/staff/LedgerPage"));
+const AccomplishmentPrintPage = lazy(() => import("@/pages/staff/AccomplishmentPrintPage"));
+function AccountabilityHome() {
+  const { user } = useAuth();
+  if (user?.role === "division_chief" && user.department_id) return <Navigate to={`/staff/accountability/${user.department_id}`} replace />;
+  return <AccountabilityPage />;
+}
+const lazyEl = (el: React.ReactNode) => <Suspense fallback={<FullPageSpinner />}>{el}</Suspense>;
 
 export const router = createBrowserRouter([
   {
@@ -45,6 +61,12 @@ export const router = createBrowserRouter([
           { path: "cases", element: <CasesPage /> },
           { path: "cases/:id", element: <CaseDetailPage /> },
           { path: "encode", element: <EncodePage /> },
+          { path: "analytics", element: lazyEl(<AnalyticsHome />) },
+          { path: "analytics/:id", element: lazyEl(<OfficePerformance />) },
+          { path: "accountability", element: lazyEl(<AccountabilityHome />) },
+          { path: "accountability/:id", element: lazyEl(<OfficePeoplePage />) },
+          { path: "people/:id", element: lazyEl(<LedgerPage />) },
+          { path: "cases/:id/accomplishment", element: lazyEl(<AccomplishmentPrintPage />) },
           { path: "map", element: <Suspense fallback={<FullPageSpinner label="Nilo-load ang mapa…" />}><MapPage /></Suspense> },
         ],
       },

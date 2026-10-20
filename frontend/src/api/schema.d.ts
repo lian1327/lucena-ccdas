@@ -167,6 +167,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/public/concerns/track/{reference_no}/confirm/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description "Naayos ba talaga?" — the reporter confirms or disputes the fix (within 30 days, once).
+         *     Not fixed → the case reopens for the office and counts against it. Throttled like submissions.
+         */
+        post: operations["v1_public_concerns_track_confirm_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/stats/": {
         parameters: {
             query?: never;
@@ -176,6 +196,106 @@ export interface paths {
         };
         /** @description Transparency stats for the landing page. Aggregates only — no individual records. Cached 5 min. */
         get: operations["v1_public_stats_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/analytics/accountability/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Proof-of-work quality per office + the supervisor watchlist. */
+        get: operations["analytics_accountability"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/analytics/offices/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["analytics_office_scorecard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/analytics/offices.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Spreadsheet export of the scorecard (opens in Excel / Google Sheets). */
+        get: operations["analytics_office_scorecard_csv"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/analytics/offices/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["analytics_office_detail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/analytics/offices/{id}/people/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description What each person in an office did, and the quality of their proof. Sorted by name, not ranked. */
+        get: operations["analytics_office_people"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/analytics/people/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description One person's actions with the evidence for each. Anyone may view their own. */
+        get: operations["analytics_person_ledger"];
         put?: never;
         post?: never;
         delete?: never;
@@ -741,6 +861,47 @@ export interface components {
             division?: number | null;
             remarks?: string;
         };
+        AccomplishmentReport: {
+            readonly id: number;
+            status?: components["schemas"]["AccomplishmentReportStatusEnum"];
+            status_display: string;
+            readonly submitted_by: string | null;
+            /** Format: date-time */
+            readonly submitted_at: string;
+            work_done: string;
+            /** Format: date-time */
+            started_at?: string | null;
+            /** Format: date-time */
+            finished_at?: string | null;
+            readonly crew: string[];
+            /** @description Job-order / barangay workers without accounts. */
+            other_workers?: string;
+            headcount: number;
+            /** Format: double */
+            man_hours: number | null;
+            materials: components["schemas"]["Material"][];
+            equipment?: string;
+            readonly reviewed_by: string | null;
+            /** Format: date-time */
+            reviewed_at?: string | null;
+            review_remarks?: string;
+            /** @description Why the validator approved even though the photo checks raised a red flag. */
+            override_reason?: string;
+        };
+        /**
+         * @description * `submitted` - Submitted, awaiting validation
+         *     * `approved` - Approved
+         *     * `returned` - Returned to the field
+         * @enum {string}
+         */
+        AccomplishmentReportStatusEnum: "submitted" | "approved" | "returned";
+        Accountability: {
+            period: components["schemas"]["Period"];
+            offices: components["schemas"]["OfficeProofRow"][];
+            watchlist: components["schemas"]["WatchItem"][];
+            /** Format: double */
+            proof_target: number;
+        };
         /**
          * @description * `self` - self
          *     * `household` - household
@@ -749,6 +910,10 @@ export interface components {
          * @enum {string}
          */
         AffectedScaleEnum: "self" | "household" | "street" | "barangay";
+        Aging: {
+            bucket: string;
+            count: number;
+        };
         AssignDivisionRequest: {
             division: number;
             remarks?: string;
@@ -764,14 +929,34 @@ export interface components {
             caption?: string;
             /** Format: date-time */
             readonly uploaded_at: string;
+            readonly uploaded_by: string | null;
+            /** @description The accomplishment report this before/after photo was submitted with. */
+            readonly report_id: number | null;
+            /** Format: date-time */
+            taken_at?: string | null;
+            time_source?: components["schemas"]["TimeSourceEnum"];
+            /** Format: decimal */
+            latitude?: string | null;
+            /** Format: decimal */
+            longitude?: string | null;
+            gps_source?: components["schemas"]["GpsSourceEnum"];
+            /** Format: double */
+            gps_accuracy_m?: number | null;
+            /**
+             * Format: double
+             * @description Distance from the reported location.
+             */
+            distance_m?: number | null;
+            readonly flags: components["schemas"]["EvidenceFlag"][];
         };
         /**
          * @description * `report` - Report photo (from reporter)
-         *     * `resolution` - Resolution photo (proof of fix)
+         *     * `before` - Before photo (staff, at the site before work)
          *     * `progress` - Progress / make-safe photo (staff, internal)
+         *     * `resolution` - After photo (proof of fix)
          * @enum {string}
          */
-        AttachmentKindEnum: "report" | "resolution" | "progress";
+        AttachmentKindEnum: "report" | "before" | "progress" | "resolution";
         BarangayStat: {
             id: number;
             name: string;
@@ -857,7 +1042,6 @@ export interface components {
             /** Format: date-time */
             returned_at?: string | null;
             return_reason?: string;
-            /** Format: int64 */
             return_count?: number;
             readonly priority_level: components["schemas"]["PriorityLevel"];
             priority_reason?: string;
@@ -868,6 +1052,8 @@ export interface components {
             readonly responded_by: string | null;
             response_remarks?: string;
             readonly breaches: string[];
+            readonly reports: components["schemas"]["AccomplishmentReport"][];
+            readonly evidence: components["schemas"]["EvidenceSummary"] | null;
         };
         /**
          * @description * `city` - City office
@@ -876,9 +1062,34 @@ export interface components {
          * @enum {string}
          */
         CaseInfoLevelEnum: "city" | "barangay" | "external";
+        /**
+         * @description * `` - Not asked / no answer
+         *     * `fixed` - Citizen confirmed it is fixed
+         *     * `not_fixed` - Citizen says it is NOT fixed
+         * @enum {string}
+         */
+        CitizenConfirmationEnum: "fixed" | "not_fixed";
+        /** @description Accomplishment report + before/after photos. */
         CompleteRequest: {
+            /** @description Work done (shown to the citizen once validated). */
             remarks: string;
+            /** @description AFTER photos. */
             photos?: string[];
+            /** @description JSON list aligned with the photos: [{exif_lat, exif_lng, exif_time, device_lat, ...}] */
+            photo_meta?: unknown;
+            before_photos?: string[];
+            /** @description JSON list aligned with the photos: [{exif_lat, exif_lng, exif_time, device_lat, ...}] */
+            before_meta?: unknown;
+            /** Format: date-time */
+            started_at?: string | null;
+            /** Format: date-time */
+            finished_at?: string | null;
+            /** @description JSON list of user ids. */
+            crew?: unknown;
+            other_workers?: string;
+            /** @description JSON list: [{"item": "Cold mix", "qty": 4, "unit": "sacks"}] */
+            materials?: unknown;
+            equipment?: string;
         };
         /**
          * @description * `web` - Web Portal
@@ -914,11 +1125,33 @@ export interface components {
          * @enum {string}
          */
         DepartmentKindEnum: "internal" | "external";
+        DeptRef: {
+            id: number;
+            code: string;
+            name: string;
+        };
         Division: {
             readonly id: number;
             code: string;
             name: string;
             department: number;
+        };
+        DivisionRow: {
+            id: number;
+            name: string;
+            received: number;
+            resolved: number;
+            /** Format: double */
+            on_time_rate: number | null;
+            /** Format: double */
+            response_rate: number | null;
+            /** Format: double */
+            median_days: number | null;
+            backlog: number;
+            overdue: number;
+            aging_30: number;
+            /** Format: double */
+            proof_rate: number | null;
         };
         EndorseRequest: {
             agency: number;
@@ -941,7 +1174,6 @@ export interface components {
             /** Format: date-time */
             next_follow_up_at?: string | null;
             readonly follow_up_due: boolean;
-            /** Format: int64 */
             follow_up_count?: number;
             readonly follow_ups: components["schemas"]["FollowUp"][];
         };
@@ -972,6 +1204,27 @@ export interface components {
          * @enum {integer}
          */
         EscalationLevelEnum: 0 | 1 | 2 | 3;
+        EvidenceFlag: {
+            code: string;
+            level: components["schemas"]["EvidenceFlagLevelEnum"];
+            label: string;
+        };
+        /**
+         * @description * `red` - red
+         *     * `amber` - amber
+         *     * `info` - info
+         * @enum {string}
+         */
+        EvidenceFlagLevelEnum: "red" | "amber" | "info";
+        EvidenceSummary: {
+            before: number;
+            after: number;
+            located: number;
+            has_before_after: boolean;
+            verified: boolean;
+            red_flags: components["schemas"]["EvidenceFlag"][];
+            amber_flags: components["schemas"]["EvidenceFlag"][];
+        };
         ExtendRequest: {
             /** Format: date */
             new_due_date: string;
@@ -979,6 +1232,11 @@ export interface components {
         };
         Feedback8888Request: {
             feedback: string;
+        };
+        Flag: {
+            code: string;
+            level: string;
+            label: string;
         };
         FollowUp: {
             readonly id: number;
@@ -989,6 +1247,21 @@ export interface components {
             method?: string;
             notes: string;
         };
+        /**
+         * @description * `exif` - Camera (photo metadata)
+         *     * `device` - Phone location at upload
+         *     * `none` - No location
+         * @enum {string}
+         */
+        GpsSourceEnum: "exif" | "device" | "none";
+        /**
+         * @description * `good` - good
+         *     * `watch` - watch
+         *     * `attention` - attention
+         *     * `insufficient` - insufficient
+         * @enum {string}
+         */
+        GradeEnum: "good" | "watch" | "attention" | "insufficient";
         History: {
             readonly id: number;
             from_status?: components["schemas"]["ConcernStatusEnum"] | components["schemas"]["BlankEnum"];
@@ -1038,10 +1311,85 @@ export interface components {
             /** Format: date */
             scheduled_for?: string | null;
             public_message?: string;
+            /** @description BEFORE photos of the site. */
+            photos?: string[];
+            /** @description JSON list aligned with the photos: [{exif_lat, exif_lng, exif_time, device_lat, ...}] */
+            photo_meta?: unknown;
         };
         IssueCount: {
             name: string;
             count: number;
+        };
+        Kpi: {
+            received: number;
+            resolved: number;
+            on_time: number;
+            /** Format: double */
+            on_time_rate: number | null;
+            /** Format: double */
+            acceptance_rate: number | null;
+            /** Format: double */
+            response_rate: number | null;
+            p1_cases: number;
+            /** Format: double */
+            p1_make_safe_rate: number | null;
+            /** Format: double */
+            median_days: number | null;
+            /** Format: double */
+            p90_days: number | null;
+            backlog: number;
+            overdue: number;
+            aging_30: number;
+            /** Format: double */
+            extension_rate: number | null;
+            /** Format: double */
+            escalation_rate: number | null;
+            /** Format: double */
+            reopen_rate: number | null;
+            returned: number;
+            /** Format: double */
+            proof_rate: number | null;
+            overrides: number;
+            /** Format: double */
+            recurrence_rate: number | null;
+            citizen_answered: number;
+            citizen_not_fixed: number;
+            /** Format: double */
+            not_fixed_rate: number | null;
+            /** Format: double */
+            quality_rate: number | null;
+            /** Format: double */
+            index: number | null;
+            grade: components["schemas"]["GradeEnum"];
+            flags: string[];
+        };
+        Ledger: {
+            period: components["schemas"]["Period"];
+            person: components["schemas"]["PersonRef"];
+            summary: components["schemas"]["PersonRow"] | null;
+            items: components["schemas"]["LedgerItem"][];
+        };
+        LedgerItem: {
+            /** Format: date-time */
+            at: string;
+            kind: string;
+            label: string;
+            concern_id: number;
+            reference_no: string;
+            title: string;
+            barangay: string;
+            detail: string;
+            ok: boolean | null;
+            flags: components["schemas"]["Flag"][];
+            photos: components["schemas"]["LedgerPhoto"][];
+        };
+        LedgerPhoto: {
+            url: string;
+            kind: string;
+            /** Format: double */
+            distance_m: number | null;
+            gps_source: string;
+            flags: components["schemas"]["Flag"][];
         };
         LinkDuplicateRequest: {
             master_reference: string;
@@ -1078,6 +1426,12 @@ export interface components {
             /** @description Matching reports without a map pin (counted in barangay stats only) */
             unpinned: number;
         };
+        Material: {
+            item: string;
+            /** Format: double */
+            qty?: number | null;
+            unit?: string;
+        };
         Me: {
             readonly id: number;
             /** @description Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only. */
@@ -1108,6 +1462,10 @@ export interface components {
          * @enum {string}
          */
         MethodEnum: "call" | "letter" | "email" | "visit" | "meeting";
+        NamedCount: {
+            name: string;
+            count: number;
+        };
         Note: {
             readonly id: number;
             readonly author: string;
@@ -1120,8 +1478,99 @@ export interface components {
         };
         /** @enum {unknown} */
         NullEnum: null;
+        OfficeDetail: {
+            period: components["schemas"]["Period"];
+            department: components["schemas"]["DeptRef"];
+            kpis: components["schemas"]["Kpi"];
+            city: components["schemas"]["Kpi"];
+            divisions: components["schemas"]["DivisionRow"][];
+            aging: components["schemas"]["Aging"][];
+            top_issues: components["schemas"]["NamedCount"][];
+            trend: components["schemas"]["TrendPoint"][];
+            city_trend: components["schemas"]["TrendPoint"][];
+            oldest_overdue: components["schemas"]["OverdueCase"][];
+            workload: components["schemas"]["Workload"][];
+        };
+        OfficeProofRow: {
+            department_id: number;
+            code: string;
+            name: string;
+            resolved: number;
+            before_after: number;
+            verified_proof: number;
+            /** Format: double */
+            proof_rate: number | null;
+            photos: number;
+            red_flag_photos: number;
+            reports: number;
+            reports_returned: number;
+            overrides: number;
+            citizen_answered: number;
+            citizen_fixed: number;
+            citizen_not_fixed: number;
+            recurrences: number;
+        };
+        OfficeRow: {
+            received: number;
+            resolved: number;
+            on_time: number;
+            /** Format: double */
+            on_time_rate: number | null;
+            /** Format: double */
+            acceptance_rate: number | null;
+            /** Format: double */
+            response_rate: number | null;
+            p1_cases: number;
+            /** Format: double */
+            p1_make_safe_rate: number | null;
+            /** Format: double */
+            median_days: number | null;
+            /** Format: double */
+            p90_days: number | null;
+            backlog: number;
+            overdue: number;
+            aging_30: number;
+            /** Format: double */
+            extension_rate: number | null;
+            /** Format: double */
+            escalation_rate: number | null;
+            /** Format: double */
+            reopen_rate: number | null;
+            returned: number;
+            /** Format: double */
+            proof_rate: number | null;
+            overrides: number;
+            /** Format: double */
+            recurrence_rate: number | null;
+            citizen_answered: number;
+            citizen_not_fixed: number;
+            /** Format: double */
+            not_fixed_rate: number | null;
+            /** Format: double */
+            quality_rate: number | null;
+            /** Format: double */
+            index: number | null;
+            grade: components["schemas"]["GradeEnum"];
+            flags: string[];
+            department_id: number;
+            code: string;
+            name: string;
+            rank: number | null;
+        };
         OptionalRemarksRequest: {
             remarks?: string;
+        };
+        OverdueCase: {
+            id: number;
+            reference_no: string;
+            title: string;
+            barangay: string;
+            priority: string | null;
+            /** Format: date-time */
+            due_at: string;
+            days_overdue: number;
+            escalation_level: number;
+            stage: string;
         };
         PaginatedStaffConcernListList: {
             /** @example 123 */
@@ -1137,6 +1586,18 @@ export interface components {
              */
             previous?: string | null;
             results: components["schemas"]["StaffConcernList"][];
+        };
+        People: {
+            period: components["schemas"]["Period"];
+            department: components["schemas"]["DeptRef"];
+            people: components["schemas"]["PersonRow"][];
+        };
+        Period: {
+            label: string;
+            /** Format: date-time */
+            start: string;
+            /** Format: date-time */
+            end: string;
         };
         Permissions: {
             can_act: boolean;
@@ -1163,6 +1624,41 @@ export interface components {
             feedback_8888: boolean;
             follow_up: boolean;
         };
+        PersonActions: {
+            accepted: number;
+            responded: number;
+            inspected: number;
+            submitted: number;
+            crew: number;
+            validated: number;
+            returned: number;
+            overrides: number;
+        };
+        PersonRef: {
+            id: number;
+            name: string;
+            role_display: string;
+            department: string | null;
+            department_id: number | null;
+            division: string | null;
+        };
+        PersonRow: {
+            id: number;
+            name: string;
+            role: string;
+            role_display: string;
+            division: string | null;
+            actions: components["schemas"]["PersonActions"];
+            total_actions: number;
+            open_assigned: number;
+            photos: number;
+            red_flag_photos: number;
+            /** Format: double */
+            located_rate: number | null;
+            reports_returned: number;
+            citizen_not_fixed: number;
+            recurrences: number;
+        };
         PriorityBreakdown: {
             /** Format: double */
             severity_component: number;
@@ -1184,17 +1680,10 @@ export interface components {
             name: string;
             name_fil?: string;
             description?: string;
-            /**
-             * Format: int64
-             * @description Calendar hours (emergencies don't wait for working days).
-             */
+            /** @description Calendar hours (emergencies don't wait for working days). */
             response_hours?: number | null;
-            /** Format: int64 */
             response_working_days?: number | null;
-            /**
-             * Format: int64
-             * @description Working days. Empty = use the ARTA class maximum.
-             */
+            /** @description Working days. Empty = use the ARTA class maximum. */
             resolution_cap_days?: number | null;
             /** @description Bootstrap color: danger, warning, info, secondary */
             color?: string;
@@ -1259,6 +1748,11 @@ export interface components {
             is_anonymous?: boolean;
             consent_given?: boolean;
             images?: string[];
+        };
+        PublicConfirmRequest: {
+            fixed: boolean;
+            feedback?: string;
+            mobile_last4?: string;
         };
         PublicStats: {
             totals: components["schemas"]["PublicStatsTotals"];
@@ -1330,6 +1824,12 @@ export interface components {
             readonly deadline_extended: boolean;
             readonly endorsed_to: string | null;
             readonly priority_level: string | null;
+            /** @description Staff 'before' photos, shown beside the 'after' photos so the citizen can compare. */
+            readonly before_photos: string[];
+            citizen_confirmation?: components["schemas"]["CitizenConfirmationEnum"] | components["schemas"]["BlankEnum"];
+            readonly can_confirm: boolean;
+            /** @description If the reporter left a mobile number, the last 4 digits are asked so a stranger can't answer for them. */
+            readonly confirm_needs_mobile: boolean;
         };
         RemarksRequest: {
             remarks: string;
@@ -1337,6 +1837,8 @@ export interface components {
         RespondRequest: {
             remarks: string;
             photos?: string[];
+            /** @description JSON list aligned with the photos: [{exif_lat, exif_lng, exif_time, device_lat, ...}] */
+            photo_meta?: unknown;
         };
         ReturnRequest: {
             reason: string;
@@ -1365,6 +1867,18 @@ export interface components {
             department?: number | null;
             division?: number | null;
             remarks?: string;
+        };
+        Scorecard: {
+            period: components["schemas"]["Period"];
+            city: components["schemas"]["Kpi"];
+            offices: components["schemas"]["OfficeRow"][];
+            weights: {
+                [key: string]: number;
+            };
+            targets: {
+                [key: string]: number;
+            };
+            min_sample: number;
         };
         SetPriorityRequest: {
             priority_level: number;
@@ -1441,10 +1955,7 @@ export interface components {
             subcategory_code?: string;
             severity?: components["schemas"]["SeverityEnum"];
             severity_display: string;
-            /**
-             * Format: int64
-             * @description Estimated number of affected citizens.
-             */
+            /** @description Estimated number of affected citizens. */
             affected_count?: number;
             /** Format: decimal */
             latitude?: string | null;
@@ -1475,6 +1986,13 @@ export interface components {
             readonly permissions: components["schemas"]["Permissions"];
             readonly suggested_route: components["schemas"]["SuggestedRoute"];
             readonly suggested_priority: components["schemas"]["PriorityLevel"] | null;
+            readonly trail: components["schemas"]["TrailStep"][];
+            citizen_confirmation?: components["schemas"]["CitizenConfirmationEnum"] | components["schemas"]["BlankEnum"];
+            /** Format: date-time */
+            citizen_confirmed_at?: string | null;
+            citizen_feedback?: string;
+            recurrence_of?: string;
+            readonly recurrences: components["schemas"]["LinkedReport"][];
         };
         StaffConcernList: {
             readonly id: number;
@@ -1599,6 +2117,12 @@ export interface components {
             department: string | null;
             division_id: number | null;
         };
+        /**
+         * @description * `exif` - Camera (photo metadata)
+         *     * `upload` - Upload time only
+         * @enum {string}
+         */
+        TimeSourceEnum: "exif" | "upload";
         TokenBlacklistRequest: {
             refresh: string;
         };
@@ -1609,16 +2133,63 @@ export interface components {
         TokenRefreshRequest: {
             refresh: string;
         };
+        TrailStep: {
+            key: string;
+            label: string;
+            who: string | null;
+            /** Format: date-time */
+            at: string | null;
+            detail: string;
+            ok: boolean | null;
+        };
+        TrendPoint: {
+            month: string;
+            label: string;
+            received: number;
+            resolved: number;
+            /** Format: double */
+            on_time_rate: number | null;
+        };
         ValidateRequest: {
             approve: boolean;
             remarks?: string;
             photos?: string[];
+            /** @description JSON list aligned with the photos: [{exif_lat, exif_lng, exif_time, device_lat, ...}] */
+            photo_meta?: unknown;
+            /** @description Required when the photo checks raised a red flag. */
+            override_reason?: string;
         };
         VerifyRequest: {
             category: string;
             subcategory?: string | null;
             severity: components["schemas"]["SeverityEnum"];
             remarks?: string;
+        };
+        WatchItem: {
+            kind: components["schemas"]["WatchItemKindEnum"];
+            label: string;
+            level: string;
+            /** Format: date-time */
+            at: string;
+            who: string | null;
+            detail: string;
+            concern_id: number;
+            reference_no: string;
+            title: string;
+            barangay: string;
+            office: string | null;
+        };
+        /**
+         * @description * `pending_red` - pending_red
+         *     * `override` - override
+         *     * `disputed` - disputed
+         *     * `recurrence` - recurrence
+         * @enum {string}
+         */
+        WatchItemKindEnum: "pending_red" | "override" | "disputed" | "recurrence";
+        Workload: {
+            name: string;
+            open: number;
         };
     };
     responses: never;
@@ -1756,7 +2327,12 @@ export interface operations {
     };
     v1_public_barangays_list: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A search term. */
+                search?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -1775,7 +2351,12 @@ export interface operations {
     };
     v1_public_categories_list: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A search term. */
+                search?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -1838,6 +2419,33 @@ export interface operations {
             };
         };
     };
+    v1_public_concerns_track_confirm_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                reference_no: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublicConfirmRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["PublicConfirmRequest"];
+                "multipart/form-data": components["schemas"]["PublicConfirmRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicTrack"];
+                };
+            };
+        };
+    };
     v1_public_stats_retrieve: {
         parameters: {
             query?: never;
@@ -1857,16 +2465,176 @@ export interface operations {
             };
         };
     };
+    analytics_accountability: {
+        parameters: {
+            query?: {
+                /** @description YYYY-MM-DD (period=custom) */
+                date_from?: string;
+                /** @description YYYY-MM-DD (period=custom) */
+                date_to?: string;
+                period?: "12m" | "90d" | "custom" | "last_month" | "quarter" | "this_month";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Accountability"];
+                };
+            };
+        };
+    };
+    analytics_office_scorecard: {
+        parameters: {
+            query?: {
+                /** @description YYYY-MM-DD (period=custom) */
+                date_from?: string;
+                /** @description YYYY-MM-DD (period=custom) */
+                date_to?: string;
+                period?: "12m" | "90d" | "custom" | "last_month" | "quarter" | "this_month";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Scorecard"];
+                };
+            };
+        };
+    };
+    analytics_office_scorecard_csv: {
+        parameters: {
+            query?: {
+                /** @description YYYY-MM-DD (period=custom) */
+                date_from?: string;
+                /** @description YYYY-MM-DD (period=custom) */
+                date_to?: string;
+                period?: "12m" | "90d" | "custom" | "last_month" | "quarter" | "this_month";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
+                };
+            };
+        };
+    };
+    analytics_office_detail: {
+        parameters: {
+            query?: {
+                /** @description YYYY-MM-DD (period=custom) */
+                date_from?: string;
+                /** @description YYYY-MM-DD (period=custom) */
+                date_to?: string;
+                period?: "12m" | "90d" | "custom" | "last_month" | "quarter" | "this_month";
+            };
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OfficeDetail"];
+                };
+            };
+        };
+    };
+    analytics_office_people: {
+        parameters: {
+            query?: {
+                /** @description YYYY-MM-DD (period=custom) */
+                date_from?: string;
+                /** @description YYYY-MM-DD (period=custom) */
+                date_to?: string;
+                period?: "12m" | "90d" | "custom" | "last_month" | "quarter" | "this_month";
+            };
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["People"];
+                };
+            };
+        };
+    };
+    analytics_person_ledger: {
+        parameters: {
+            query?: {
+                /** @description YYYY-MM-DD (period=custom) */
+                date_from?: string;
+                /** @description YYYY-MM-DD (period=custom) */
+                date_to?: string;
+                period?: "12m" | "90d" | "custom" | "last_month" | "quarter" | "this_month";
+            };
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Ledger"];
+                };
+            };
+        };
+    };
     v1_staff_concerns_list: {
         parameters: {
             query?: {
                 barangay?: number;
                 category?: string;
                 include_duplicates?: boolean;
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
                 /** @description A page number within the paginated result set. */
                 page?: number;
                 /** @description Search reference no., title, landmark, description */
                 q?: string;
+                /** @description A search term. */
+                search?: string;
                 /** @description Inbox view (default: open) */
                 tab?: "all" | "closed" | "endorsed" | "for_acceptance" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
             };
@@ -2325,9 +3093,8 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["InspectRequest"];
                 "multipart/form-data": components["schemas"]["InspectRequest"];
-                "application/x-www-form-urlencoded": components["schemas"]["InspectRequest"];
+                "application/json": components["schemas"]["InspectRequest"];
             };
         };
         responses: {
@@ -2731,6 +3498,10 @@ export interface operations {
         parameters: {
             query?: {
                 kind?: "external" | "internal";
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A search term. */
+                search?: string;
             };
             header?: never;
             path?: never;
@@ -2752,6 +3523,10 @@ export interface operations {
         parameters: {
             query: {
                 department: number;
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A search term. */
+                search?: string;
             };
             header?: never;
             path?: never;
@@ -2874,7 +3649,12 @@ export interface operations {
     };
     v1_staff_priority_levels_list: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A search term. */
+                search?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -2915,6 +3695,10 @@ export interface operations {
             query: {
                 department: number;
                 division?: number;
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A search term. */
+                search?: string;
             };
             header?: never;
             path?: never;

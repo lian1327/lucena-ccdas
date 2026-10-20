@@ -10,7 +10,10 @@ import type { PriorityLevel, StaffConcernDetail } from "@/api/types";
 import { UrgencyBadge } from "@/components/UrgencyBadge";
 import { fmtDateTime } from "@/utils/format";
 
-import { ErrorText, Panel, PhotoPicker, SubmitButton } from "./ui";
+import { EvidencePicker } from "@/features/evidence/EvidencePicker";
+import { evidenceFields, type EvidencePhoto } from "@/features/evidence/capture";
+
+import { ErrorText, Panel, SubmitButton } from "./ui";
 
 type P = { c: StaffConcernDetail };
 
@@ -187,7 +190,7 @@ export function PriorityPanel({ c }: P) {
 export function RespondPanel({ c }: P) {
   const respond = useRespond(c.id);
   const [remarks, setRemarks] = useState("");
-  const [photos, setPhotos] = useState<File[]>([]);
+  const [photos, setPhotos] = useState<EvidencePhoto[]>([]);
   if (!c.permissions.respond) return null;
   const p1 = c.case?.priority_level?.code === "P1";
   return (
@@ -196,9 +199,9 @@ export function RespondPanel({ c }: P) {
         : "Kung hindi pa makakapag-inspeksyon, itala ang unang ginawa. Ang site inspection ay binibilang din bilang unang aksyon."}>
       <Form.Control as="textarea" rows={2} className="mb-2" value={remarks} onChange={(e) => setRemarks(e.target.value)}
         placeholder="hal. Nilagyan ng barricade at warning sign. Papalitan ang takip bukas. (makikita ng nag-report)" />
-      <PhotoPicker label="Litrato (opsyonal, internal)" value={photos} onChange={setPhotos} />
+      <EvidencePicker label="Litrato ng make-safe (opsyonal, internal)" value={photos} onChange={setPhotos} />
       <SubmitButton pending={respond.isPending} disabled={!remarks.trim()} variant={p1 ? "danger" : "primary"}
-        onClick={() => respond.mutate({ remarks, photos })}>I-log ang unang aksyon</SubmitButton>
+        onClick={() => respond.mutate({ remarks, ...evidenceFields(photos, "photos", "photo_meta") } as never)}>I-log ang unang aksyon</SubmitButton>
       <ErrorText err={respond.error} />
     </Panel>
   );

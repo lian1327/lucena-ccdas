@@ -55,3 +55,24 @@ export type MapPoints = S["MapPoints"];
 export type BarangayStat = S["BarangayStat"];
 export type Hotspot = S["Hotspot"];
 export type Hotspots = S["Hotspots"];
+
+// ----- Analytics -----
+export type Kpi = S["Kpi"];
+export type OfficeRow = S["OfficeRow"];
+export type Scorecard = S["Scorecard"];
+export type OfficeDetail = S["OfficeDetail"];
+export type TrendPoint = S["TrendPoint"];
+
+// ----- Proof of work / accountability (Step 10) -----
+export type Attachment = S["Attachment"];
+export type EvidenceFlag = S["EvidenceFlag"];
+export type AccomplishmentReport = S["AccomplishmentReport"];
+export type EvidenceSummary = S["EvidenceSummary"];
+export type TrailStep = S["TrailStep"];
+export type Accountability = S["Accountability"];
+export type OfficeProofRow = S["OfficeProofRow"];
+export type WatchItem = S["WatchItem"];
+export type People = S["People"];
+export type PersonRow = S["PersonRow"];
+export type Ledger = S["Ledger"];
+export type LedgerItem = S["LedgerItem"];

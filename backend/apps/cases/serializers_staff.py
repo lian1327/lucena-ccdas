@@ -10,8 +10,10 @@ from apps.concerns.models import Category, Concern, ConcernAttachment, StatusHis
 from apps.concerns.serializers import AFFECTED_BUCKETS, PublicConcernCreateSerializer
 from apps.concerns.services import on_concern_submitted
 
-from . import deadlines
-from .models import Case, CaseNote, Department, Division, Endorsement, EndorsementFollowUp, PriorityLevel
+from . import deadlines, evidence
+from .models import (
+    AccomplishmentReport, Case, CaseNote, Department, Division, Endorsement, EndorsementFollowUp, PriorityLevel,
+)
 from .scoping import permissions_for
 from .services import breaches, suggest_priority, suggested_route
 
@@ -112,15 +114,81 @@ class StaffConcernListSerializer(serializers.ModelSerializer):
 
 # ---------- Detail ----------
 
+class EvidenceFlagSerializer(serializers.Serializer):
+    code = serializers.CharField()
+    level = serializers.ChoiceField(choices=["red", "amber", "info"])
+    label = serializers.CharField()
+
+
 class AttachmentSerializer(serializers.ModelSerializer):
     url = serializers.SerializerMethodField()
+    uploaded_by = serializers.SerializerMethodField()
+    flags = serializers.SerializerMethodField()
 
     class Meta:
         model = ConcernAttachment
-        fields = ["id", "kind", "url", "caption", "uploaded_at"]
+        fields = ["id", "kind", "url", "caption", "uploaded_at", "uploaded_by", "report_id",
+                  "taken_at", "time_source", "latitude", "longitude", "gps_source", "gps_accuracy_m", "distance_m", "flags"]
 
     def get_url(self, obj) -> str:
         return obj.file.url
+
+    def get_uploaded_by(self, obj) -> str | None:
+        return _name(obj.uploaded_by)
+
+    @extend_schema_field(EvidenceFlagSerializer(many=True))
+    def get_flags(self, obj):
+        return evidence.flag_list(obj.flags or [])
+
+
+class MaterialSerializer(serializers.Serializer):
+    item = serializers.CharField(max_length=120)
+    qty = serializers.FloatField(required=False, allow_null=True)
+    unit = serializers.CharField(max_length=30, required=False, allow_blank=True)
+
+
+class AccomplishmentReportSerializer(serializers.ModelSerializer):
+    submitted_by = serializers.SerializerMethodField()
+    reviewed_by = serializers.SerializerMethodField()
+    crew = serializers.SerializerMethodField()
+    materials = MaterialSerializer(many=True)
+    status_display = serializers.CharField(source="get_status_display")
+    headcount = serializers.IntegerField()
+    man_hours = serializers.FloatField(allow_null=True)
+
+    class Meta:
+        model = AccomplishmentReport
+        fields = ["id", "status", "status_display", "submitted_by", "submitted_at", "work_done", "started_at", "finished_at",
+                  "crew", "other_workers", "headcount", "man_hours", "materials", "equipment",
+                  "reviewed_by", "reviewed_at", "review_remarks", "override_reason"]
+
+    def get_submitted_by(self, obj) -> str | None:
+        return _name(obj.submitted_by)
+
+    def get_reviewed_by(self, obj) -> str | None:
+        return _name(obj.reviewed_by)
+
+    def get_crew(self, obj) -> list[str]:
+        return [_name(u) for u in obj.crew.all()]
+
+
+class EvidenceSummarySerializer(serializers.Serializer):
+    before = serializers.IntegerField()
+    after = serializers.IntegerField()
+    located = serializers.IntegerField()
+    has_before_after = serializers.BooleanField()
+    verified = serializers.BooleanField()
+    red_flags = EvidenceFlagSerializer(many=True)
+    amber_flags = EvidenceFlagSerializer(many=True)
+
+
+class TrailStepSerializer(serializers.Serializer):
+    key = serializers.CharField()
+    label = serializers.CharField()
+    who = serializers.CharField(allow_null=True)
+    at = serializers.DateTimeField(allow_null=True)
+    detail = serializers.CharField(allow_blank=True)
+    ok = serializers.BooleanField(allow_null=True)
 
 
 class HistorySerializer(serializers.ModelSerializer):
@@ -196,6 +264,8 @@ class CaseInfoSerializer(serializers.ModelSerializer):
     responded_by = serializers.SerializerMethodField()
     screening_checklist = serializers.SerializerMethodField()
     breaches = serializers.SerializerMethodField()
+    reports = AccomplishmentReportSerializer(many=True, read_only=True)
+    evidence = serializers.SerializerMethodField()
 
     class Meta:
         model = Case
@@ -211,7 +281,7 @@ class CaseInfoSerializer(serializers.ModelSerializer):
             "routed_at", "accepted_at", "accepted_by", "acceptance_due_at", "screening", "screening_checklist",
             "returned_at", "return_reason", "return_count",
             "priority_level", "priority_reason", "response_due_at", "responded_at", "responded_by", "response_remarks",
-            "breaches",
+            "breaches", "reports", "evidence",
         ]
 
     def get_assigned_to(self, obj) -> str | None:
@@ -237,6 +307,10 @@ class CaseInfoSerializer(serializers.ModelSerializer):
 
     def get_breaches(self, obj) -> list[str]:
         return breaches(obj) if obj.concern.is_open else []
+
+    @extend_schema_field(EvidenceSummarySerializer(allow_null=True))
+    def get_evidence(self, obj):
+        return evidence.summary(obj)
 
     def get_max_extension_due(self, obj) -> str | None:
         if not obj.due_at or obj.extended_at:
@@ -308,6 +382,9 @@ class StaffConcernDetailSerializer(StaffConcernListSerializer):
     permissions = serializers.SerializerMethodField()
     suggested_route = serializers.SerializerMethodField()
     suggested_priority = serializers.SerializerMethodField()
+    trail = serializers.SerializerMethodField()
+    recurrence_of = serializers.CharField(source="recurrence_of.reference_no", default=None)
+    recurrences = LinkedReportSerializer(many=True, read_only=True)
 
     class Meta(StaffConcernListSerializer.Meta):
         fields = StaffConcernListSerializer.Meta.fields + [
@@ -318,6 +395,7 @@ class StaffConcernDetailSerializer(StaffConcernListSerializer):
             "verified_by", "verified_at", "acknowledged_at", "resolved_at",
             "duplicate_of", "duplicates", "attachments", "history", "case", "notes",
             "priority", "permissions", "suggested_route", "suggested_priority",
+            "trail", "citizen_confirmation", "citizen_confirmed_at", "citizen_feedback", "recurrence_of", "recurrences",
         ]
 
     def get_encoded_by(self, obj) -> str | None:
@@ -344,6 +422,10 @@ class StaffConcernDetailSerializer(StaffConcernListSerializer):
     def get_suggested_priority(self, obj):
         lvl = suggest_priority(obj)
         return PriorityLevelSerializer(lvl).data if lvl else None
+
+    @extend_schema_field(TrailStepSerializer(many=True))
+    def get_trail(self, obj):
+        return accountability_trail(obj)
 
     @extend_schema_field(SuggestedRouteSerializer)
     def get_suggested_route(self, obj):
@@ -397,9 +479,53 @@ class SetPrioritySerializer(serializers.Serializer):
     reason = serializers.CharField(max_length=300)
 
 
+class PhotoMetaSerializer(serializers.Serializer):
+    """Sent by the browser for each photo, read BEFORE compression strips the EXIF."""
+    exif_lat = serializers.FloatField(required=False, allow_null=True)
+    exif_lng = serializers.FloatField(required=False, allow_null=True)
+    exif_time = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    device_lat = serializers.FloatField(required=False, allow_null=True)
+    device_lng = serializers.FloatField(required=False, allow_null=True)
+    device_accuracy = serializers.FloatField(required=False, allow_null=True)
+
+
+class JSONListField(serializers.JSONField):
+    """Accepts a real JSON list (application/json) or a JSON string (multipart/form-data)."""
+
+    def to_internal_value(self, data):
+        if isinstance(data, (bytes, str)):
+            import json
+            try:
+                data = json.loads(data or "[]")
+            except ValueError:
+                raise serializers.ValidationError("Invalid JSON.")
+        return data
+
+
+def _meta_field():
+    return JSONListField(required=False, default=list,
+                                 help_text="JSON list aligned with the photos: [{exif_lat, exif_lng, exif_time, device_lat, ...}]")
+
+
+def _clean_meta(v):
+    if isinstance(v, dict):
+        v = [v]
+    if not isinstance(v, list):
+        raise serializers.ValidationError("Must be a JSON list.")
+    out = []
+    for item in v[:MAX_PHOTOS * 2]:
+        ser = PhotoMetaSerializer(data=item if isinstance(item, dict) else {})
+        out.append(ser.validated_data if ser.is_valid() else {})
+    return out
+
+
 class RespondSerializer(serializers.Serializer):
     remarks = serializers.CharField(max_length=1000)
     photos = serializers.ListField(child=serializers.ImageField(), required=False, max_length=MAX_PHOTOS)
+    photo_meta = _meta_field()
+
+    def validate_photo_meta(self, v):
+        return _clean_meta(v)
 
 
 class AssignDivisionSerializer(serializers.Serializer):
@@ -417,6 +543,12 @@ class InspectSerializer(serializers.Serializer):
     action_plan = serializers.CharField(required=False, allow_blank=True, max_length=2000)
     scheduled_for = serializers.DateField(required=False, allow_null=True)
     public_message = serializers.CharField(required=False, allow_blank=True, max_length=500)
+    photos = serializers.ListField(child=serializers.ImageField(), required=False, max_length=MAX_PHOTOS,
+                                   help_text="BEFORE photos of the site.")
+    photo_meta = _meta_field()
+
+    def validate_photo_meta(self, v):
+        return _clean_meta(v)
 
     def validate_scheduled_for(self, v):
         if v and v < timezone.localdate():
@@ -425,14 +557,59 @@ class InspectSerializer(serializers.Serializer):
 
 
 class CompleteSerializer(serializers.Serializer):
-    remarks = serializers.CharField(max_length=1000)
-    photos = serializers.ListField(child=serializers.ImageField(), required=False, max_length=MAX_PHOTOS)
+    """Accomplishment report + before/after photos."""
+    remarks = serializers.CharField(max_length=1000, help_text="Work done (shown to the citizen once validated).")
+    photos = serializers.ListField(child=serializers.ImageField(), required=False, max_length=MAX_PHOTOS,
+                                   help_text="AFTER photos.")
+    photo_meta = _meta_field()
+    before_photos = serializers.ListField(child=serializers.ImageField(), required=False, max_length=MAX_PHOTOS)
+    before_meta = _meta_field()
+    started_at = serializers.DateTimeField(required=False, allow_null=True)
+    finished_at = serializers.DateTimeField(required=False, allow_null=True)
+    crew = JSONListField(required=False, default=list, help_text="JSON list of user ids.")
+    other_workers = serializers.CharField(required=False, allow_blank=True, max_length=300)
+    materials = JSONListField(required=False, default=list,
+                                      help_text='JSON list: [{"item": "Cold mix", "qty": 4, "unit": "sacks"}]')
+    equipment = serializers.CharField(required=False, allow_blank=True, max_length=300)
+
+    def validate_photo_meta(self, v):
+        return _clean_meta(v)
+
+    def validate_before_meta(self, v):
+        return _clean_meta(v)
+
+    def validate_crew(self, v):
+        if not isinstance(v, list):
+            raise serializers.ValidationError("Must be a JSON list of user ids.")
+        users = list(User.objects.filter(pk__in=[i for i in v if isinstance(i, int)], is_active=True))
+        return users
+
+    def validate_materials(self, v):
+        if not isinstance(v, list):
+            raise serializers.ValidationError("Must be a JSON list.")
+        ser = MaterialSerializer(data=[m for m in v if isinstance(m, dict)][:20], many=True)
+        ser.is_valid(raise_exception=True)
+        return ser.validated_data
+
+    def validate(self, attrs):
+        dept_id = self.context.get("department_id")
+        if dept_id:
+            bad = [u for u in attrs.get("crew", []) if u.department_id != dept_id]
+            if bad:
+                raise serializers.ValidationError({"crew": "Crew must be from the handling office."})
+        return attrs
 
 
 class ValidateSerializer(serializers.Serializer):
     approve = serializers.BooleanField()
     remarks = serializers.CharField(required=False, allow_blank=True, max_length=1000)
     photos = serializers.ListField(child=serializers.ImageField(), required=False, max_length=MAX_PHOTOS)
+    photo_meta = _meta_field()
+    override_reason = serializers.CharField(required=False, allow_blank=True, max_length=1000,
+                                            help_text="Required when the photo checks raised a red flag.")
+
+    def validate_photo_meta(self, v):
+        return _clean_meta(v)
 
 
 class ExtendSerializer(serializers.Serializer):
@@ -484,6 +661,19 @@ class EscalateSerializer(serializers.Serializer):
 
 class NoteCreateSerializer(serializers.Serializer):
     body = serializers.CharField(max_length=2000)
+
+
+class SimilarReportSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    reference_no = serializers.CharField()
+    title = serializers.CharField()
+    status = serializers.CharField()
+    created_at = serializers.DateTimeField()
+    category = serializers.CharField(allow_null=True)
+    distance_m = serializers.IntegerField(allow_null=True)
+    score = serializers.FloatField()
+    reasons = serializers.ListField(child=serializers.CharField())
+    reporters = serializers.IntegerField()
 
 
 class LinkDuplicateSerializer(serializers.Serializer):
@@ -557,3 +747,54 @@ class StaffEncodeSerializer(PublicConcernCreateSerializer):
         on_concern_submitted(concern, user=user)
         concern.refresh_from_db()
         return concern
+
+
+# ---------- Accountability trail ----------
+
+def accountability_trail(concern):
+    """Who did each step, when, and whether it met its commitment. One row per step, in order."""
+    case = getattr(concern, "case", None)
+    rows = [{"key": "verified", "label": "Na-verify (PACD)", "who": _name(concern.verified_by), "at": concern.verified_at,
+             "detail": "", "ok": None}]
+    if not case:
+        return rows
+    lv = case.priority_level
+
+    def ok(done, due):
+        return None if not (done and due) else done <= due
+
+    routed = next((h for h in reversed(list(concern.history.all()))
+                   if h.to_status == Concern.Status.ASSIGNED and h.from_status != Concern.Status.ASSIGNED), None)
+    rows += [
+        {"key": "routed", "label": "Naipasa sa opisina", "who": _name(routed.changed_by) if routed else None,
+         "at": case.routed_at, "detail": case.department.name if case.department else "", "ok": None},
+        {"key": "accepted", "label": "Tinanggap ng opisina", "who": _name(case.accepted_by), "at": case.accepted_at,
+         "detail": f"{lv.code} · {lv.name}" if lv else "", "ok": ok(case.accepted_at, case.acceptance_due_at)},
+        {"key": "assigned", "label": "Itinalaga", "who": _name(case.assigned_by) if case.assigned_to else None, "at": None,
+         "detail": (f"kay {_name(case.assigned_to)}" if case.assigned_to else "")
+                   + (f" · {case.division.name}" if case.division else ""), "ok": None},
+        {"key": "responded", "label": "Unang aksyon", "who": _name(case.responded_by), "at": case.responded_at,
+         "detail": case.response_remarks[:120], "ok": ok(case.responded_at, case.response_due_at)},
+        {"key": "inspected", "label": "Inspeksyon", "who": _name(case.inspected_by), "at": case.inspected_at,
+         "detail": case.inspection_findings[:120], "ok": None},
+    ]
+    for r in reversed(list(case.reports.all())):
+        crew = ", ".join(filter(None, [_name(u) for u in r.crew.all()] + [r.other_workers]))
+        rows.append({"key": f"report-{r.id}", "label": "Accomplishment report", "who": _name(r.submitted_by),
+                     "at": r.submitted_at, "detail": f"Crew: {crew}" if crew else "", "ok": None})
+        if r.status != AccomplishmentReport.Status.SUBMITTED:
+            approved = r.status == AccomplishmentReport.Status.APPROVED
+            rows.append({"key": f"review-{r.id}", "label": "Na-validate" if approved else "Ibinalik sa crew",
+                         "who": _name(r.reviewed_by), "at": r.reviewed_at,
+                         "detail": (f"Override: {r.override_reason}" if r.override_reason else r.review_remarks)[:200],
+                         "ok": (ok(r.reviewed_at, case.due_at) if approved else False)})
+    if case.validated_at and not case.reports.exists():
+        rows.append({"key": "validated", "label": "Na-validate", "who": _name(case.validated_by), "at": case.validated_at,
+                     "detail": "", "ok": ok(case.validated_at, case.due_at)})
+    if concern.citizen_confirmation:
+        fixed = concern.citizen_confirmation == Concern.Confirmation.FIXED
+        rows.append({"key": "citizen", "label": "Kumpirmasyon ng nag-report", "who": "Nag-report",
+                     "at": concern.citizen_confirmed_at,
+                     "detail": ("Naayos na" if fixed else "HINDI pa naayos") + (f": {concern.citizen_feedback}" if concern.citizen_feedback else ""),
+                     "ok": fixed})
+    return rows

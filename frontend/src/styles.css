@@ -19,3 +19,8 @@ aside .nav-link.active {
   .analytics-report details { display: none; }
   body { background: #fff !important; }
 }
+@media print {
+  .exec-report { box-shadow: none !important; max-width: none !important; padding: 0 !important; }
+  .exec-report table { page-break-inside: avoid; }
+  .heatmap td { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}

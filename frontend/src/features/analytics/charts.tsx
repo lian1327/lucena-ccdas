@@ -79,3 +79,46 @@ export function AgingBars({ data }: { data: { bucket: string; count: number }[] 
     />
   );
 }
+
+/**
+ * Monthly count for one issue (solid) and next month's estimate (dashed) with its 80% range (light bar).
+ * One y-axis (counts). Mixed chart: line for actuals/forecast, floating bar for the range.
+ */
+export function ForecastChart({ labels, series, next }: {
+  labels: string[]; series: number[]; next: { label: string; estimate: number; low: number; high: number };
+}) {
+  const all = [...labels.map((l) => l.replace(" 20", " '")), `${next.label.slice(0, 3)} '${next.label.slice(-2)}`];
+  const n = series.length;
+  const actual = [...series, null];
+  const fc = all.map((_, i) => (i === n - 1 ? series[n - 1] : i === n ? next.estimate : null));
+  const range = all.map((_, i) => (i === n ? [next.low, next.high] : null));
+  return (
+    <Bar
+      aria-label="Monthly count with next month's estimate and range"
+      data={{
+        labels: all,
+        datasets: [
+          { type: "bar" as const, label: "Saklaw (80%)", data: range as never, backgroundColor: "#cde2fb", borderRadius: 4, barPercentage: .5, order: 3 },
+          { type: "line" as const, label: "Aktwal", data: actual, borderColor: C.office, backgroundColor: C.office, borderWidth: 2, pointRadius: 3, order: 1 },
+          { type: "line" as const, label: "Tantiya", data: fc, borderColor: C.office, backgroundColor: "#fff", borderWidth: 2, borderDash: [5, 4],
+            pointRadius: (ctx: { dataIndex: number }) => (ctx.dataIndex === n ? 5 : 0), pointBorderWidth: 2, order: 2 },
+        ],
+      } as never}
+      options={{
+        maintainAspectRatio: false,
+        interaction: { mode: "index", intersect: false },
+        plugins: {
+          legend: { position: "bottom", labels: { boxWidth: 12, font: { size: 11 } } },
+          tooltip: {
+            filter: (i) => i.raw != null,
+            callbacks: {
+              label: (i) => Array.isArray(i.raw) ? ` Saklaw: ${(i.raw as number[])[0]}–${(i.raw as number[])[1]}`
+                : ` ${i.dataset.label}: ${i.formattedValue}`,
+            },
+          },
+        },
+        scales: { x: { ...axis, grid: { display: false } }, y: { ...axis, beginAtZero: true, ticks: { ...axis.ticks, precision: 0 } } },
+      }}
+    />
+  );
+}

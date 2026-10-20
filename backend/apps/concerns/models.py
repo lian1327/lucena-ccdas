@@ -178,6 +178,20 @@ class Concern(models.Model):
     )
     verified_at = models.DateTimeField(null=True, blank=True)
 
+    # Did the citizen confirm the fix? (asked on the tracking page after "Resolved")
+    class Confirmation(models.TextChoices):
+        PENDING = "", "Not asked / no answer"
+        FIXED = "fixed", "Citizen confirmed it is fixed"
+        NOT_FIXED = "not_fixed", "Citizen says it is NOT fixed"
+
+    citizen_confirmation = models.CharField(max_length=10, choices=Confirmation.choices, default="", blank=True, db_index=True)
+    citizen_confirmed_at = models.DateTimeField(null=True, blank=True)
+    citizen_feedback = models.TextField(blank=True)
+    recurrence_of = models.ForeignKey(
+        "self", null=True, blank=True, on_delete=models.SET_NULL, related_name="recurrences",
+        help_text="Same problem, same spot, reported again within 30 days after it was marked fixed.",
+    )
+
     is_synthetic = models.BooleanField(
         default=False, db_index=True, help_text="Generated demo/test data. Purge with generate_synthetic_data --purge.",
     )
@@ -240,8 +254,18 @@ def attachment_path(instance, filename):
 class ConcernAttachment(models.Model):
     class Kind(models.TextChoices):
         REPORT = "report", "Report photo (from reporter)"
-        RESOLUTION = "resolution", "Resolution photo (proof of fix)"
+        BEFORE = "before", "Before photo (staff, at the site before work)"
         PROGRESS = "progress", "Progress / make-safe photo (staff, internal)"
+        RESOLUTION = "resolution", "After photo (proof of fix)"
+
+    class GpsSource(models.TextChoices):
+        EXIF = "exif", "Camera (photo metadata)"
+        DEVICE = "device", "Phone location at upload"
+        NONE = "none", "No location"
+
+    class TimeSource(models.TextChoices):
+        EXIF = "exif", "Camera (photo metadata)"
+        UPLOAD = "upload", "Upload time only"
 
     concern = models.ForeignKey(Concern, on_delete=models.CASCADE, related_name="attachments")
     kind = models.CharField(max_length=12, choices=Kind.choices, default=Kind.REPORT)
@@ -249,6 +273,21 @@ class ConcernAttachment(models.Model):
     caption = models.CharField(max_length=150, blank=True)
     uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)
     uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    # Evidence metadata (staff photos). Metadata is supporting evidence, not cryptographic proof.
+    report = models.ForeignKey(
+        "cases.AccomplishmentReport", null=True, blank=True, on_delete=models.SET_NULL, related_name="photos",
+        help_text="The accomplishment report this before/after photo was submitted with.",
+    )
+    taken_at = models.DateTimeField(null=True, blank=True)
+    time_source = models.CharField(max_length=8, choices=TimeSource.choices, default=TimeSource.UPLOAD)
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    gps_accuracy_m = models.FloatField(null=True, blank=True)
+    gps_source = models.CharField(max_length=8, choices=GpsSource.choices, default=GpsSource.NONE)
+    distance_m = models.FloatField(null=True, blank=True, help_text="Distance from the reported location.")
+    phash = models.CharField(max_length=16, blank=True, db_index=True, help_text="Perceptual hash (detects reused photos).")
+    flags = models.JSONField(default=list, blank=True, help_text="Evidence check codes, see apps.cases.evidence.FLAGS.")
 
     def __str__(self):
         return f"Attachment for {self.concern.reference_no}"

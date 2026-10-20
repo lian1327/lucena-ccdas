@@ -3,6 +3,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tansta
 import { api } from "./client";
 import type { SubmitConcernInput } from "./public";
 import type {
+  SimilarReport,
   Channel,
   Department,
   Division,
@@ -184,5 +185,13 @@ export function useEncodeConcern() {
       qc.setQueryData(staffKeys.detail(data.id), data);
       qc.invalidateQueries({ queryKey: staffKeys.all });
     },
+  });
+}
+
+export function useSimilarReports(id: number, enabled = true) {
+  return useQuery({
+    queryKey: ["staff", "similar", id],
+    queryFn: async () => (await api.get<SimilarReport[]>(`/staff/concerns/${id}/similar/`)).data,
+    enabled,
   });
 }

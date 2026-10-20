@@ -3,7 +3,7 @@ import { Alert, Badge, Button, Card, Col, Form, ListGroup, Row } from "react-boo
 import { Link, useParams } from "react-router-dom";
 
 import { apiErrorMessage } from "@/api/client";
-import { useAddNote, useLinkDuplicate, useStaffConcern, useUnlinkDuplicate } from "@/api/staff";
+import { useAddNote, useLinkDuplicate, useSimilarReports, useStaffConcern, useUnlinkDuplicate } from "@/api/staff";
 import type { StaffConcernDetail } from "@/api/types";
 import { FullPageSpinner } from "@/components/FullPageSpinner";
 import { PriorityBadge } from "@/components/PriorityBadge";
@@ -52,6 +52,36 @@ function NotesPanel({ c }: { c: StaffConcernDetail }) {
   );
 }
 
+/** "Posibleng kapareho": the system suggests, a person decides. Older report = the original. */
+function SimilarSuggestions({ c, onLink, pending }: { c: StaffConcernDetail; onLink: (ref: string) => void; pending: boolean }) {
+  const q = useSimilarReports(c.id, !c.duplicate_of && !["resolved", "closed", "rejected"].includes(c.status ?? ""));
+  if (!q.data?.length) return null;
+  return (
+    <div className="border rounded p-2 mb-2 bg-light-subtle">
+      <div className="small fw-semibold mb-1"><i className="bi bi-search me-1" aria-hidden />Posibleng kapareho (parehong barangay, ≤14 araw)</div>
+      {q.data.map((s) => {
+        const older = new Date(s.created_at) <= new Date(c.created_at);
+        return (
+          <div key={s.id} className="small border-top py-1 d-flex gap-2 align-items-start">
+            <div className="flex-grow-1" style={{ minWidth: 0 }}>
+              <Link to={`/staff/cases/${s.id}`}>{s.reference_no}</Link>
+              <span className="text-secondary"> · {timeAgo(s.created_at)} na · {s.reporters} nag-report</span>
+              <div className="text-truncate">{s.title}</div>
+              <div className="text-secondary">{s.reasons.join(" · ")}</div>
+            </div>
+            {older ? (
+              <Button size="sm" variant="outline-primary" className="py-0 text-nowrap" disabled={pending}
+                onClick={() => onLink(s.reference_no)} title="Gawing duplicate ng mas naunang report na ito">I-link</Button>
+            ) : (
+              <span className="text-secondary text-nowrap" title="Mas bago ang report na iyon; i-link ito mula roon">mas bago</span>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function DuplicatesPanel({ c }: { c: StaffConcernDetail }) {
   const link = useLinkDuplicate(c.id);
   const unlink = useUnlinkDuplicate(c.id);
@@ -81,6 +111,7 @@ function DuplicatesPanel({ c }: { c: StaffConcernDetail }) {
               ))}
             </ListGroup>
           )}
+          {c.permissions.link && <SimilarSuggestions c={c} onLink={(ref) => link.mutate({ master_reference: ref })} pending={link.isPending} />}
           {c.permissions.link && (
             <Form className="d-flex gap-2" onSubmit={(e) => { e.preventDefault(); if (ref.trim()) link.mutate({ master_reference: ref.trim() }); }}>
               <Form.Control size="sm" placeholder="Duplicate ng CCD-…" value={ref} onChange={(e) => setRef(e.target.value)} />

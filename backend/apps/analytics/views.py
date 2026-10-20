@@ -433,3 +433,177 @@ class PersonLedgerView(APIView):
             "summary": summary,
             "items": accountability.ledger(person, start, end),
         })
+
+
+# ================= Executive (Step 11) =================
+from . import executive  # noqa: E402
+
+
+class IsExecutive(BasePermission):
+    def has_permission(self, request, view):
+        u = request.user
+        return bool(u and u.is_authenticated and (u.is_superuser or u.role in (R.CITY_ADMIN, R.MAYOR)))
+
+
+class ExecCategorySerializer(serializers.Serializer):
+    code = serializers.CharField()
+    name = serializers.CharField()
+    name_en = serializers.CharField()
+    count = serializers.IntegerField()
+    prev = serializers.IntegerField()
+    change = serializers.FloatField(allow_null=True)
+    avg3 = serializers.FloatField()
+
+
+class ExecBarangaySerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    rank = serializers.IntegerField(allow_null=True)
+    name = serializers.CharField()
+    population = serializers.IntegerField(allow_null=True)
+    count = serializers.IntegerField()
+    prev = serializers.IntegerField()
+    change = serializers.FloatField(allow_null=True)
+    per_1000 = serializers.FloatField(allow_null=True)
+    open_now = serializers.IntegerField()
+    overdue_now = serializers.IntegerField()
+    top_issue = serializers.CharField(allow_null=True)
+    cells = serializers.DictField(child=serializers.IntegerField())
+
+
+class RankItemSerializer(serializers.Serializer):
+    barangay = serializers.CharField()
+    barangay_id = serializers.IntegerField()
+    count = serializers.IntegerField()
+    prev = serializers.IntegerField()
+    share = serializers.FloatField(allow_null=True)
+
+
+class RankingSerializer(serializers.Serializer):
+    code = serializers.CharField()
+    name = serializers.CharField()
+    total = serializers.IntegerField()
+    top = RankItemSerializer(many=True)
+
+
+class RangeSerializer(serializers.Serializer):
+    estimate = serializers.FloatField()
+    low = serializers.IntegerField()
+    high = serializers.IntegerField()
+    method = serializers.CharField()
+    method_label = serializers.CharField()
+    backtest_mape = serializers.FloatField(allow_null=True)
+    naive_mape = serializers.FloatField(allow_null=True)
+
+
+class ForecastCategorySerializer(RangeSerializer):
+    code = serializers.CharField()
+    name = serializers.CharField()
+    series = serializers.ListField(child=serializers.IntegerField())
+
+
+class ForecastSerializer(serializers.Serializer):
+    month = serializers.CharField()
+    label = serializers.CharField()
+    months = serializers.ListField(child=serializers.CharField())
+    month_labels = serializers.ListField(child=serializers.CharField())
+    categories = ForecastCategorySerializer(many=True)
+    method = serializers.CharField()
+    backtest_mape = serializers.FloatField(allow_null=True)
+    naive_mape = serializers.FloatField(allow_null=True)
+
+
+class FocusSerializer(serializers.Serializer):
+    barangay = serializers.CharField()
+    count = serializers.IntegerField()
+
+
+class ResourceSerializer(serializers.Serializer):
+    department_id = serializers.IntegerField()
+    code = serializers.CharField()
+    name = serializers.CharField()
+    forecast = RangeSerializer()
+    capacity = serializers.FloatField()
+    backlog = serializers.IntegerField()
+    overdue = serializers.IntegerField()
+    field_staff = serializers.IntegerField()
+    per_staff = serializers.FloatField(allow_null=True)
+    demand = serializers.FloatField()
+    gap = serializers.FloatField()
+    extra_staff = serializers.IntegerField()
+    status = serializers.ChoiceField(choices=["ok", "short"])
+    focus_barangays = FocusSerializer(many=True)
+    text = serializers.CharField()
+    text_en = serializers.CharField()
+
+
+class InsightSerializer(serializers.Serializer):
+    kind = serializers.CharField()
+    level = serializers.ChoiceField(choices=["red", "amber", "info"])
+    text = serializers.CharField()
+    text_en = serializers.CharField()
+    value = serializers.FloatField(allow_null=True)
+    barangay_id = serializers.IntegerField(allow_null=True)
+    category = serializers.CharField(allow_null=True)
+
+
+class ExecTotalsSerializer(serializers.Serializer):
+    problems = serializers.IntegerField()
+    prev = serializers.IntegerField()
+    change = serializers.FloatField(allow_null=True)
+    reports = serializers.IntegerField()
+    resolved = serializers.IntegerField()
+    open_now = serializers.IntegerField()
+    overdue_now = serializers.IntegerField()
+    barangays_reporting = serializers.IntegerField()
+
+
+class ExecutiveSerializer(serializers.Serializer):
+    month = serializers.CharField()
+    label = serializers.CharField()
+    partial = serializers.BooleanField()
+    start = serializers.DateTimeField()
+    end = serializers.DateTimeField()
+    prev_label = serializers.CharField()
+    totals = ExecTotalsSerializer()
+    categories = ExecCategorySerializer(many=True)
+    barangays = ExecBarangaySerializer(many=True)
+    rankings = RankingSerializer(many=True)
+    forecast = ForecastSerializer()
+    resources = ResourceSerializer(many=True)
+    insights = InsightSerializer(many=True)
+    offices = OfficeRowSerializer(many=True)
+    city = KpiSerializer()
+
+
+class ExecutiveView(APIView):
+    """The Mayor's monthly picture. ?month=YYYY-MM (default: last complete month)."""
+
+    permission_classes = [IsExecutive]
+
+    @extend_schema(parameters=[OpenApiParameter("month", str, description="YYYY-MM")], responses=ExecutiveSerializer,
+                   operation_id="analytics_executive")
+    def get(self, request):
+        data = executive.overview(request.query_params.get("month"))
+        rows, city = kpis.scorecard(data["start"], data["end"], None)
+        return Response({**data, "offices": rows, "city": city})
+
+
+class ExecutiveBarangayCSV(APIView):
+    permission_classes = [IsExecutive]
+
+    @extend_schema(parameters=[OpenApiParameter("month", str)], responses={(200, "text/csv"): str},
+                   operation_id="analytics_executive_barangays_csv")
+    def get(self, request):
+        data = executive.overview(request.query_params.get("month"))
+        codes = [c["code"] for c in data["categories"]]
+        resp = HttpResponse(content_type="text/csv; charset=utf-8")
+        resp["Content-Disposition"] = f'attachment; filename="ccadss-barangays-{data["month"]}.csv"'
+        resp.write("﻿")
+        w = csv.writer(resp)
+        w.writerow([f"CCADSS Barangay × issue — {data['label']} (problems, duplicates merged)"])
+        w.writerow(["rank", "barangay", "population", "problems", "per_1000", "prev_month", "change", "open_now", "overdue_now"]
+                   + [c["name_en"] for c in data["categories"]])
+        for b in data["barangays"]:
+            w.writerow([b["rank"] or "", b["name"], b["population"] or "", b["count"], b["per_1000"] or "", b["prev"],
+                        "" if b["change"] is None else b["change"], b["open_now"], b["overdue_now"]] + [b["cells"][c] for c in codes])
+        return resp

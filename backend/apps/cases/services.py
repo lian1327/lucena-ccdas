@@ -9,8 +9,8 @@ from apps.concerns.models import Concern, ConcernAttachment, StatusHistory
 from apps.concerns.services import change_status
 from apps.priority.services import compute_priority
 
-from . import deadlines
-from .models import Case, CaseNote, Endorsement, EndorsementFollowUp, PriorityLevel
+from . import deadlines, evidence
+from .models import AccomplishmentReport, Case, CaseNote, Endorsement, EndorsementFollowUp, PriorityLevel
 
 S = Concern.Status
 FOLLOW_UP_DAYS = 7
@@ -42,9 +42,28 @@ def _public_entry(concern, user, remarks):
         )
 
 
-def _attach(concern, user, photos, kind=ConcernAttachment.Kind.RESOLUTION):
-    for f in photos:
-        ConcernAttachment.objects.create(concern=concern, file=f, uploaded_by=user, kind=kind)
+def _attach(concern, user, photos, kind=ConcernAttachment.Kind.RESOLUTION, meta=(), report=None):
+    """Save staff photos with their evidence metadata and run the proof checks on each."""
+    case = getattr(concern, "case", None)
+    meta = list(meta or [])
+    before_hashes = []
+    if kind == ConcernAttachment.Kind.RESOLUTION:
+        before_hashes = list(concern.attachments.filter(kind=ConcernAttachment.Kind.BEFORE)
+                             .exclude(phash="").values_list("phash", flat=True))
+    saved = []
+    for i, f in enumerate(photos):
+        m = evidence.build_metadata(f, meta[i] if i < len(meta) else {})
+        att = ConcernAttachment(
+            concern=concern, file=f, uploaded_by=user, kind=kind, report=report,
+            latitude=evidence.to_decimal(m["latitude"]), longitude=evidence.to_decimal(m["longitude"]),
+            gps_source=m["gps_source"], gps_accuracy_m=m["gps_accuracy_m"],
+            taken_at=m["taken_at"], time_source=m["time_source"], phash=m["phash"],
+        )
+        att.uploaded_at = timezone.now()
+        evidence.check(att, case, before_hashes)
+        att.save()
+        saved.append(att)
+    return saved
 
 
 def _move(concern, user, status, remarks, is_public=True):
@@ -250,7 +269,7 @@ def set_priority(concern, user, *, priority_level, reason):
 
 
 @transaction.atomic
-def respond(concern, user, *, remarks, photos=()):
+def respond(concern, user, *, remarks, photos=(), photo_meta=()):
     """First field action / make-safe (e.g. barricade an open manhole). Stops the response clock."""
     case = concern.case
     if case.responded_at:
@@ -259,7 +278,7 @@ def respond(concern, user, *, remarks, photos=()):
     case.responded_by = user
     case.response_remarks = remarks
     case.save(update_fields=["responded_at", "responded_by", "response_remarks"])
-    _attach(concern, user, photos, kind=ConcernAttachment.Kind.PROGRESS)
+    _attach(concern, user, photos, kind=ConcernAttachment.Kind.PROGRESS, meta=photo_meta)
     _move(concern, user, S.IN_PROGRESS, remarks)
     return case
 
@@ -294,9 +313,11 @@ def assign_person(concern, user, *, person, remarks=""):
 
 
 @transaction.atomic
-def inspect(concern, user, *, findings, action_plan="", scheduled_for=None, public_message=""):
-    """Site inspection → findings + plan + schedule. Citizen is told when work is scheduled (Charter step 'inform client')."""
+def inspect(concern, user, *, findings, action_plan="", scheduled_for=None, public_message="",
+            photos=(), photo_meta=()):
+    """Site inspection → findings + plan + schedule + BEFORE photos. Citizen is told when work is scheduled."""
     case = concern.case
+    _attach(concern, user, photos, kind=ConcernAttachment.Kind.BEFORE, meta=photo_meta)
     case.inspected_at = timezone.now()
     case.inspected_by = user
     if not case.responded_at:  # site inspection counts as the first response
@@ -316,35 +337,80 @@ def inspect(concern, user, *, findings, action_plan="", scheduled_for=None, publ
 
 
 @transaction.atomic
-def complete_work(concern, user, *, remarks, photos):
-    """Field reports the work done, with proof. Citizen still sees 'In Progress' until a supervisor validates."""
-    if not photos and getattr(settings, "REQUIRE_RESOLUTION_PHOTO", True):
-        raise WorkflowError("Attach at least one photo of the completed work.")
+def complete_work(concern, user, *, remarks, photos, photo_meta=(), before_photos=(), before_meta=(),
+                  started_at=None, finished_at=None, crew=(), other_workers="", materials=(), equipment=""):
+    """
+    Field reports the work done = an accomplishment report: what was done, who was there, what was used,
+    plus BEFORE and AFTER photos with location/time. Citizen still sees 'In Progress' until a supervisor validates.
+    """
+    require = getattr(settings, "REQUIRE_RESOLUTION_PHOTO", True)
+    if not photos and require:
+        raise WorkflowError("Kailangan ng 'after' na litrato ng natapos na trabaho.")
+    has_before = concern.attachments.filter(kind=ConcernAttachment.Kind.BEFORE).exists()
+    if require and not has_before and not before_photos:
+        raise WorkflowError("Kailangan ng 'before' na litrato (kuha bago simulan ang trabaho).")
+    if started_at and finished_at and finished_at < started_at:
+        raise WorkflowError("Mas maaga ang 'natapos' kaysa sa 'sinimulan'.")
+    now = timezone.now()
+    if finished_at and finished_at > now + timedelta(minutes=10):
+        raise WorkflowError("Hindi puwedeng nasa hinaharap ang oras ng pagtatapos.")
     case = concern.case
-    _attach(concern, user, photos)
-    case.work_completed_at = timezone.now()
+    report = AccomplishmentReport.objects.create(
+        case=case, submitted_by=user, work_done=remarks, started_at=started_at, finished_at=finished_at or now,
+        other_workers=other_workers, equipment=equipment,
+        materials=[m for m in (materials or []) if str(m.get("item", "")).strip()],
+    )
+    report.crew.set({*(crew or []), user})
+    _attach(concern, user, before_photos, kind=ConcernAttachment.Kind.BEFORE, meta=before_meta, report=report)
+    after = _attach(concern, user, photos, meta=photo_meta, report=report)
+    case.work_completed_at = now
     case.work_completed_by = user
     case.completion_remarks = remarks
     case.save(update_fields=["work_completed_at", "work_completed_by", "completion_remarks"])
     _move(concern, user, S.IN_PROGRESS, "Natapos na ang trabaho; hinihintay ang beripikasyon ng supervisor.", is_public=False)
-    _note(case, user, f"Work reported complete: {remarks}")
+    reds = evidence.red_flags(after + list(concern.attachments.filter(kind=ConcernAttachment.Kind.BEFORE)))
+    warn = f" ⚠ Photo checks: {', '.join(evidence.FLAGS[r][1] for r in reds)}." if reds else ""
+    _note(case, user, f"Accomplishment report submitted: {remarks}{warn}")
     return case
 
 
 @transaction.atomic
-def validate(concern, user, *, approve, remarks="", photos=()):
-    """Supervisor confirms (→ Resolved, shown to citizen) or sends it back to the crew."""
+def validate(concern, user, *, approve, remarks="", photos=(), photo_meta=(), override_reason=""):
+    """
+    Supervisor confirms (→ Resolved, shown to citizen) or sends it back to the crew.
+    If the photo checks raised a red flag, approval needs a written reason, recorded against the validator.
+    """
     case = concern.case
+    report = case.reports.filter(status=AccomplishmentReport.Status.SUBMITTED).first()
+    now = timezone.now()
     if not approve:
         if not remarks:
             raise WorkflowError("Explain what still needs to be done.")
         case.work_completed_at = None
         case.work_completed_by = None
         case.save(update_fields=["work_completed_at", "work_completed_by"])
+        if report:
+            report.status, report.reviewed_by, report.reviewed_at, report.review_remarks = \
+                AccomplishmentReport.Status.RETURNED, user, now, remarks
+            report.save(update_fields=["status", "reviewed_by", "reviewed_at", "review_remarks"])
         _note(case, user, f"Returned to field: {remarks}")
         return case
 
-    _attach(concern, user, photos)
+    _attach(concern, user, photos, meta=photo_meta, report=report)
+    staff_photos = concern.attachments.filter(kind__in=[ConcernAttachment.Kind.BEFORE, ConcernAttachment.Kind.RESOLUTION])
+    reds = evidence.red_flags(staff_photos)
+    if reds and len((override_reason or "").strip()) < 15:
+        raise WorkflowError(
+            "May red flag ang mga litrato (" + "; ".join(evidence.FLAGS[r][1] for r in reds) + "). "
+            "Isulat kung bakit aaprubahan pa rin (hal. 'Personal kong ininspeksyon kahapon; mahina ang GPS sa ilalim ng tulay')."
+        )
+    if report:
+        report.status, report.reviewed_by, report.reviewed_at = AccomplishmentReport.Status.APPROVED, user, now
+        report.review_remarks = remarks
+        report.override_reason = override_reason.strip() if reds else ""
+        report.save(update_fields=["status", "reviewed_by", "reviewed_at", "review_remarks", "override_reason"])
+    if reds:
+        _note(case, user, f"Approved despite photo flags ({', '.join(reds)}): {override_reason.strip()}")
     has_proof = concern.attachments.filter(kind=ConcernAttachment.Kind.RESOLUTION).exists()
     if not has_proof and getattr(settings, "REQUIRE_RESOLUTION_PHOTO", True):
         raise WorkflowError("A resolution photo is required before marking this resolved.")
@@ -461,6 +527,45 @@ def reject(concern, user, *, remarks):
 @transaction.atomic
 def close(concern, user, *, remarks=""):
     change_status(concern, S.CLOSED, user, remarks or "Isinara na ang report. Salamat sa pakikipagtulungan!")
+
+
+@transaction.atomic
+def citizen_confirm(concern, *, fixed, feedback=""):
+    """
+    The reporter answers "Naayos ba talaga?" on the tracking page.
+      fixed     → recorded; a resolved report is closed (loop closed by the citizen themself)
+      not fixed → the case is reopened, the office is told, and it counts as a reopen in the office KPIs
+    """
+    if concern.citizen_confirmation:
+        raise WorkflowError("Nakapagbigay ka na ng sagot para sa report na ito.")
+    if concern.status not in (S.RESOLVED, S.CLOSED) or not concern.resolved_at:
+        raise WorkflowError("Maaari lamang sumagot kapag naayos na ang report.")
+    if timezone.now() - concern.resolved_at > timedelta(days=CONFIRM_WINDOW_DAYS):
+        raise WorkflowError(f"Lampas na sa {CONFIRM_WINDOW_DAYS} araw mula nang maayos. Mag-report muli kung bumalik ang problema.")
+    concern.citizen_confirmation = Concern.Confirmation.FIXED if fixed else Concern.Confirmation.NOT_FIXED
+    concern.citizen_confirmed_at = timezone.now()
+    concern.citizen_feedback = (feedback or "").strip()[:1000]
+    concern.save(update_fields=["citizen_confirmation", "citizen_confirmed_at", "citizen_feedback", "updated_at"])
+    if fixed:
+        if concern.status == S.RESOLVED:
+            change_status(concern, S.CLOSED, None, "Kinumpirma ng nag-report na naayos na. Salamat!",
+                          enforce=False, cascade=False)
+        return concern
+    master = concern.duplicate_of or concern  # one reporter of a shared problem can reopen the shared case
+    msg = "Ayon sa nag-report, HINDI pa naayos" + (f": {concern.citizen_feedback}" if concern.citizen_feedback else ".")
+    case = getattr(master, "case", None)
+    if case:
+        case.work_completed_at = case.validated_at = case.resolved_at = None
+        case.work_completed_by = case.validated_by = None
+        case.save(update_fields=["work_completed_at", "validated_at", "resolved_at", "work_completed_by", "validated_by"])
+        _note(case, None, f"Citizen disputed the fix ({concern.reference_no}). {msg}")
+    change_status(master, S.IN_PROGRESS, None, msg + " Binuksan muli ang kaso.", enforce=False)
+    if concern is not master and concern.status != S.IN_PROGRESS:
+        change_status(concern, S.IN_PROGRESS, None, msg + " Binuksan muli ang kaso.", enforce=False, cascade=False)
+    return concern
+
+
+CONFIRM_WINDOW_DAYS = 30
 
 
 @transaction.atomic

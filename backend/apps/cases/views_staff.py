@@ -36,6 +36,7 @@ from .serializers_staff import (
     PriorityLevelSerializer,
     RemarksSerializer,
     RespondSerializer,
+    SimilarReportSerializer,
     ReturnSerializer,
     SetPrioritySerializer,
     RouteSerializer,
@@ -181,7 +182,8 @@ class StaffConcernViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet
     def _run(self, perm, ser_cls, fn, *, files=None, map_kwargs=None):
         concern = self._guard(perm)
         data = _multipart_lists(self.request, *(files or ())) if files else self.request.data
-        ser = ser_cls(data=data)
+        case = getattr(concern, "case", None)
+        ser = ser_cls(data=data, context={"request": self.request, "department_id": case.department_id if case else None})
         ser.is_valid(raise_exception=True)
         kwargs = dict(ser.validated_data)
         if map_kwargs:
@@ -272,16 +274,18 @@ class StaffConcernViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet
 
         return self._run("assign_person", AssignPersonSerializer, services.assign_person, map_kwargs=check)
 
-    @extend_schema(request=InspectSerializer, responses=StaffConcernDetailSerializer)
+    @extend_schema(request={"multipart/form-data": InspectSerializer, "application/json": InspectSerializer},
+                   responses=StaffConcernDetailSerializer)
     @action(detail=True, methods=["post"])
     def inspect(self, request, pk=None):
-        return self._run("inspect", InspectSerializer, services.inspect)
+        return self._run("inspect", InspectSerializer, services.inspect, files=["photos"],
+                         map_kwargs=lambda kw: {**kw, "photos": kw.get("photos", [])})
 
     @extend_schema(request={"multipart/form-data": CompleteSerializer}, responses=StaffConcernDetailSerializer)
     @action(detail=True, methods=["post"])
     def complete(self, request, pk=None):
-        return self._run("complete", CompleteSerializer, services.complete_work, files=["photos"],
-                         map_kwargs=lambda kw: {**kw, "photos": kw.get("photos", [])})
+        return self._run("complete", CompleteSerializer, services.complete_work, files=["photos", "before_photos"],
+                         map_kwargs=lambda kw: {**kw, "photos": kw.get("photos", []), "before_photos": kw.get("before_photos", [])})
 
     @extend_schema(request={"multipart/form-data": ValidateSerializer}, responses=StaffConcernDetailSerializer)
     @action(detail=True, methods=["post"])
@@ -348,6 +352,15 @@ class StaffConcernViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet
         except services.WorkflowError as e:
             raise ValidationError({"master_reference": str(e)})
         return self._detail(concern)
+
+    @extend_schema(responses=SimilarReportSerializer(many=True))
+    @action(detail=True, methods=["get"])
+    def similar(self, request, pk=None):
+        """'Posibleng kapareho': same barangay, last 14 days, may be the same problem. Suggestions only."""
+        from apps.concerns.services import similar_reports
+
+        concern = self.get_object()
+        return Response(SimilarReportSerializer(similar_reports(concern), many=True).data)
 
     @extend_schema(request=None, responses=StaffConcernDetailSerializer)
     @action(detail=True, methods=["post"], url_path="unlink-duplicate")

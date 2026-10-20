@@ -221,6 +221,39 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/staff/analytics/executive/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The Mayor's monthly picture. ?month=YYYY-MM (default: last complete month). */
+        get: operations["analytics_executive"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/analytics/executive/barangays.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["analytics_executive_barangays_csv"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/staff/analytics/offices/": {
         parameters: {
             query?: never;
@@ -662,6 +695,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/staff/concerns/{id}/similar/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description 'Posibleng kapareho': same barangay, last 14 days, may be the same problem. Suggestions only. */
+        get: operations["v1_staff_concerns_similar_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/staff/concerns/{id}/unlink-duplicate/": {
         parameters: {
             query?: never;
@@ -1042,6 +1092,7 @@ export interface components {
             /** Format: date-time */
             returned_at?: string | null;
             return_reason?: string;
+            /** Format: int64 */
             return_count?: number;
             readonly priority_level: components["schemas"]["PriorityLevel"];
             priority_reason?: string;
@@ -1174,6 +1225,7 @@ export interface components {
             /** Format: date-time */
             next_follow_up_at?: string | null;
             readonly follow_up_due: boolean;
+            /** Format: int64 */
             follow_up_count?: number;
             readonly follow_ups: components["schemas"]["FollowUp"][];
         };
@@ -1206,16 +1258,9 @@ export interface components {
         EscalationLevelEnum: 0 | 1 | 2 | 3;
         EvidenceFlag: {
             code: string;
-            level: components["schemas"]["EvidenceFlagLevelEnum"];
+            level: components["schemas"]["LevelFa5Enum"];
             label: string;
         };
-        /**
-         * @description * `red` - red
-         *     * `amber` - amber
-         *     * `info` - info
-         * @enum {string}
-         */
-        EvidenceFlagLevelEnum: "red" | "amber" | "info";
         EvidenceSummary: {
             before: number;
             after: number;
@@ -1224,6 +1269,65 @@ export interface components {
             verified: boolean;
             red_flags: components["schemas"]["EvidenceFlag"][];
             amber_flags: components["schemas"]["EvidenceFlag"][];
+        };
+        ExecBarangay: {
+            id: number;
+            rank: number | null;
+            name: string;
+            population: number | null;
+            count: number;
+            prev: number;
+            /** Format: double */
+            change: number | null;
+            /** Format: double */
+            per_1000: number | null;
+            open_now: number;
+            overdue_now: number;
+            top_issue: string | null;
+            cells: {
+                [key: string]: number;
+            };
+        };
+        ExecCategory: {
+            code: string;
+            name: string;
+            name_en: string;
+            count: number;
+            prev: number;
+            /** Format: double */
+            change: number | null;
+            /** Format: double */
+            avg3: number;
+        };
+        ExecTotals: {
+            problems: number;
+            prev: number;
+            /** Format: double */
+            change: number | null;
+            reports: number;
+            resolved: number;
+            open_now: number;
+            overdue_now: number;
+            barangays_reporting: number;
+        };
+        Executive: {
+            month: string;
+            label: string;
+            partial: boolean;
+            /** Format: date-time */
+            start: string;
+            /** Format: date-time */
+            end: string;
+            prev_label: string;
+            totals: components["schemas"]["ExecTotals"];
+            categories: components["schemas"]["ExecCategory"][];
+            barangays: components["schemas"]["ExecBarangay"][];
+            rankings: components["schemas"]["Ranking"][];
+            forecast: components["schemas"]["Forecast"];
+            resources: components["schemas"]["Resource"][];
+            insights: components["schemas"]["Insight"][];
+            offices: components["schemas"]["OfficeRow"][];
+            city: components["schemas"]["Kpi"];
         };
         ExtendRequest: {
             /** Format: date */
@@ -1238,6 +1342,10 @@ export interface components {
             level: string;
             label: string;
         };
+        Focus: {
+            barangay: string;
+            count: number;
+        };
         FollowUp: {
             readonly id: number;
             /** Format: date-time */
@@ -1246,6 +1354,33 @@ export interface components {
             /** @description call / letter / email / visit / meeting */
             method?: string;
             notes: string;
+        };
+        Forecast: {
+            month: string;
+            label: string;
+            months: string[];
+            month_labels: string[];
+            categories: components["schemas"]["ForecastCategory"][];
+            method: string;
+            /** Format: double */
+            backtest_mape: number | null;
+            /** Format: double */
+            naive_mape: number | null;
+        };
+        ForecastCategory: {
+            /** Format: double */
+            estimate: number;
+            low: number;
+            high: number;
+            method: string;
+            method_label: string;
+            /** Format: double */
+            backtest_mape: number | null;
+            /** Format: double */
+            naive_mape: number | null;
+            code: string;
+            name: string;
+            series: number[];
         };
         /**
          * @description * `exif` - Camera (photo metadata)
@@ -1304,6 +1439,16 @@ export interface components {
             points_considered: number;
             /** @description Isolated reports not in any hotspot */
             noise: number;
+        };
+        Insight: {
+            kind: string;
+            level: components["schemas"]["LevelFa5Enum"];
+            text: string;
+            text_en: string;
+            /** Format: double */
+            value: number | null;
+            barangay_id: number | null;
+            category: string | null;
         };
         InspectRequest: {
             findings: string;
@@ -1391,6 +1536,13 @@ export interface components {
             gps_source: string;
             flags: components["schemas"]["Flag"][];
         };
+        /**
+         * @description * `red` - red
+         *     * `amber` - amber
+         *     * `info` - info
+         * @enum {string}
+         */
+        LevelFa5Enum: "red" | "amber" | "info";
         LinkDuplicateRequest: {
             master_reference: string;
         };
@@ -1572,6 +1724,21 @@ export interface components {
             escalation_level: number;
             stage: string;
         };
+        PaginatedSimilarReportList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["SimilarReport"][];
+        };
         PaginatedStaffConcernListList: {
             /** @example 123 */
             count: number;
@@ -1680,10 +1847,17 @@ export interface components {
             name: string;
             name_fil?: string;
             description?: string;
-            /** @description Calendar hours (emergencies don't wait for working days). */
+            /**
+             * Format: int64
+             * @description Calendar hours (emergencies don't wait for working days).
+             */
             response_hours?: number | null;
+            /** Format: int64 */
             response_working_days?: number | null;
-            /** @description Working days. Empty = use the ARTA class maximum. */
+            /**
+             * Format: int64
+             * @description Working days. Empty = use the ARTA class maximum.
+             */
             resolution_cap_days?: number | null;
             /** @description Bootstrap color: danger, warning, info, secondary */
             color?: string;
@@ -1831,9 +2005,63 @@ export interface components {
             /** @description If the reporter left a mobile number, the last 4 digits are asked so a stranger can't answer for them. */
             readonly confirm_needs_mobile: boolean;
         };
+        Range: {
+            /** Format: double */
+            estimate: number;
+            low: number;
+            high: number;
+            method: string;
+            method_label: string;
+            /** Format: double */
+            backtest_mape: number | null;
+            /** Format: double */
+            naive_mape: number | null;
+        };
+        RankItem: {
+            barangay: string;
+            barangay_id: number;
+            count: number;
+            prev: number;
+            /** Format: double */
+            share: number | null;
+        };
+        Ranking: {
+            code: string;
+            name: string;
+            total: number;
+            top: components["schemas"]["RankItem"][];
+        };
         RemarksRequest: {
             remarks: string;
         };
+        Resource: {
+            department_id: number;
+            code: string;
+            name: string;
+            forecast: components["schemas"]["Range"];
+            /** Format: double */
+            capacity: number;
+            backlog: number;
+            overdue: number;
+            field_staff: number;
+            /** Format: double */
+            per_staff: number | null;
+            /** Format: double */
+            demand: number;
+            /** Format: double */
+            gap: number;
+            extra_staff: number;
+            status: components["schemas"]["ResourceStatusEnum"];
+            focus_barangays: components["schemas"]["Focus"][];
+            text: string;
+            text_en: string;
+        };
+        /**
+         * @description * `ok` - ok
+         *     * `short` - short
+         * @enum {string}
+         */
+        ResourceStatusEnum: "ok" | "short";
         RespondRequest: {
             remarks: string;
             photos?: string[];
@@ -1893,6 +2121,20 @@ export interface components {
          * @enum {integer}
          */
         SeverityEnum: 1 | 2 | 3 | 4 | 5;
+        SimilarReport: {
+            id: number;
+            reference_no: string;
+            title: string;
+            status: string;
+            /** Format: date-time */
+            created_at: string;
+            category: string | null;
+            distance_m: number | null;
+            /** Format: double */
+            score: number;
+            reasons: string[];
+            reporters: number;
+        };
         StaffConcernDetail: {
             readonly id: number;
             readonly reference_no: string;
@@ -1955,7 +2197,10 @@ export interface components {
             subcategory_code?: string;
             severity?: components["schemas"]["SeverityEnum"];
             severity_display: string;
-            /** @description Estimated number of affected citizens. */
+            /**
+             * Format: int64
+             * @description Estimated number of affected citizens.
+             */
             affected_count?: number;
             /** Format: decimal */
             latitude?: string | null;
@@ -2327,12 +2572,7 @@ export interface operations {
     };
     v1_public_barangays_list: {
         parameters: {
-            query?: {
-                /** @description Which field to use when ordering the results. */
-                ordering?: string;
-                /** @description A search term. */
-                search?: string;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -2351,12 +2591,7 @@ export interface operations {
     };
     v1_public_categories_list: {
         parameters: {
-            query?: {
-                /** @description Which field to use when ordering the results. */
-                ordering?: string;
-                /** @description A search term. */
-                search?: string;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -2486,6 +2721,49 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Accountability"];
+                };
+            };
+        };
+    };
+    analytics_executive: {
+        parameters: {
+            query?: {
+                /** @description YYYY-MM */
+                month?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Executive"];
+                };
+            };
+        };
+    };
+    analytics_executive_barangays_csv: {
+        parameters: {
+            query?: {
+                month?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
                 };
             };
         };
@@ -2627,14 +2905,10 @@ export interface operations {
                 barangay?: number;
                 category?: string;
                 include_duplicates?: boolean;
-                /** @description Which field to use when ordering the results. */
-                ordering?: string;
                 /** @description A page number within the paginated result set. */
                 page?: number;
                 /** @description Search reference no., title, landmark, description */
                 q?: string;
-                /** @description A search term. */
-                search?: string;
                 /** @description Inbox view (default: open) */
                 tab?: "all" | "closed" | "endorsed" | "for_acceptance" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
             };
@@ -3394,6 +3668,38 @@ export interface operations {
             };
         };
     };
+    v1_staff_concerns_similar_list: {
+        parameters: {
+            query?: {
+                barangay?: number;
+                category?: string;
+                include_duplicates?: boolean;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Search reference no., title, landmark, description */
+                q?: string;
+                /** @description Inbox view (default: open) */
+                tab?: "all" | "closed" | "endorsed" | "for_acceptance" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
+            };
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this concern. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedSimilarReportList"];
+                };
+            };
+        };
+    };
     v1_staff_concerns_unlink_duplicate_create: {
         parameters: {
             query?: {
@@ -3498,10 +3804,6 @@ export interface operations {
         parameters: {
             query?: {
                 kind?: "external" | "internal";
-                /** @description Which field to use when ordering the results. */
-                ordering?: string;
-                /** @description A search term. */
-                search?: string;
             };
             header?: never;
             path?: never;
@@ -3523,10 +3825,6 @@ export interface operations {
         parameters: {
             query: {
                 department: number;
-                /** @description Which field to use when ordering the results. */
-                ordering?: string;
-                /** @description A search term. */
-                search?: string;
             };
             header?: never;
             path?: never;
@@ -3649,12 +3947,7 @@ export interface operations {
     };
     v1_staff_priority_levels_list: {
         parameters: {
-            query?: {
-                /** @description Which field to use when ordering the results. */
-                ordering?: string;
-                /** @description A search term. */
-                search?: string;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -3695,10 +3988,6 @@ export interface operations {
             query: {
                 department: number;
                 division?: number;
-                /** @description Which field to use when ordering the results. */
-                ordering?: string;
-                /** @description A search term. */
-                search?: string;
             };
             header?: never;
             path?: never;

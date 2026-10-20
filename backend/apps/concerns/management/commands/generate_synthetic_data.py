@@ -128,6 +128,8 @@ class Command(BaseCommand):
                 stats["duplicates"] += self._duplicates(master)
                 if (i + 1) % 250 == 0:
                     self.stdout.write(f"  … {i + 1}/{o['count']}")
+        from django.core.management import call_command
+        call_command("generate_proof_data", seed=o["seed"], stdout=self.stdout)  # Step 10: before/after proof, reports
         self.stdout.write("  computing priority scores…")
         with transaction.atomic():
             for c in Concern.objects.filter(is_synthetic=True).select_related("category").iterator():

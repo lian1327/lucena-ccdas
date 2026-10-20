@@ -1,7 +1,7 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
 import { api } from "./client";
-import type { Accountability, Ledger, OfficeDetail, People, Scorecard } from "./types";
+import type { Accountability, Executive, Ledger, OfficeDetail, People, Scorecard } from "./types";
 
 export type Period = "this_month" | "last_month" | "quarter" | "90d" | "12m";
 
@@ -55,4 +55,23 @@ export function useLedger(id: number, period: Period) {
     queryFn: async () => (await api.get<Ledger>(`/staff/analytics/people/${id}/`, { params: { period } })).data,
     enabled: id > 0,
   });
+}
+
+// ----- Step 11: executive -----
+export function useExecutive(month?: string) {
+  return useQuery({
+    queryKey: ["analytics", "executive", month ?? "default"],
+    queryFn: async () => (await api.get<Executive>("/staff/analytics/executive/", { params: { month } })).data,
+    placeholderData: keepPreviousData,
+  });
+}
+
+export async function downloadBarangayCsv(month: string) {
+  const res = await api.get("/staff/analytics/executive/barangays.csv", { params: { month }, responseType: "blob" });
+  const url = URL.createObjectURL(res.data as Blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `ccadss-barangays-${month}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
 }

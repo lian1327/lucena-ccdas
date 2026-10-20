@@ -1,3 +1,4 @@
+from datetime import timedelta
 import re
 
 from django.conf import settings
@@ -228,6 +229,9 @@ class PublicTrackSerializer(serializers.ModelSerializer):
     deadline_extended = serializers.SerializerMethodField()
     endorsed_to = serializers.SerializerMethodField()
     priority_level = serializers.SerializerMethodField()
+    before_photos = serializers.SerializerMethodField()
+    can_confirm = serializers.SerializerMethodField()
+    confirm_needs_mobile = serializers.SerializerMethodField()
 
     class Meta:
         model = Concern
@@ -236,6 +240,7 @@ class PublicTrackSerializer(serializers.ModelSerializer):
             "reference_no", "title", "category", "subcategory", "barangay", "status", "status_display",
             "assigned_office", "linked_to_reference", "created_at", "resolved_at", "timeline",
             "resolution_photos", "target_date", "deadline_extended", "endorsed_to", "priority_level",
+            "before_photos", "citizen_confirmation", "can_confirm", "confirm_needs_mobile",
         ]
 
     def get_assigned_office(self, obj) -> str | None:
@@ -275,6 +280,21 @@ class PublicTrackSerializer(serializers.ModelSerializer):
         source = obj.duplicate_of if obj.duplicate_of_id else obj
         return [a.file.url for a in source.attachments.all() if a.kind == "resolution"]
 
+    def get_before_photos(self, obj) -> list[str]:
+        """Staff 'before' photos, shown beside the 'after' photos so the citizen can compare."""
+        source = obj.duplicate_of if obj.duplicate_of_id else obj
+        return [a.file.url for a in source.attachments.all() if a.kind == "before"]
+
+    def get_can_confirm(self, obj) -> bool:
+        from apps.cases.services import CONFIRM_WINDOW_DAYS
+
+        return bool(not obj.citizen_confirmation and obj.status in Concern.DONE_STATUSES and obj.resolved_at
+                    and timezone.now() - obj.resolved_at <= timedelta(days=CONFIRM_WINDOW_DAYS))
+
+    def get_confirm_needs_mobile(self, obj) -> bool:
+        """If the reporter left a mobile number, the last 4 digits are asked so a stranger can't answer for them."""
+        return bool(obj.reporter_contact)
+
     @extend_schema_field(PublicTimelineSerializer(many=True))
     def get_timeline(self, obj):
         return PublicTimelineSerializer(obj.history.filter(is_public=True), many=True).data
@@ -313,3 +333,9 @@ class PublicStatsSerializer(serializers.Serializer):
     by_category = PublicStatsCategorySerializer(many=True)
     by_barangay = PublicStatsBarangaySerializer(many=True)
     generated_at = serializers.DateTimeField()
+
+
+class PublicConfirmSerializer(serializers.Serializer):
+    fixed = serializers.BooleanField()
+    feedback = serializers.CharField(required=False, allow_blank=True, max_length=1000)
+    mobile_last4 = serializers.RegexField(r"^\d{4}$", required=False, allow_blank=True)

@@ -22,6 +22,7 @@ from .serializers import (
     PublicBarangaySerializer,
     PublicCategorySerializer,
     PublicConcernCreateSerializer,
+    PublicConfirmSerializer,
     PublicStatsSerializer,
     PublicTrackSerializer,
 )
@@ -75,6 +76,34 @@ class PublicTrackView(PublicMixin, generics.RetrieveAPIView):
             Concern.objects.select_related("category", "subcategory", "barangay", "duplicate_of", "case__department"),
             reference_no=ref,
         )
+
+
+class PublicConfirmView(PublicMixin, APIView):
+    """
+    "Naayos ba talaga?" — the reporter confirms or disputes the fix (within 30 days, once).
+    Not fixed → the case reopens for the office and counts against it. Throttled like submissions.
+    """
+
+    throttle_scope = "public_submit"
+
+    @extend_schema(request=PublicConfirmSerializer, responses=PublicTrackSerializer)
+    def post(self, request, reference_no):
+        from apps.cases.services import WorkflowError, citizen_confirm
+
+        concern = get_object_or_404(Concern, reference_no=reference_no.strip().upper())
+        ser = PublicConfirmSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        if concern.reporter_contact:
+            digits = "".join(ch for ch in concern.reporter_contact if ch.isdigit())
+            if ser.validated_data.get("mobile_last4") != digits[-4:]:
+                return Response({"detail": "Hindi tugma ang huling 4 na numero ng mobile na ginamit sa report."},
+                                status=status.HTTP_400_BAD_REQUEST)
+        try:
+            citizen_confirm(concern, fixed=ser.validated_data["fixed"], feedback=ser.validated_data.get("feedback", ""))
+        except WorkflowError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        concern.refresh_from_db()
+        return Response(PublicTrackSerializer(concern, context={"request": request}).data)
 
 
 class PublicStatsView(PublicMixin, APIView):

@@ -76,3 +76,11 @@ export type People = S["People"];
 export type PersonRow = S["PersonRow"];
 export type Ledger = S["Ledger"];
 export type LedgerItem = S["LedgerItem"];
+
+// ----- Executive (Step 11) -----
+export type Executive = S["Executive"];
+export type ExecBarangay = S["ExecBarangay"];
+export type Insight = S["Insight"];
+export type Resource = S["Resource"];
+export type ForecastCategory = S["ForecastCategory"];
+export type SimilarReport = S["SimilarReport"];

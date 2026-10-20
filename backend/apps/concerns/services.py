@@ -1,5 +1,6 @@
 """Domain services for concerns. Views stay thin; workflow logic lives here."""
 import math
+import re
 from datetime import timedelta
 
 from django.conf import settings
@@ -51,6 +52,34 @@ def find_master_duplicate(concern):
     return None
 
 
+RECURRENCE_RADIUS_M = 75
+RECURRENCE_WINDOW_DAYS = 30
+
+
+def find_recurrence(concern, now=None):
+    """
+    A concern marked fixed (resolved/closed) within the last 30 days, same problem type, within 75 m.
+    This is the "fake fix" signal: the pothole that was "patched" and is back three weeks later.
+    """
+    if not (concern.category_id and concern.latitude is not None and concern.longitude is not None):
+        return None
+    now = now or concern.created_at or timezone.now()
+    dlat = RECURRENCE_RADIUS_M / 111_320
+    dlng = RECURRENCE_RADIUS_M / (111_320 * max(math.cos(math.radians(float(concern.latitude))), 0.01))
+    qs = Concern.objects.filter(
+        category_id=concern.category_id, status__in=Concern.DONE_STATUSES, duplicate_of__isnull=True,
+        resolved_at__gte=now - timedelta(days=RECURRENCE_WINDOW_DAYS), resolved_at__lte=now,
+        latitude__range=(float(concern.latitude) - dlat, float(concern.latitude) + dlat),
+        longitude__range=(float(concern.longitude) - dlng, float(concern.longitude) + dlng),
+    ).exclude(pk=concern.pk).exclude(status=S.REJECTED).order_by("-resolved_at")
+    if concern.subcategory_id:
+        qs = qs.filter(subcategory_id=concern.subcategory_id)
+    for c in qs:
+        if haversine_m(concern.latitude, concern.longitude, c.latitude, c.longitude) <= RECURRENCE_RADIUS_M:
+            return c
+    return None
+
+
 @transaction.atomic
 def on_concern_submitted(concern, user=None):
     """Called right after a concern is created (any channel)."""
@@ -64,6 +93,11 @@ def on_concern_submitted(concern, user=None):
         concern.duplicate_of = master
         concern.save(update_fields=["duplicate_of"])
         compute_priority(master)  # more reports → master's priority rises
+    else:
+        fixed = find_recurrence(concern)
+        if fixed:  # "fixed" last month, broken again: counts against the office that fixed it
+            concern.recurrence_of = fixed
+            concern.save(update_fields=["recurrence_of"])
 
     # Hook for Module 3 (AI classification) — will be replaced by a Celery task:
     # classify_concern.delay(concern.pk)
@@ -132,3 +166,67 @@ def change_status(concern, new_status, user=None, remarks="", is_public=True, en
             change_status(dup, new_status, user=user, remarks=note.strip(),
                           is_public=is_public, enforce=False, cascade=False)
     return concern
+
+
+_WORD = re.compile(r"[a-zñ]{3,}")
+_STOP = {"ang", "mga", "may", "sa", "na", "ng", "at", "po", "kami", "namin", "dito", "the", "and", "lang", "pa", "din",
+         "rin", "yung", "iyong", "for", "ito", "nang", "kasi", "kapag", "para", "wala", "walang", "naman", "sila", "tapat",
+         "malapit", "sira", "sirang", "kanto", "harap", "likod", "brgy", "barangay", "st", "rd", "road", "street"}
+
+
+def _tokens(text):
+    return {w for w in _WORD.findall((text or "").lower()) if w not in _STOP}
+
+
+def similar_reports(concern, limit=5):
+    """
+    "Posibleng kapareho" for PACD triage: open originals in the same barangay from the last 14 days that may be the
+    same problem even when auto-linking couldn't decide (no pin, or a different category picked by the citizen).
+    Score: same category +3, same sub-type +2, within 100 m +3 (300 m +1), shared words up to +4, same day +1.
+    The system only suggests; a person decides whether to link.
+    """
+    if concern.duplicate_of_id:
+        return []
+    since = concern.created_at - timedelta(days=14)
+    qs = (Concern.objects.filter(barangay_id=concern.barangay_id, duplicate_of__isnull=True, created_at__gte=since,
+                                 created_at__lte=concern.created_at + timedelta(days=14), status__in=Concern.OPEN_STATUSES)
+          .exclude(pk=concern.pk).select_related("category", "subcategory")
+          .order_by("-created_at")[:200])
+    place = _tokens(concern.barangay.name)
+    mine = _tokens(f"{concern.title} {concern.description} {concern.location_description}") - place
+    out = []
+    for c in qs:
+        score, why = 0.0, []
+        if concern.category_id and c.category_id == concern.category_id:
+            score += 3
+            why.append("parehong kategorya")
+        if concern.subcategory_id and c.subcategory_id == concern.subcategory_id:
+            score += 2
+            why.append("parehong uri")
+        dist = None
+        if None not in (concern.latitude, concern.longitude, c.latitude, c.longitude):
+            dist = round(haversine_m(concern.latitude, concern.longitude, c.latitude, c.longitude))
+            if dist <= 100:
+                score += 3
+                why.append(f"{dist} m ang layo")
+            elif dist <= 300:
+                score += 1
+                why.append(f"{dist} m ang layo")
+            elif dist > 1000:
+                score -= 3
+        theirs = _tokens(f"{c.title} {c.description} {c.location_description}") - place
+        shared = mine & theirs
+        if shared:
+            j = len(shared) / max(1, len(mine | theirs))
+            score += min(4, 10 * j)
+            if j >= .1:
+                why.append("magkatulad na salita: " + ", ".join(sorted(shared)[:4]))
+        if abs((c.created_at - concern.created_at).total_seconds()) < 86400:
+            score += 1
+        if score >= 4:
+            out.append({"id": c.id, "reference_no": c.reference_no, "title": c.title, "status": c.status,
+                        "created_at": c.created_at, "category": c.category.name if c.category else None,
+                        "distance_m": dist, "score": round(score, 1), "reasons": why,
+                        "reporters": 1 + c.duplicates.count()})
+    out.sort(key=lambda x: -x["score"])
+    return out[:limit]

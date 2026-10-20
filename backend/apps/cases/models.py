@@ -247,3 +247,51 @@ class CaseNote(models.Model):
 
     class Meta:
         ordering = ["created_at"]
+
+
+class AccomplishmentReport(models.Model):
+    """
+    What the crew did, who was there, what was used — submitted with before/after photos when work is reported done.
+    Every submission is kept (a returned submission stays on record), so the trail shows each attempt.
+    """
+
+    class Status(models.TextChoices):
+        SUBMITTED = "submitted", "Submitted, awaiting validation"
+        APPROVED = "approved", "Approved"
+        RETURNED = "returned", "Returned to the field"
+
+    case = models.ForeignKey(Case, on_delete=models.CASCADE, related_name="reports")
+    submitted_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="submitted_reports")
+    submitted_at = models.DateTimeField(auto_now_add=True)
+    work_done = models.TextField()
+    started_at = models.DateTimeField(null=True, blank=True)
+    finished_at = models.DateTimeField(null=True, blank=True)
+    crew = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, related_name="crew_reports")
+    other_workers = models.CharField(max_length=300, blank=True, help_text="Job-order / barangay workers without accounts.")
+    materials = models.JSONField(default=list, blank=True, help_text='[{"item": "Cold mix asphalt", "qty": 4, "unit": "sacks"}]')
+    equipment = models.CharField(max_length=300, blank=True)
+
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.SUBMITTED)
+    reviewed_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    review_remarks = models.TextField(blank=True)
+    override_reason = models.TextField(
+        blank=True, help_text="Why the validator approved even though the photo checks raised a red flag.",
+    )
+
+    class Meta:
+        ordering = ["-submitted_at"]
+
+    def __str__(self):
+        return f"Accomplishment report {self.case.concern.reference_no} ({self.get_status_display()})"
+
+    @property
+    def headcount(self):
+        extra = len([n for n in self.other_workers.split(",") if n.strip()])
+        return self.crew.count() + extra
+
+    @property
+    def man_hours(self):
+        if not (self.started_at and self.finished_at) or self.finished_at <= self.started_at:
+            return None
+        return round(self.headcount * (self.finished_at - self.started_at).total_seconds() / 3600, 1)

@@ -10,6 +10,10 @@ type Tile = { key: keyof StaffSummary; label: string; sub: string; tab: string; 
 const ALL: Record<string, Tile> = {
   triage: { key: "triage", label: "Kailangang suriin", sub: "Triage", tab: "triage", icon: "clipboard-check", tone: "primary" },
   danger: { key: "danger_unverified", label: "May panganib, hindi pa nasusuri", sub: "Unverified danger", tab: "triage", icon: "exclamation-triangle", tone: "danger" },
+  accept: { key: "for_acceptance", label: "Tatanggapin ng opisina", sub: "Office acceptance (1 WD)", tab: "for_acceptance", icon: "inbox", tone: "primary" },
+  returned: { key: "returned", label: "Ibinalik ng opisina", sub: "Returned to PACD", tab: "to_route", icon: "arrow-return-left", tone: "danger" },
+  response: { key: "response_overdue", label: "Walang unang aksyon (lampas)", sub: "Response overdue", tab: "overdue", icon: "stopwatch", tone: "danger" },
+  p1: { key: "p1_open", label: "Bukas na P1 Emergency", sub: "Make-safe priority", tab: "open", icon: "lightning-charge", tone: "danger" },
   to_route: { key: "to_route", label: "Ipapasa sa opisina", sub: "To route", tab: "to_route", icon: "signpost-split", tone: "primary" },
   mine: { key: "mine", label: "Kailangan ng aksyon ko", sub: "My queue", tab: "mine", icon: "person-workspace", tone: "primary" },
   validation: { key: "validation", label: "Hinihintay ang validation", sub: "For validation", tab: "validation", icon: "patch-check", tone: "success" },
@@ -21,13 +25,14 @@ const ALL: Record<string, Tile> = {
 };
 
 const BY_ROLE: Partial<Record<Role, string[]>> = {
-  pacd: ["triage", "danger", "to_route", "f8888", "follow", "mine", "overdue", "resolved"],
-  city_admin: ["danger", "triage", "to_route", "overdue", "follow", "validation", "open", "resolved"],
-  dept_head: ["mine", "validation", "overdue", "open", "resolved"],
-  division_chief: ["mine", "validation", "overdue", "resolved"],
-  dept_staff: ["mine", "overdue", "resolved"],
+  pacd: ["triage", "danger", "to_route", "returned", "f8888", "follow", "mine", "resolved"],
+  city_admin: ["p1", "danger", "accept", "response", "overdue", "returned", "follow", "resolved"],
+  office_desk: ["accept", "mine", "p1", "response", "overdue", "resolved"],
+  dept_head: ["mine", "accept", "p1", "response", "validation", "overdue", "resolved"],
+  division_chief: ["mine", "p1", "response", "validation", "overdue", "resolved"],
+  dept_staff: ["mine", "p1", "response", "overdue", "resolved"],
   barangay: ["triage", "to_route", "mine", "validation", "overdue", "resolved"],
-  mayor: ["overdue", "open", "follow", "resolved"],
+  mayor: ["p1", "overdue", "response", "accept", "follow", "resolved"],
 };
 
 export function DashboardPage() {

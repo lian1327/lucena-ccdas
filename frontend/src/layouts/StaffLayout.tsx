@@ -10,7 +10,7 @@ const NAV: NavItem[] = [
   { to: "/staff", icon: "speedometer2", label: "Dashboard", ready: true },
   { to: "/staff/cases", icon: "inboxes", label: "Mga Kaso", ready: true },
   { to: "/staff/encode", icon: "pencil-square", label: "I-encode", ready: true },
-  { to: "/staff/map", icon: "geo-alt", label: "GIS Map", ready: false },
+  { to: "/staff/map", icon: "geo-alt", label: "GIS Map", ready: true },
   { to: "/staff/analytics", icon: "bar-chart", label: "Analytics", ready: false },
   { to: "/staff/executive", icon: "briefcase", label: "Executive", ready: false, executiveOnly: true },
 ];

@@ -6,6 +6,7 @@ type TabDef = { key: InboxTab; label: string; count?: keyof StaffSummary; danger
 const T = {
   triage: { key: "triage", label: "Triage", count: "triage" },
   to_route: { key: "to_route", label: "Ipapasa", count: "to_route" },
+  for_acceptance: { key: "for_acceptance", label: "For acceptance", count: "for_acceptance" },
   validation: { key: "validation", label: "For validation", count: "validation" },
   endorsed: { key: "endorsed", label: "Endorsed (DPWH atbp.)", count: "endorsed" },
   overdue: { key: "overdue", label: "Overdue", count: "overdue", danger: true },
@@ -20,9 +21,11 @@ export function tabsFor(role: Role | undefined): TabDef[] {
   switch (role) {
     case "pacd":
     case "city_admin":
-      return [T.triage, T.to_route, mine("Isasara / 8888 / follow-up"), T.endorsed, T.validation, T.overdue, T.open, T.closed];
+      return [T.triage, T.to_route, mine("Isasara / 8888 / follow-up"), T.for_acceptance, T.endorsed, T.overdue, T.open, T.closed];
+    case "office_desk":
+      return [mine("Tatanggapin / ipapasa"), T.for_acceptance, T.overdue, T.open, T.closed];
     case "dept_head":
-      return [mine("Kailangan ng aksyon ko"), T.triage, T.validation, T.endorsed, T.overdue, T.open, T.closed];
+      return [mine("Kailangan ng aksyon ko"), T.for_acceptance, T.validation, T.endorsed, T.overdue, T.open, T.closed];
     case "division_chief":
       return [mine("Kailangan ng aksyon ko"), T.validation, T.overdue, T.open, T.closed];
     case "dept_staff":
@@ -30,7 +33,7 @@ export function tabsFor(role: Role | undefined): TabDef[] {
     case "barangay":
       return [T.triage, T.to_route, mine("Barangay-level"), T.validation, T.overdue, T.open, T.closed];
     case "mayor":
-      return [T.overdue, T.endorsed, T.open, T.closed];
+      return [T.overdue, T.for_acceptance, T.endorsed, T.open, T.closed];
     default:
       return [T.open, T.closed];
   }
@@ -38,6 +41,8 @@ export function tabsFor(role: Role | undefined): TabDef[] {
 
 export const STAGE_LABEL: Record<string, string> = {
   with_department: "Nasa opisina",
+  for_acceptance: "For acceptance",
+  returned: "Ibinalik sa PACD",
   with_division: "Nasa division",
   assigned: "May tauhan na",
   scheduled: "Nakaiskedyul",

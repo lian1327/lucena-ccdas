@@ -1,4 +1,4 @@
-from django.db.models import Count, Q
+from django.db.models import Count, F, Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from drf_spectacular.utils import OpenApiParameter, extend_schema
@@ -15,9 +15,10 @@ from apps.concerns.models import Concern
 from apps.concerns.services import InvalidTransition
 
 from . import services
-from .models import Case, CaseNote, Department, Division
+from .models import Case, CaseNote, Department, Division, PriorityLevel
 from .scoping import is_admin, permissions_for, scoped_concerns
 from .serializers_staff import (
+    AcceptSerializer,
     AssignDivisionSerializer,
     AssignPersonSerializer,
     CompleteSerializer,
@@ -32,7 +33,11 @@ from .serializers_staff import (
     LinkDuplicateSerializer,
     NoteCreateSerializer,
     OptionalRemarksSerializer,
+    PriorityLevelSerializer,
     RemarksSerializer,
+    RespondSerializer,
+    ReturnSerializer,
+    SetPrioritySerializer,
     RouteSerializer,
     StaffConcernDetailSerializer,
     StaffConcernListSerializer,
@@ -45,7 +50,7 @@ from .serializers_staff import (
 
 IsStaff = HasRole(*STAFF_ROLES)
 R = User.Role
-TABS = ["triage", "to_route", "mine", "validation", "endorsed", "overdue", "open", "closed", "all"]
+TABS = ["triage", "to_route", "for_acceptance", "mine", "validation", "endorsed", "overdue", "open", "closed", "all"]
 OPEN = Concern.OPEN_STATUSES
 
 
@@ -66,8 +71,13 @@ def my_queue_q(user):
     """'Ako ang susunod na kikilos' — what this person should act on next."""
     now = timezone.now()
     for_validation = Q(case__work_completed_at__isnull=False, case__validated_at__isnull=True)
+    awaiting = Q(case__level=Case.Level.CITY, case__accepted_at__isnull=True, case__department__isnull=False)
+    if user.role == R.OFFICE_DESK:
+        return Q(case__department_id=user.department_id) & (awaiting | Q(case__division__isnull=True))
     if user.role == R.DEPT_HEAD:
-        return Q(case__department_id=user.department_id) & (Q(case__division__isnull=True) | for_validation)
+        return Q(case__department_id=user.department_id) & (
+            awaiting | Q(case__division__isnull=True) | for_validation
+        )
     if user.role == R.DIVISION_CHIEF:
         mine = Q(case__division_id=user.division_id) | Q(case__department_id=user.department_id, case__division__isnull=True)
         return mine & (Q(case__assigned_to__isnull=True) | for_validation)
@@ -87,8 +97,14 @@ def apply_tab(qs, tab, user):
     now = timezone.now()
     if tab == "triage":
         return qs.filter(is_verified=False, status__in=OPEN)
-    if tab == "to_route":
-        return qs.filter(is_verified=True, case__isnull=True, status__in=OPEN)
+    if tab == "to_route":  # verified but not yet routed, or returned by an office
+        return qs.filter(
+            Q(case__isnull=True) | Q(case__level=Case.Level.CITY, case__department__isnull=True),
+            is_verified=True, status__in=OPEN,
+        )
+    if tab == "for_acceptance":
+        return qs.filter(status__in=OPEN, case__level=Case.Level.CITY, case__department__isnull=False,
+                         case__accepted_at__isnull=True)
     if tab == "mine":
         q = my_queue_q(user)
         # resolved concerns only matter in PACD's queue (to close); everyone else: open only
@@ -145,7 +161,8 @@ class StaffConcernViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet
             )
         if tab in ("triage", "to_route"):
             return qs.order_by("-danger_now", "-priority_score", "created_at")
-        return qs.order_by("-priority_score", "created_at")
+        # Work queues: urgency level first (P1 before P2…), then score, then oldest first
+        return qs.order_by(F("case__priority_level__sort_order").asc(nulls_last=True), "-priority_score", "created_at")
 
     def get_serializer_class(self):
         if self.action == "list":
@@ -213,6 +230,28 @@ class StaffConcernViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet
     @action(detail=True, methods=["post"])
     def endorse(self, request, pk=None):
         return self._run("endorse", EndorseSerializer, services.endorse)
+
+    # ----- office receiving & screening -----
+    @extend_schema(request=AcceptSerializer, responses=StaffConcernDetailSerializer)
+    @action(detail=True, methods=["post"])
+    def accept(self, request, pk=None):
+        return self._run("accept", AcceptSerializer, services.accept)
+
+    @extend_schema(request=ReturnSerializer, responses=StaffConcernDetailSerializer)
+    @action(detail=True, methods=["post"], url_path="return-to-pacd")
+    def return_to_pacd(self, request, pk=None):
+        return self._run("return_to_pacd", ReturnSerializer, services.return_to_pacd)
+
+    @extend_schema(request=SetPrioritySerializer, responses=StaffConcernDetailSerializer)
+    @action(detail=True, methods=["post"], url_path="set-priority")
+    def set_priority(self, request, pk=None):
+        return self._run("set_priority", SetPrioritySerializer, services.set_priority)
+
+    @extend_schema(request={"multipart/form-data": RespondSerializer}, responses=StaffConcernDetailSerializer)
+    @action(detail=True, methods=["post"])
+    def respond(self, request, pk=None):
+        return self._run("respond", RespondSerializer, services.respond, files=["photos"],
+                         map_kwargs=lambda kw: {**kw, "photos": kw.get("photos", [])})
 
     # ----- inside the office -----
     @extend_schema(request=AssignDivisionSerializer, responses=StaffConcernDetailSerializer)
@@ -329,8 +368,13 @@ class StaffSummaryView(APIView):
         month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         triage = apply_tab(base, "triage", user)
         endorsed = apply_tab(base, "endorsed", user)
+        open_ = base.filter(status__in=OPEN)
         return Response({
             "triage": triage.count(),
+            "for_acceptance": apply_tab(base, "for_acceptance", user).count(),
+            "returned": open_.filter(case__level=Case.Level.CITY, case__department__isnull=True).count(),
+            "response_overdue": open_.filter(case__responded_at__isnull=True, case__response_due_at__lt=now).count(),
+            "p1_open": open_.filter(case__priority_level__code="P1").count(),
             "to_route": apply_tab(base, "to_route", user).count(),
             "danger_unverified": triage.filter(danger_now=True).count(),
             "mine": apply_tab(base, "mine", user).count(),
@@ -388,3 +432,10 @@ class StaffUserListView(generics.ListAPIView):
         if p.get("division"):
             qs = qs.filter(Q(division_id=p["division"]) | Q(division__isnull=True))
         return qs.order_by("role", "first_name", "username")
+
+
+class PriorityLevelListView(generics.ListAPIView):
+    permission_classes = [IsStaff]
+    serializer_class = PriorityLevelSerializer
+    pagination_class = None
+    queryset = PriorityLevel.objects.all()

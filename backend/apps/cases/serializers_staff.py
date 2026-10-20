@@ -11,9 +11,9 @@ from apps.concerns.serializers import AFFECTED_BUCKETS, PublicConcernCreateSeria
 from apps.concerns.services import on_concern_submitted
 
 from . import deadlines
-from .models import Case, CaseNote, Department, Division, Endorsement, EndorsementFollowUp
+from .models import Case, CaseNote, Department, Division, Endorsement, EndorsementFollowUp, PriorityLevel
 from .scoping import permissions_for
-from .services import suggested_route
+from .services import breaches, suggest_priority, suggested_route
 
 MAX_PHOTOS = 3
 
@@ -32,6 +32,13 @@ class DepartmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Department
         fields = ["id", "code", "name", "kind"]
+
+
+class PriorityLevelSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PriorityLevel
+        fields = ["id", "code", "name", "name_fil", "description", "response_hours", "response_working_days",
+                  "resolution_cap_days", "color"]
 
 
 class DivisionSerializer(serializers.ModelSerializer):
@@ -73,6 +80,13 @@ class StaffConcernListSerializer(serializers.ModelSerializer):
     escalation_level = serializers.IntegerField(source="case.escalation_level", default=0)
     duplicate_count = serializers.IntegerField(read_only=True, default=0)
     channel_display = serializers.CharField(source="get_channel_display")
+    priority_code = serializers.CharField(source="case.priority_level.code", default=None)
+    priority_name = serializers.CharField(source="case.priority_level.name", default=None)
+    priority_color = serializers.CharField(source="case.priority_level.color", default=None)
+    response_due_at = serializers.DateTimeField(source="case.response_due_at", default=None)
+    responded_at = serializers.DateTimeField(source="case.responded_at", default=None)
+    acceptance_due_at = serializers.DateTimeField(source="case.acceptance_due_at", default=None)
+    return_reason = serializers.CharField(source="case.return_reason", default=None)
 
     class Meta:
         model = Concern
@@ -83,6 +97,8 @@ class StaffConcernListSerializer(serializers.ModelSerializer):
             "level", "stage", "department", "department_is_external", "division", "assigned_to",
             "due_at", "extended", "escalation_level", "duplicate_count",
             "external_ticket_no", "external_feedback_due_at", "external_feedback_sent_at",
+            "priority_code", "priority_name", "priority_color", "response_due_at", "responded_at",
+            "acceptance_due_at", "return_reason",
         ]
 
     def get_assigned_to(self, obj) -> str | None:
@@ -175,6 +191,11 @@ class CaseInfoSerializer(serializers.ModelSerializer):
     stage = serializers.CharField()
     max_extension_due = serializers.SerializerMethodField()
     endorsements = EndorsementSerializer(many=True, read_only=True)
+    priority_level = PriorityLevelSerializer(read_only=True, default=None)
+    accepted_by = serializers.SerializerMethodField()
+    responded_by = serializers.SerializerMethodField()
+    screening_checklist = serializers.SerializerMethodField()
+    breaches = serializers.SerializerMethodField()
 
     class Meta:
         model = Case
@@ -187,6 +208,10 @@ class CaseInfoSerializer(serializers.ModelSerializer):
             "validated_at", "validated_by",
             "escalation_level", "escalation_level_display", "escalated_at", "escalation_reason",
             "resolution_summary", "resolved_at", "endorsements",
+            "routed_at", "accepted_at", "accepted_by", "acceptance_due_at", "screening", "screening_checklist",
+            "returned_at", "return_reason", "return_count",
+            "priority_level", "priority_reason", "response_due_at", "responded_at", "responded_by", "response_remarks",
+            "breaches",
         ]
 
     def get_assigned_to(self, obj) -> str | None:
@@ -200,6 +225,18 @@ class CaseInfoSerializer(serializers.ModelSerializer):
 
     def get_validated_by(self, obj) -> str | None:
         return _name(obj.validated_by)
+
+    def get_accepted_by(self, obj) -> str | None:
+        return _name(obj.accepted_by)
+
+    def get_responded_by(self, obj) -> str | None:
+        return _name(obj.responded_by)
+
+    def get_screening_checklist(self, obj) -> list[str]:
+        return list(obj.department.screening_checklist or []) if obj.department else []
+
+    def get_breaches(self, obj) -> list[str]:
+        return breaches(obj) if obj.concern.is_open else []
 
     def get_max_extension_due(self, obj) -> str | None:
         if not obj.due_at or obj.extended_at:
@@ -229,6 +266,10 @@ class PermissionsSerializer(serializers.Serializer):
     route = serializers.BooleanField()
     route_any_office = serializers.BooleanField()
     endorse = serializers.BooleanField()
+    accept = serializers.BooleanField()
+    return_to_pacd = serializers.BooleanField()
+    set_priority = serializers.BooleanField()
+    respond = serializers.BooleanField()
     assign_division = serializers.BooleanField()
     assign_person = serializers.BooleanField()
     inspect = serializers.BooleanField()
@@ -266,6 +307,7 @@ class StaffConcernDetailSerializer(StaffConcernListSerializer):
     priority = serializers.SerializerMethodField()
     permissions = serializers.SerializerMethodField()
     suggested_route = serializers.SerializerMethodField()
+    suggested_priority = serializers.SerializerMethodField()
 
     class Meta(StaffConcernListSerializer.Meta):
         fields = StaffConcernListSerializer.Meta.fields + [
@@ -275,7 +317,7 @@ class StaffConcernDetailSerializer(StaffConcernListSerializer):
             "source_reference", "encoded_by", "external_feedback",
             "verified_by", "verified_at", "acknowledged_at", "resolved_at",
             "duplicate_of", "duplicates", "attachments", "history", "case", "notes",
-            "priority", "permissions", "suggested_route",
+            "priority", "permissions", "suggested_route", "suggested_priority",
         ]
 
     def get_encoded_by(self, obj) -> str | None:
@@ -297,6 +339,11 @@ class StaffConcernDetailSerializer(StaffConcernListSerializer):
     @extend_schema_field(PermissionsSerializer)
     def get_permissions(self, obj):
         return permissions_for(self.context["request"].user, obj)
+
+    @extend_schema_field(PriorityLevelSerializer(allow_null=True))
+    def get_suggested_priority(self, obj):
+        lvl = suggest_priority(obj)
+        return PriorityLevelSerializer(lvl).data if lvl else None
 
     @extend_schema_field(SuggestedRouteSerializer)
     def get_suggested_route(self, obj):
@@ -331,6 +378,28 @@ class RouteSerializer(serializers.Serializer):
         queryset=Division.objects.filter(is_active=True), required=False, allow_null=True
     )
     remarks = serializers.CharField(required=False, allow_blank=True, max_length=500)
+
+
+class AcceptSerializer(serializers.Serializer):
+    priority_level = serializers.PrimaryKeyRelatedField(queryset=PriorityLevel.objects.all())
+    priority_reason = serializers.CharField(required=False, allow_blank=True, max_length=300)
+    screening = serializers.DictField(child=serializers.BooleanField(), required=False)
+    division = serializers.PrimaryKeyRelatedField(queryset=Division.objects.filter(is_active=True), required=False, allow_null=True)
+    remarks = serializers.CharField(required=False, allow_blank=True, max_length=500)
+
+
+class ReturnSerializer(serializers.Serializer):
+    reason = serializers.CharField(max_length=500)
+
+
+class SetPrioritySerializer(serializers.Serializer):
+    priority_level = serializers.PrimaryKeyRelatedField(queryset=PriorityLevel.objects.all())
+    reason = serializers.CharField(max_length=300)
+
+
+class RespondSerializer(serializers.Serializer):
+    remarks = serializers.CharField(max_length=1000)
+    photos = serializers.ListField(child=serializers.ImageField(), required=False, max_length=MAX_PHOTOS)
 
 
 class AssignDivisionSerializer(serializers.Serializer):
@@ -423,6 +492,10 @@ class LinkDuplicateSerializer(serializers.Serializer):
 
 class StaffSummarySerializer(serializers.Serializer):
     triage = serializers.IntegerField()
+    for_acceptance = serializers.IntegerField()
+    returned = serializers.IntegerField()
+    response_overdue = serializers.IntegerField()
+    p1_open = serializers.IntegerField()
     to_route = serializers.IntegerField()
     danger_unverified = serializers.IntegerField()
     mine = serializers.IntegerField()

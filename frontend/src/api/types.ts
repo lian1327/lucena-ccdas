@@ -25,7 +25,7 @@ export type JwtClaims = {
 };
 
 export const STAFF_ROLES: Role[] = [
-  "pacd", "barangay", "dept_head", "division_chief", "dept_staff", "city_admin", "mayor",
+  "pacd", "barangay", "office_desk", "dept_head", "division_chief", "dept_staff", "city_admin", "mayor",
 ];
 export const EXECUTIVE_ROLES: Role[] = ["city_admin", "mayor"];
 
@@ -39,6 +39,7 @@ export type StaffConcernPage = S["PaginatedStaffConcernListList"];
 export type StaffSummary = S["StaffSummary"];
 export type Department = S["Department"];
 export type Division = S["Division"];
+export type PriorityLevel = S["PriorityLevel"];
 export type Permissions = S["Permissions"];
 export type CaseInfo = S["CaseInfo"];
 export type EndorsementInfo = S["Endorsement"];
@@ -47,3 +48,10 @@ export type StaffUser = S["StaffUser"];
 export type Channel = S["ConcernChannelEnum"];
 export type Severity = S["SeverityEnum"];
 export type StaffEncodeRequest = S["StaffEncodeRequest"];
+
+// ----- GIS -----
+export type MapPoint = S["MapPoint"];
+export type MapPoints = S["MapPoints"];
+export type BarangayStat = S["BarangayStat"];
+export type Hotspot = S["Hotspot"];
+export type Hotspots = S["Hotspots"];

@@ -7,6 +7,7 @@ class User(AbstractUser):
         CITIZEN = "citizen", "Citizen"
         PACD = "pacd", "Public Assistance & Complaints Desk"
         BARANGAY = "barangay", "Barangay Personnel"
+        OFFICE_DESK = "office_desk", "Office Receiving Officer"
         DEPT_HEAD = "dept_head", "Department Head"
         DIVISION_CHIEF = "division_chief", "Division Chief / Supervisor"
         DEPT_STAFF = "dept_staff", "Field Personnel (Engineer / Crew)"

@@ -68,6 +68,7 @@ const INTERNAL: Step[] = [
   { key: "received", label: "Natanggap" },
   { key: "verified", label: "Na-verify" },
   { key: "routed", label: "Naipasa" },
+  { key: "accepted", label: "Tinanggap ng opisina" },
   { key: "assigned", label: "May tauhan" },
   { key: "inspected", label: "Na-inspeksyon" },
   { key: "done", label: "Tapos ang trabaho" },
@@ -98,11 +99,12 @@ export function stepsFor(c: StaffConcernDetail): { steps: Step[]; done: boolean[
     ];
     return { steps: EXTERNAL, done };
   }
-  const steps = k?.level === "barangay" ? INTERNAL.filter((s) => s.key !== "assigned") : INTERNAL;
+  const steps = k?.level === "barangay" ? INTERNAL.filter((s) => s.key !== "assigned" && s.key !== "accepted") : INTERNAL;
   const flags: Record<string, boolean> = {
     received: true,
     verified: c.is_verified,
-    routed: !!k,
+    routed: !!k && !!(k.department || k.level === "barangay"),
+    accepted: !!k?.accepted_at,
     assigned: !!k?.assigned_to,
     inspected: !!k?.inspected_at,
     done: !!k?.work_completed_at,

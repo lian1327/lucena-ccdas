@@ -227,6 +227,7 @@ class PublicTrackSerializer(serializers.ModelSerializer):
     target_date = serializers.SerializerMethodField()
     deadline_extended = serializers.SerializerMethodField()
     endorsed_to = serializers.SerializerMethodField()
+    priority_level = serializers.SerializerMethodField()
 
     class Meta:
         model = Concern
@@ -234,7 +235,7 @@ class PublicTrackSerializer(serializers.ModelSerializer):
         fields = [
             "reference_no", "title", "category", "subcategory", "barangay", "status", "status_display",
             "assigned_office", "linked_to_reference", "created_at", "resolved_at", "timeline",
-            "resolution_photos", "target_date", "deadline_extended", "endorsed_to",
+            "resolution_photos", "target_date", "deadline_extended", "endorsed_to", "priority_level",
         ]
 
     def get_assigned_office(self, obj) -> str | None:
@@ -259,6 +260,11 @@ class PublicTrackSerializer(serializers.ModelSerializer):
     def get_deadline_extended(self, obj) -> bool:
         case = self._case(obj)
         return bool(case and case.extended_at)
+
+    def get_priority_level(self, obj) -> str | None:
+        case = self._case(obj)
+        lvl = case.priority_level if case else None
+        return (lvl.name_fil or lvl.name) if lvl and obj.is_open else None
 
     def get_endorsed_to(self, obj) -> str | None:
         case = self._case(obj)

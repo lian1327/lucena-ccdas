@@ -219,6 +219,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/staff/concerns/{id}/accept/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Staff case inbox and workflow. Visibility and every action are decided in scoping.py. */
+        post: operations["v1_staff_concerns_accept_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/staff/concerns/{id}/assign-division/": {
         parameters: {
             query?: never;
@@ -457,6 +474,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/staff/concerns/{id}/respond/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Staff case inbox and workflow. Visibility and every action are decided in scoping.py. */
+        post: operations["v1_staff_concerns_respond_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/concerns/{id}/return-to-pacd/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Staff case inbox and workflow. Visibility and every action are decided in scoping.py. */
+        post: operations["v1_staff_concerns_return_to_pacd_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/staff/concerns/{id}/route/": {
         parameters: {
             query?: never;
@@ -468,6 +519,23 @@ export interface paths {
         put?: never;
         /** @description Staff case inbox and workflow. Visibility and every action are decided in scoping.py. */
         post: operations["v1_staff_concerns_route_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/concerns/{id}/set-priority/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Staff case inbox and workflow. Visibility and every action are decided in scoping.py. */
+        post: operations["v1_staff_concerns_set_priority_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -557,6 +625,76 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/staff/map/barangays/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Per-barangay load, including reports without a pin (located by barangay). */
+        get: operations["v1_staff_map_barangays_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/map/hotspots/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description DBSCAN hotspots over distinct problems (original reports, not duplicates), so one problem reported
+         *     by many people doesn't masquerade as a recurring hotspot. Recurrence = distinct months active.
+         */
+        get: operations["v1_staff_map_hotspots_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/map/points/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Pinned reports for markers and the heatmap (weight = number of residents who reported it). */
+        get: operations["v1_staff_map_points_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/priority-levels/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["v1_staff_priority_levels_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/staff/summary/": {
         parameters: {
             query?: never;
@@ -594,6 +732,15 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AcceptRequest: {
+            priority_level: number;
+            priority_reason?: string;
+            screening?: {
+                [key: string]: boolean;
+            };
+            division?: number | null;
+            remarks?: string;
+        };
         /**
          * @description * `self` - self
          *     * `household` - household
@@ -621,9 +768,28 @@ export interface components {
         /**
          * @description * `report` - Report photo (from reporter)
          *     * `resolution` - Resolution photo (proof of fix)
+         *     * `progress` - Progress / make-safe photo (staff, internal)
          * @enum {string}
          */
-        AttachmentKindEnum: "report" | "resolution";
+        AttachmentKindEnum: "report" | "resolution" | "progress";
+        BarangayStat: {
+            id: number;
+            name: string;
+            /** Format: double */
+            lat: number | null;
+            /** Format: double */
+            lng: number | null;
+            population: number;
+            concerns: number;
+            reports: number;
+            open: number;
+            overdue: number;
+            /** Format: double */
+            per_10k: number | null;
+            /** Format: double */
+            median_days_to_resolve: number | null;
+            top_issues: components["schemas"]["IssueCount"][];
+        };
         /** @enum {unknown} */
         BlankEnum: "";
         /** @description Adds role/scope claims so the frontend can route without an extra request. */
@@ -675,6 +841,33 @@ export interface components {
             /** Format: date-time */
             resolved_at?: string | null;
             readonly endorsements: components["schemas"]["Endorsement"][];
+            /**
+             * Format: date-time
+             * @description When the current office received it (clock start).
+             */
+            routed_at?: string | null;
+            /** Format: date-time */
+            accepted_at?: string | null;
+            readonly accepted_by: string | null;
+            /** Format: date-time */
+            acceptance_due_at?: string | null;
+            /** @description Answers to the office's screening checklist. */
+            screening?: unknown;
+            readonly screening_checklist: string[];
+            /** Format: date-time */
+            returned_at?: string | null;
+            return_reason?: string;
+            /** Format: int64 */
+            return_count?: number;
+            readonly priority_level: components["schemas"]["PriorityLevel"];
+            priority_reason?: string;
+            /** Format: date-time */
+            response_due_at?: string | null;
+            /** Format: date-time */
+            responded_at?: string | null;
+            readonly responded_by: string | null;
+            response_remarks?: string;
+            readonly breaches: string[];
         };
         /**
          * @description * `city` - City office
@@ -807,12 +1000,48 @@ export interface components {
             /** Format: date-time */
             readonly created_at: string;
         };
+        Hotspot: {
+            /** Format: double */
+            lat: number;
+            /** Format: double */
+            lng: number;
+            radius_m: number;
+            /** @description Distinct problems (original reports) in the cluster */
+            count: number;
+            /** @description Including duplicate reports from other residents */
+            reports: number;
+            open: number;
+            top_issue: string;
+            top_issue_share: number;
+            issues: components["schemas"]["IssueCount"][];
+            barangay: string;
+            landmark: string;
+            /** @description Distinct months with reports: recurrence */
+            months_active: number;
+            /** Format: date-time */
+            first_report: string;
+            /** Format: date-time */
+            last_report: string;
+            concern_ids: number[];
+        };
+        Hotspots: {
+            hotspots: components["schemas"]["Hotspot"][];
+            eps_m: number;
+            min_samples: number;
+            points_considered: number;
+            /** @description Isolated reports not in any hotspot */
+            noise: number;
+        };
         InspectRequest: {
             findings: string;
             action_plan?: string;
             /** Format: date */
             scheduled_for?: string | null;
             public_message?: string;
+        };
+        IssueCount: {
+            name: string;
+            count: number;
         };
         LinkDuplicateRequest: {
             master_reference: string;
@@ -824,6 +1053,30 @@ export interface components {
             /** Format: date-time */
             readonly created_at: string;
             channel?: components["schemas"]["ConcernChannelEnum"];
+        };
+        MapPoint: {
+            id: number;
+            ref: string;
+            /** Format: double */
+            lat: number;
+            /** Format: double */
+            lng: number;
+            category: string | null;
+            subcategory: string | null;
+            status: string;
+            priority: string | null;
+            /** @description 1 + linked duplicate reports */
+            reports: number;
+            overdue: boolean;
+            /** Format: date-time */
+            created_at: string;
+            barangay: string;
+        };
+        MapPoints: {
+            points: components["schemas"]["MapPoint"][];
+            total: number;
+            /** @description Matching reports without a map pin (counted in barangay stats only) */
+            unpinned: number;
         };
         Me: {
             readonly id: number;
@@ -891,6 +1144,10 @@ export interface components {
             route: boolean;
             route_any_office: boolean;
             endorse: boolean;
+            accept: boolean;
+            return_to_pacd: boolean;
+            set_priority: boolean;
+            respond: boolean;
             assign_division: boolean;
             assign_person: boolean;
             inspect: boolean;
@@ -920,6 +1177,27 @@ export interface components {
             days_open: number;
             /** Format: double */
             total: number;
+        };
+        PriorityLevel: {
+            readonly id: number;
+            code: string;
+            name: string;
+            name_fil?: string;
+            description?: string;
+            /**
+             * Format: int64
+             * @description Calendar hours (emergencies don't wait for working days).
+             */
+            response_hours?: number | null;
+            /** Format: int64 */
+            response_working_days?: number | null;
+            /**
+             * Format: int64
+             * @description Working days. Empty = use the ARTA class maximum.
+             */
+            resolution_cap_days?: number | null;
+            /** @description Bootstrap color: danger, warning, info, secondary */
+            color?: string;
         };
         PublicBarangay: {
             readonly id: number;
@@ -1051,14 +1329,23 @@ export interface components {
             readonly target_date: string | null;
             readonly deadline_extended: boolean;
             readonly endorsed_to: string | null;
+            readonly priority_level: string | null;
         };
         RemarksRequest: {
             remarks: string;
+        };
+        RespondRequest: {
+            remarks: string;
+            photos?: string[];
+        };
+        ReturnRequest: {
+            reason: string;
         };
         /**
          * @description * `citizen` - Citizen
          *     * `pacd` - Public Assistance & Complaints Desk
          *     * `barangay` - Barangay Personnel
+         *     * `office_desk` - Office Receiving Officer
          *     * `dept_head` - Department Head
          *     * `division_chief` - Division Chief / Supervisor
          *     * `dept_staff` - Field Personnel (Engineer / Crew)
@@ -1066,7 +1353,7 @@ export interface components {
          *     * `mayor` - Mayor's Office
          * @enum {string}
          */
-        RoleEnum: "citizen" | "pacd" | "barangay" | "dept_head" | "division_chief" | "dept_staff" | "city_admin" | "mayor";
+        RoleEnum: "citizen" | "pacd" | "barangay" | "office_desk" | "dept_head" | "division_chief" | "dept_staff" | "city_admin" | "mayor";
         /**
          * @description * `city` - city
          *     * `barangay` - barangay
@@ -1078,6 +1365,10 @@ export interface components {
             department?: number | null;
             division?: number | null;
             remarks?: string;
+        };
+        SetPriorityRequest: {
+            priority_level: number;
+            reason: string;
         };
         /**
          * @description * `1` - Minor
@@ -1135,6 +1426,16 @@ export interface components {
             external_feedback_due_at?: string | null;
             /** Format: date-time */
             external_feedback_sent_at?: string | null;
+            priority_code?: string;
+            priority_name?: string;
+            priority_color?: string;
+            /** Format: date-time */
+            response_due_at?: string;
+            /** Format: date-time */
+            responded_at?: string;
+            /** Format: date-time */
+            acceptance_due_at?: string;
+            return_reason?: string;
             description: string;
             category_code?: string;
             subcategory_code?: string;
@@ -1173,6 +1474,7 @@ export interface components {
             readonly priority: components["schemas"]["PriorityBreakdown"] | null;
             readonly permissions: components["schemas"]["Permissions"];
             readonly suggested_route: components["schemas"]["SuggestedRoute"];
+            readonly suggested_priority: components["schemas"]["PriorityLevel"] | null;
         };
         StaffConcernList: {
             readonly id: number;
@@ -1221,6 +1523,16 @@ export interface components {
             external_feedback_due_at?: string | null;
             /** Format: date-time */
             external_feedback_sent_at?: string | null;
+            priority_code?: string;
+            priority_name?: string;
+            priority_color?: string;
+            /** Format: date-time */
+            response_due_at?: string;
+            /** Format: date-time */
+            responded_at?: string;
+            /** Format: date-time */
+            acceptance_due_at?: string;
+            return_reason?: string;
         };
         StaffEncodeRequest: {
             channel: components["schemas"]["ConcernChannelEnum"];
@@ -1257,6 +1569,10 @@ export interface components {
         };
         StaffSummary: {
             triage: number;
+            for_acceptance: number;
+            returned: number;
+            response_overdue: number;
+            p1_open: number;
             to_route: number;
             danger_unverified: number;
             mine: number;
@@ -1552,7 +1868,7 @@ export interface operations {
                 /** @description Search reference no., title, landmark, description */
                 q?: string;
                 /** @description Inbox view (default: open) */
-                tab?: "all" | "closed" | "endorsed" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
+                tab?: "all" | "closed" | "endorsed" | "for_acceptance" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
             };
             header?: never;
             path?: never;
@@ -1579,7 +1895,7 @@ export interface operations {
                 /** @description Search reference no., title, landmark, description */
                 q?: string;
                 /** @description Inbox view (default: open) */
-                tab?: "all" | "closed" | "endorsed" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
+                tab?: "all" | "closed" | "endorsed" | "for_acceptance" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
             };
             header?: never;
             path?: never;
@@ -1610,7 +1926,7 @@ export interface operations {
                 /** @description Search reference no., title, landmark, description */
                 q?: string;
                 /** @description Inbox view (default: open) */
-                tab?: "all" | "closed" | "endorsed" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
+                tab?: "all" | "closed" | "endorsed" | "for_acceptance" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
             };
             header?: never;
             path: {
@@ -1631,6 +1947,42 @@ export interface operations {
             };
         };
     };
+    v1_staff_concerns_accept_create: {
+        parameters: {
+            query?: {
+                barangay?: number;
+                category?: string;
+                include_duplicates?: boolean;
+                /** @description Search reference no., title, landmark, description */
+                q?: string;
+                /** @description Inbox view (default: open) */
+                tab?: "all" | "closed" | "endorsed" | "for_acceptance" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
+            };
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this concern. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AcceptRequest"];
+                "multipart/form-data": components["schemas"]["AcceptRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["AcceptRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffConcernDetail"];
+                };
+            };
+        };
+    };
     v1_staff_concerns_assign_division_create: {
         parameters: {
             query?: {
@@ -1640,7 +1992,7 @@ export interface operations {
                 /** @description Search reference no., title, landmark, description */
                 q?: string;
                 /** @description Inbox view (default: open) */
-                tab?: "all" | "closed" | "endorsed" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
+                tab?: "all" | "closed" | "endorsed" | "for_acceptance" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
             };
             header?: never;
             path: {
@@ -1676,7 +2028,7 @@ export interface operations {
                 /** @description Search reference no., title, landmark, description */
                 q?: string;
                 /** @description Inbox view (default: open) */
-                tab?: "all" | "closed" | "endorsed" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
+                tab?: "all" | "closed" | "endorsed" | "for_acceptance" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
             };
             header?: never;
             path: {
@@ -1712,7 +2064,7 @@ export interface operations {
                 /** @description Search reference no., title, landmark, description */
                 q?: string;
                 /** @description Inbox view (default: open) */
-                tab?: "all" | "closed" | "endorsed" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
+                tab?: "all" | "closed" | "endorsed" | "for_acceptance" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
             };
             header?: never;
             path: {
@@ -1748,7 +2100,7 @@ export interface operations {
                 /** @description Search reference no., title, landmark, description */
                 q?: string;
                 /** @description Inbox view (default: open) */
-                tab?: "all" | "closed" | "endorsed" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
+                tab?: "all" | "closed" | "endorsed" | "for_acceptance" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
             };
             header?: never;
             path: {
@@ -1782,7 +2134,7 @@ export interface operations {
                 /** @description Search reference no., title, landmark, description */
                 q?: string;
                 /** @description Inbox view (default: open) */
-                tab?: "all" | "closed" | "endorsed" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
+                tab?: "all" | "closed" | "endorsed" | "for_acceptance" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
             };
             header?: never;
             path: {
@@ -1818,7 +2170,7 @@ export interface operations {
                 /** @description Search reference no., title, landmark, description */
                 q?: string;
                 /** @description Inbox view (default: open) */
-                tab?: "all" | "closed" | "endorsed" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
+                tab?: "all" | "closed" | "endorsed" | "for_acceptance" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
             };
             header?: never;
             path: {
@@ -1854,7 +2206,7 @@ export interface operations {
                 /** @description Search reference no., title, landmark, description */
                 q?: string;
                 /** @description Inbox view (default: open) */
-                tab?: "all" | "closed" | "endorsed" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
+                tab?: "all" | "closed" | "endorsed" | "for_acceptance" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
             };
             header?: never;
             path: {
@@ -1890,7 +2242,7 @@ export interface operations {
                 /** @description Search reference no., title, landmark, description */
                 q?: string;
                 /** @description Inbox view (default: open) */
-                tab?: "all" | "closed" | "endorsed" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
+                tab?: "all" | "closed" | "endorsed" | "for_acceptance" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
             };
             header?: never;
             path: {
@@ -1926,7 +2278,7 @@ export interface operations {
                 /** @description Search reference no., title, landmark, description */
                 q?: string;
                 /** @description Inbox view (default: open) */
-                tab?: "all" | "closed" | "endorsed" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
+                tab?: "all" | "closed" | "endorsed" | "for_acceptance" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
             };
             header?: never;
             path: {
@@ -1962,7 +2314,7 @@ export interface operations {
                 /** @description Search reference no., title, landmark, description */
                 q?: string;
                 /** @description Inbox view (default: open) */
-                tab?: "all" | "closed" | "endorsed" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
+                tab?: "all" | "closed" | "endorsed" | "for_acceptance" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
             };
             header?: never;
             path: {
@@ -1998,7 +2350,7 @@ export interface operations {
                 /** @description Search reference no., title, landmark, description */
                 q?: string;
                 /** @description Inbox view (default: open) */
-                tab?: "all" | "closed" | "endorsed" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
+                tab?: "all" | "closed" | "endorsed" | "for_acceptance" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
             };
             header?: never;
             path: {
@@ -2034,7 +2386,7 @@ export interface operations {
                 /** @description Search reference no., title, landmark, description */
                 q?: string;
                 /** @description Inbox view (default: open) */
-                tab?: "all" | "closed" | "endorsed" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
+                tab?: "all" | "closed" | "endorsed" | "for_acceptance" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
             };
             header?: never;
             path: {
@@ -2070,7 +2422,7 @@ export interface operations {
                 /** @description Search reference no., title, landmark, description */
                 q?: string;
                 /** @description Inbox view (default: open) */
-                tab?: "all" | "closed" | "endorsed" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
+                tab?: "all" | "closed" | "endorsed" | "for_acceptance" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
             };
             header?: never;
             path: {
@@ -2106,7 +2458,7 @@ export interface operations {
                 /** @description Search reference no., title, landmark, description */
                 q?: string;
                 /** @description Inbox view (default: open) */
-                tab?: "all" | "closed" | "endorsed" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
+                tab?: "all" | "closed" | "endorsed" | "for_acceptance" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
             };
             header?: never;
             path: {
@@ -2133,6 +2485,76 @@ export interface operations {
             };
         };
     };
+    v1_staff_concerns_respond_create: {
+        parameters: {
+            query?: {
+                barangay?: number;
+                category?: string;
+                include_duplicates?: boolean;
+                /** @description Search reference no., title, landmark, description */
+                q?: string;
+                /** @description Inbox view (default: open) */
+                tab?: "all" | "closed" | "endorsed" | "for_acceptance" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
+            };
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this concern. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["RespondRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffConcernDetail"];
+                };
+            };
+        };
+    };
+    v1_staff_concerns_return_to_pacd_create: {
+        parameters: {
+            query?: {
+                barangay?: number;
+                category?: string;
+                include_duplicates?: boolean;
+                /** @description Search reference no., title, landmark, description */
+                q?: string;
+                /** @description Inbox view (default: open) */
+                tab?: "all" | "closed" | "endorsed" | "for_acceptance" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
+            };
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this concern. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReturnRequest"];
+                "multipart/form-data": components["schemas"]["ReturnRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["ReturnRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffConcernDetail"];
+                };
+            };
+        };
+    };
     v1_staff_concerns_route_create: {
         parameters: {
             query?: {
@@ -2142,7 +2564,7 @@ export interface operations {
                 /** @description Search reference no., title, landmark, description */
                 q?: string;
                 /** @description Inbox view (default: open) */
-                tab?: "all" | "closed" | "endorsed" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
+                tab?: "all" | "closed" | "endorsed" | "for_acceptance" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
             };
             header?: never;
             path: {
@@ -2169,6 +2591,42 @@ export interface operations {
             };
         };
     };
+    v1_staff_concerns_set_priority_create: {
+        parameters: {
+            query?: {
+                barangay?: number;
+                category?: string;
+                include_duplicates?: boolean;
+                /** @description Search reference no., title, landmark, description */
+                q?: string;
+                /** @description Inbox view (default: open) */
+                tab?: "all" | "closed" | "endorsed" | "for_acceptance" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
+            };
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this concern. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetPriorityRequest"];
+                "multipart/form-data": components["schemas"]["SetPriorityRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["SetPriorityRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffConcernDetail"];
+                };
+            };
+        };
+    };
     v1_staff_concerns_unlink_duplicate_create: {
         parameters: {
             query?: {
@@ -2178,7 +2636,7 @@ export interface operations {
                 /** @description Search reference no., title, landmark, description */
                 q?: string;
                 /** @description Inbox view (default: open) */
-                tab?: "all" | "closed" | "endorsed" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
+                tab?: "all" | "closed" | "endorsed" | "for_acceptance" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
             };
             header?: never;
             path: {
@@ -2208,7 +2666,7 @@ export interface operations {
                 /** @description Search reference no., title, landmark, description */
                 q?: string;
                 /** @description Inbox view (default: open) */
-                tab?: "all" | "closed" | "endorsed" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
+                tab?: "all" | "closed" | "endorsed" | "for_acceptance" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
             };
             header?: never;
             path: {
@@ -2242,7 +2700,7 @@ export interface operations {
                 /** @description Search reference no., title, landmark, description */
                 q?: string;
                 /** @description Inbox view (default: open) */
-                tab?: "all" | "closed" | "endorsed" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
+                tab?: "all" | "closed" | "endorsed" | "for_acceptance" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
             };
             header?: never;
             path: {
@@ -2307,6 +2765,128 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Division"][];
+                };
+            };
+        };
+    };
+    v1_staff_map_barangays_list: {
+        parameters: {
+            query?: {
+                barangay?: number;
+                category?: string;
+                /** @description YYYY-MM-DD */
+                date_from?: string;
+                /** @description YYYY-MM-DD */
+                date_to?: string;
+                /** @description Look-back window in days (default 90). Ignored if date_from is set. */
+                days?: number;
+                department?: number;
+                /** @description P1..P4 */
+                priority?: string;
+                status?: "all" | "open" | "resolved";
+                subcategory?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BarangayStat"][];
+                };
+            };
+        };
+    };
+    v1_staff_map_hotspots_retrieve: {
+        parameters: {
+            query?: {
+                barangay?: number;
+                category?: string;
+                /** @description YYYY-MM-DD */
+                date_from?: string;
+                /** @description YYYY-MM-DD */
+                date_to?: string;
+                /** @description Look-back window in days (default 90). Ignored if date_from is set. */
+                days?: number;
+                department?: number;
+                /** @description Cluster radius in meters (default 75) */
+                eps_m?: number;
+                /** @description Minimum distinct reports per hotspot (default 4) */
+                min_samples?: number;
+                /** @description P1..P4 */
+                priority?: string;
+                status?: "all" | "open" | "resolved";
+                subcategory?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Hotspots"];
+                };
+            };
+        };
+    };
+    v1_staff_map_points_retrieve: {
+        parameters: {
+            query?: {
+                barangay?: number;
+                category?: string;
+                /** @description YYYY-MM-DD */
+                date_from?: string;
+                /** @description YYYY-MM-DD */
+                date_to?: string;
+                /** @description Look-back window in days (default 90). Ignored if date_from is set. */
+                days?: number;
+                department?: number;
+                /** @description P1..P4 */
+                priority?: string;
+                status?: "all" | "open" | "resolved";
+                subcategory?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MapPoints"];
+                };
+            };
+        };
+    };
+    v1_staff_priority_levels_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PriorityLevel"][];
                 };
             };
         };

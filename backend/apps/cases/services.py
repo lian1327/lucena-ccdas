@@ -10,7 +10,7 @@ from apps.concerns.services import change_status
 from apps.priority.services import compute_priority
 
 from . import deadlines
-from .models import Case, CaseNote, Endorsement, EndorsementFollowUp
+from .models import Case, CaseNote, Endorsement, EndorsementFollowUp, PriorityLevel
 
 S = Concern.Status
 FOLLOW_UP_DAYS = 7
@@ -86,9 +86,44 @@ def suggested_route(concern):
     return dept, div
 
 
+def suggest_priority(concern):
+    """
+    Starting point for the office's judgment (they confirm or change it on acceptance):
+      P1 Emergency  – citizen reported danger, or verified severity ≥ 4 on a safety-weighted category
+      P2 Urgent     – priority score ≥ 50 (many affected / many reporters / severe)
+      P3 Standard   – score ≥ 20
+      P4 Low        – everything else
+    """
+    levels = {p.code: p for p in PriorityLevel.objects.all()}
+    if not levels:
+        return None
+    score = float(concern.priority_score or 0)
+    if concern.danger_now or (concern.is_verified and concern.severity >= 5):
+        code = "P1"
+    elif score >= 50 or concern.severity >= 4:
+        code = "P2"
+    elif score >= 20:
+        code = "P3"
+    else:
+        code = "P4"
+    return levels.get(code) or next(iter(levels.values()))
+
+
+def _apply_clocks(case, start=None, keep_extension=False):
+    """(Re)compute response and resolution targets from the clock start and the case's priority level."""
+    start = start or case.routed_at or timezone.now()
+    concern = case.concern
+    if not (keep_extension and case.extended_at):
+        case.due_at = case.original_due_at = deadlines.resolution_due(concern, start, case.priority_level)
+    case.response_due_at = None if case.responded_at else deadlines.response_due(start, case.priority_level)
+
+
 @transaction.atomic
 def route(concern, user, *, level, department=None, division=None, remarks=""):
-    """PACD / barangay sends the concern to who will handle it. Starts the ARTA clock."""
+    """
+    PACD / barangay sends the concern to who will handle it. Starts the clocks.
+    City-level cases wait for the office's own receiving & screening (accept or return) within 1 working day.
+    """
     if level == Case.Level.EXTERNAL:
         raise WorkflowError("Use the endorsement action for external agencies.")
     if level == Case.Level.CITY and not department:
@@ -100,33 +135,132 @@ def route(concern, user, *, level, department=None, division=None, remarks=""):
     if division and department and division.department_id != department.id:
         raise WorkflowError("Division does not belong to the selected office.")
 
-    case = getattr(concern, "case", None)
+    city = level == Case.Level.CITY
     now = timezone.now()
-    due = deadlines.initial_due(concern, now)
-    fields = dict(level=level, department=department if level == Case.Level.CITY else None,
-                  division=division if level == Case.Level.CITY else None,
-                  assigned_to=None, assigned_by=user)
+    case = getattr(concern, "case", None)
     if case is None:
-        case = Case.objects.create(concern=concern, due_at=due, original_due_at=due, **fields)
-    else:
-        moved = (case.level, case.department_id) != (level, fields["department"].id if fields["department"] else None)
-        for k, v in fields.items():
-            setattr(case, k, v)
-        if moved:  # new owner gets a fresh ARTA clock
-            case.due_at = case.original_due_at = due
-            case.extended_at = None
-            case.extension_reason = ""
-            case.inspected_at = case.work_completed_at = None
-        case.save()
-        _note(case, user, f"Inilipat sa {department.name if department else 'barangay'}. {remarks}".strip())
+        case = Case(concern=concern)
+    elif case.department_id or case.level == Case.Level.BARANGAY:
+        _note(case, user, f"Inilipat sa {department.name if city else 'barangay'}. {remarks}".strip())
 
-    where = department.name if level == Case.Level.CITY else f"Barangay {concern.barangay.name}"
+    case.level = level
+    case.department = department if city else None
+    case.division = division if city else None
+    case.assigned_to = None
+    case.assigned_by = user
+    case.routed_at = now
+    case.extended_at = None
+    case.extension_reason = ""
+    case.inspected_at = case.work_completed_at = case.responded_at = None
+    case.accepted_at = None if city else now          # barangay-level: the barangay routed it to itself
+    case.accepted_by = None if city else user
+    case.acceptance_due_at = deadlines.acceptance_due(now) if city else None
+    case.screening = {}
+    case.priority_level = case.priority_level or suggest_priority(concern)
+    _apply_clocks(case, now)
+    case.save()
+
+    where = department.name if city else f"Barangay {concern.barangay.name}"
     msg = remarks or f"Naipasa na sa {where}. Target na petsa: {timezone.localtime(case.due_at):%b %d, %Y}."
     if concern.status in (S.SUBMITTED, S.UNDER_REVIEW):
         change_status(concern, S.ASSIGNED, user, msg)
     else:
         _move(concern, user, S.ASSIGNED, msg)
     compute_priority(concern)
+    return case
+
+
+# ---------------- Office receiving & screening ----------------
+
+@transaction.atomic
+def accept(concern, user, *, priority_level, screening=None, division=None, priority_reason="", remarks=""):
+    """
+    The receiving office confirms the case is theirs, answers its own screening checklist, and confirms the
+    priority level. Changing the suggested level requires a reason (it changes the citizen's target date).
+    """
+    case = concern.case
+    if case.accepted_at:
+        raise WorkflowError("Already accepted.")
+    if division and division.department_id != case.department_id:
+        raise WorkflowError("Division does not belong to this office.")
+    checklist = case.department.screening_checklist or []
+    answers = screening or {}
+    missing = [q for q in checklist if q not in answers]
+    if missing:
+        raise WorkflowError(f"Sagutin ang lahat ng screening questions ({len(missing)} pa).")
+    changed = case.priority_level_id != priority_level.id
+    if changed and not priority_reason.strip():
+        raise WorkflowError("Give a reason for changing the suggested priority level.")
+
+    now = timezone.now()
+    case.accepted_at = now
+    case.accepted_by = user
+    case.screening = answers
+    if division:
+        case.division = division
+    if changed:
+        old = case.priority_level
+        case.priority_level = priority_level
+        case.priority_reason = priority_reason
+        _apply_clocks(case)  # clock still runs from receipt, not from acceptance
+        _note(case, user, f"Priority {old.code if old else '—'} → {priority_level.code}: {priority_reason}")
+    case.save()
+    _note(case, user, f"Tinanggap ng {case.department.code}. {remarks}".strip())
+    msg = f"Tinanggap na ng {case.department.name}. Antas: {priority_level.name_fil or priority_level.name}. " \
+          f"Target na petsa: {timezone.localtime(case.due_at):%b %d, %Y}."
+    _public_entry(concern, user, msg)
+    return case
+
+
+@transaction.atomic
+def return_to_pacd(concern, user, *, reason):
+    """Wrong office: send back to the PACD with a reason (not straight to another office, to avoid ping-pong)."""
+    case = concern.case
+    if case.accepted_at:
+        raise WorkflowError("Accepted cases are re-routed by PACD or the City Administrator.")
+    dept = case.department
+    case.returned_at = timezone.now()
+    case.return_reason = f"{dept.code if dept else ''}: {reason}"
+    case.return_count += 1
+    case.department = None
+    case.division = None
+    case.assigned_to = None
+    case.acceptance_due_at = None
+    case.save()
+    _note(case, user, f"Ibinalik sa PACD ng {dept.name if dept else 'opisina'}: {reason}")
+    change_status(concern, S.UNDER_REVIEW, user, f"Returned by {dept.code if dept else 'office'}: {reason}",
+                  is_public=False, enforce=False)
+    return case
+
+
+@transaction.atomic
+def set_priority(concern, user, *, priority_level, reason):
+    case = concern.case
+    if case.priority_level_id == priority_level.id:
+        return case
+    old = case.priority_level
+    case.priority_level = priority_level
+    case.priority_reason = reason
+    _apply_clocks(case, keep_extension=True)
+    case.save()
+    _note(case, user, f"Priority {old.code if old else '—'} → {priority_level.code}: {reason}")
+    _public_entry(concern, user, f"Binago ang antas ng prayoridad: {priority_level.name_fil or priority_level.name}. "
+                                 f"Target na petsa: {timezone.localtime(case.due_at):%b %d, %Y}.")
+    return case
+
+
+@transaction.atomic
+def respond(concern, user, *, remarks, photos=()):
+    """First field action / make-safe (e.g. barricade an open manhole). Stops the response clock."""
+    case = concern.case
+    if case.responded_at:
+        raise WorkflowError("Response already logged.")
+    case.responded_at = timezone.now()
+    case.responded_by = user
+    case.response_remarks = remarks
+    case.save(update_fields=["responded_at", "responded_by", "response_remarks"])
+    _attach(concern, user, photos, kind=ConcernAttachment.Kind.PROGRESS)
+    _move(concern, user, S.IN_PROGRESS, remarks)
     return case
 
 
@@ -165,10 +299,14 @@ def inspect(concern, user, *, findings, action_plan="", scheduled_for=None, publ
     case = concern.case
     case.inspected_at = timezone.now()
     case.inspected_by = user
+    if not case.responded_at:  # site inspection counts as the first response
+        case.responded_at = case.inspected_at
+        case.responded_by = user
     case.inspection_findings = findings
     case.action_plan = action_plan
     case.scheduled_for = scheduled_for
-    case.save(update_fields=["inspected_at", "inspected_by", "inspection_findings", "action_plan", "scheduled_for"])
+    case.save(update_fields=["inspected_at", "inspected_by", "inspection_findings", "action_plan", "scheduled_for",
+                             "responded_at", "responded_by"])
     msg = public_message or (
         f"Na-inspeksyon na ang lugar. Nakaiskedyul ang trabaho sa {scheduled_for:%b %d, %Y}."
         if scheduled_for else "Na-inspeksyon na ang lugar. Inihahanda ang trabaho."
@@ -349,23 +487,42 @@ def escalate(concern, user, *, reason, auto=False):
     return case
 
 
+def breaches(case, now=None):
+    """Which commitments this open case has missed right now (used for escalation and analytics)."""
+    now = now or timezone.now()
+    out = []
+    if case.level == Case.Level.CITY and case.department_id and not case.accepted_at \
+            and case.acceptance_due_at and case.acceptance_due_at < now:
+        out.append(f"hindi pa tinatanggap ng {case.department.code} (due {timezone.localtime(case.acceptance_due_at):%b %d %H:%M})")
+    if not case.responded_at and case.response_due_at and case.response_due_at < now:
+        lvl = case.priority_level.code if case.priority_level else ""
+        out.append(f"walang unang aksyon para sa {lvl} (due {timezone.localtime(case.response_due_at):%b %d %H:%M})")
+    if case.due_at and case.due_at < now:
+        out.append(f"lampas sa target na petsa ({timezone.localtime(case.due_at):%b %d})")
+    return out
+
+
 def escalate_overdue(now=None):
     """
-    Run hourly. Open cases past due escalate one level (Dept Head → City Admin → Mayor) and get a
-    short grace window so they don't escalate every hour.
+    Run hourly (Task Scheduler / Celery beat). Any missed commitment (acceptance, response, resolution)
+    escalates the case one level: Dept Head → City Admin → Mayor. Targets are never moved; a separate
+    timer (next_escalation_at) waits 2 working days before escalating the same case again.
     """
     now = now or timezone.now()
-    overdue = Case.objects.select_related("concern__category").filter(
+    candidates = Case.objects.select_related("concern__category", "department", "priority_level").filter(
         concern__status__in=Concern.OPEN_STATUSES,
         concern__duplicate_of__isnull=True,
-        due_at__lt=now,
         escalation_level__lt=Case.EscalationLevel.MAYOR,
-    )
+    ).exclude(next_escalation_at__gt=now)
     n = 0
-    for case in overdue:
-        escalate(case.concern, None, reason=f"Lumampas sa target na petsa ({timezone.localtime(case.due_at):%b %d}).", auto=True)
-        case.due_at = deadlines.add_working_days(now, 2)
-        case.save(update_fields=["due_at"])
+    for case in candidates:
+        missed = breaches(case, now)
+        if not missed:
+            continue
+        reason = "; ".join(missed)
+        escalate(case.concern, None, reason=reason[:1].upper() + reason[1:] + ".", auto=True)
+        case.next_escalation_at = deadlines.add_working_days(now, 2)
+        case.save(update_fields=["next_escalation_at"])
         n += 1
     return n
 

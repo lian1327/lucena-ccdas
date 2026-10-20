@@ -1,4 +1,7 @@
+import { lazy, Suspense } from "react";
 import { createBrowserRouter } from "react-router-dom";
+
+import { FullPageSpinner } from "@/components/FullPageSpinner";
 
 import { STAFF_ROLES } from "@/api/types";
 import { ProtectedRoute } from "@/auth/ProtectedRoute";
@@ -14,6 +17,8 @@ import { CaseDetailPage } from "@/pages/staff/CaseDetailPage";
 import { CasesPage } from "@/pages/staff/CasesPage";
 import { DashboardPage } from "@/pages/staff/DashboardPage";
 import { EncodePage } from "@/pages/staff/EncodePage";
+
+const MapPage = lazy(() => import("@/pages/staff/MapPage"));
 
 export const router = createBrowserRouter([
   {
@@ -40,6 +45,7 @@ export const router = createBrowserRouter([
           { path: "cases", element: <CasesPage /> },
           { path: "cases/:id", element: <CaseDetailPage /> },
           { path: "encode", element: <EncodePage /> },
+          { path: "map", element: <Suspense fallback={<FullPageSpinner label="Nilo-load ang mapa…" />}><MapPage /></Suspense> },
         ],
       },
     ],

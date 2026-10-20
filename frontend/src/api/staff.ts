@@ -7,6 +7,7 @@ import type {
   Department,
   Division,
   EndorsementStatus,
+  PriorityLevel,
   Severity,
   StaffConcernDetail,
   StaffConcernPage,
@@ -15,7 +16,7 @@ import type {
 } from "./types";
 
 export type InboxTab =
-  | "triage" | "to_route" | "mine" | "validation" | "endorsed" | "overdue" | "open" | "closed" | "all";
+  | "triage" | "to_route" | "for_acceptance" | "mine" | "validation" | "endorsed" | "overdue" | "open" | "closed" | "all";
 export type InboxParams = { tab: InboxTab; q?: string; page?: number };
 
 export const staffKeys = {
@@ -60,6 +61,14 @@ export function useDepartments(kind?: "internal" | "external") {
   return useQuery({
     queryKey: staffKeys.departments(kind),
     queryFn: async () => (await api.get<Department[]>("/staff/departments/", { params: { kind } })).data,
+    staleTime: 60 * 60 * 1000,
+  });
+}
+
+export function usePriorityLevels() {
+  return useQuery({
+    queryKey: ["staff", "priority-levels"],
+    queryFn: async () => (await api.get<PriorityLevel[]>("/staff/priority-levels/")).data,
     staleTime: 60 * 60 * 1000,
   });
 }
@@ -117,6 +126,14 @@ export const useRoute = (id: number) =>
   useCaseAction<{ level: "city" | "barangay"; department?: number | null; division?: number | null; remarks?: string }>(id, "route");
 export const useEndorse = (id: number) =>
   useCaseAction<{ agency: number; letter_reference?: string; contact_person?: string; remarks?: string }>(id, "endorse");
+export const useAccept = (id: number) =>
+  useCaseAction<{
+    priority_level: number; priority_reason?: string; screening: Record<string, boolean>; division?: number | null; remarks?: string;
+  }>(id, "accept");
+export const useReturnToPacd = (id: number) => useCaseAction<{ reason: string }>(id, "return-to-pacd");
+export const useSetPriority = (id: number) => useCaseAction<{ priority_level: number; reason: string }>(id, "set-priority");
+export const useRespond = (id: number) =>
+  useCaseAction<{ remarks: string; photos: File[] }>(id, "respond", (v) => toFormData(v));
 export const useAssignDivision = (id: number) => useCaseAction<{ division: number; remarks?: string }>(id, "assign-division");
 export const useAssignPerson = (id: number) => useCaseAction<{ person: number; remarks?: string }>(id, "assign-person");
 export const useInspect = (id: number) =>

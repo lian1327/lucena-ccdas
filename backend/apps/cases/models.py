@@ -14,6 +14,10 @@ class Department(models.Model):
     kind = models.CharField(max_length=10, choices=Kind.choices, default=Kind.INTERNAL)
     head = models.CharField(max_length=150, blank=True)
     contact = models.CharField(max_length=200, blank=True, help_text="For external agencies: office address / email / phone.")
+    screening_checklist = models.JSONField(
+        default=list, blank=True,
+        help_text='Office-specific checks done on receipt, e.g. ["Nasa city road (hindi national road)?", ...]',
+    )
     is_active = models.BooleanField(default=True)
 
     class Meta:
@@ -41,6 +45,34 @@ class Division(models.Model):
 
     def __str__(self):
         return f"{self.department.code} › {self.name}"
+
+
+class PriorityLevel(models.Model):
+    """
+    LGU service standard for urgency. ARTA (RA 11032) sets the legal MAXIMUM by complexity (3/7/20 working days);
+    a priority level can only make the target shorter: resolution target = min(resolution_cap_days, ARTA class).
+    The response target is the time to first field action (inspection or make-safe).
+    """
+
+    code = models.CharField(max_length=4, unique=True)  # P1..P4
+    name = models.CharField(max_length=40)
+    name_fil = models.CharField(max_length=40, blank=True)
+    description = models.CharField(max_length=255, blank=True)
+    response_hours = models.PositiveSmallIntegerField(
+        null=True, blank=True, help_text="Calendar hours (emergencies don't wait for working days).",
+    )
+    response_working_days = models.PositiveSmallIntegerField(null=True, blank=True)
+    resolution_cap_days = models.PositiveSmallIntegerField(
+        null=True, blank=True, help_text="Working days. Empty = use the ARTA class maximum.",
+    )
+    color = models.CharField(max_length=20, default="secondary", help_text="Bootstrap color: danger, warning, info, secondary")
+    sort_order = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ["sort_order"]
+
+    def __str__(self):
+        return f"{self.code} · {self.name}"
 
 
 class Holiday(models.Model):
@@ -84,6 +116,24 @@ class Case(models.Model):
         settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
     )
     assigned_at = models.DateTimeField(auto_now_add=True)
+    routed_at = models.DateTimeField(null=True, blank=True, help_text="When the current office received it (clock start).")
+
+    # Office receiving & screening: the office confirms the case is theirs before work starts
+    accepted_at = models.DateTimeField(null=True, blank=True)
+    accepted_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    acceptance_due_at = models.DateTimeField(null=True, blank=True)
+    screening = models.JSONField(default=dict, blank=True, help_text="Answers to the office's screening checklist.")
+    returned_at = models.DateTimeField(null=True, blank=True)
+    return_reason = models.TextField(blank=True)
+    return_count = models.PositiveSmallIntegerField(default=0)
+
+    # Priority (urgency) — sets response target and caps the resolution target within ARTA
+    priority_level = models.ForeignKey(PriorityLevel, null=True, blank=True, on_delete=models.PROTECT, related_name="cases")
+    priority_reason = models.CharField(max_length=300, blank=True)
+    response_due_at = models.DateTimeField(null=True, blank=True)
+    responded_at = models.DateTimeField(null=True, blank=True)
+    responded_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    response_remarks = models.TextField(blank=True)
 
     # ARTA (RA 11032): working-day deadline; one written extension, notified before the original lapses
     due_at = models.DateTimeField(null=True, blank=True)
@@ -109,6 +159,9 @@ class Case(models.Model):
     escalation_level = models.PositiveSmallIntegerField(choices=EscalationLevel.choices, default=EscalationLevel.NONE)
     escalated_at = models.DateTimeField(null=True, blank=True)
     escalation_reason = models.TextField(blank=True)
+    next_escalation_at = models.DateTimeField(
+        null=True, blank=True, help_text="Earliest time the next automatic escalation may fire (targets never move).",
+    )
 
     resolution_summary = models.TextField(blank=True)
     resolved_at = models.DateTimeField(null=True, blank=True)
@@ -129,6 +182,10 @@ class Case(models.Model):
             return "for_validation"
         if self.level == self.Level.EXTERNAL:
             return "endorsed"
+        if self.level == self.Level.CITY and (self.department_id is None):
+            return "returned"
+        if self.level == self.Level.CITY and not self.accepted_at:
+            return "for_acceptance"
         if self.inspected_at:
             return "scheduled"
         if self.assigned_to_id or self.level == self.Level.BARANGAY:

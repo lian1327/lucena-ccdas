@@ -9,6 +9,7 @@ import { useAuth } from "@/auth/AuthContext";
 import { STAGE_LABEL, tabsFor } from "@/features/cases/roleViews";
 import { FullPageSpinner } from "@/components/FullPageSpinner";
 import { PriorityBadge } from "@/components/PriorityBadge";
+import { UrgencyBadge } from "@/components/UrgencyBadge";
 import { StatusBadge } from "@/components/StatusBadge";
 import { dueLabel, timeAgo } from "@/utils/format";
 
@@ -18,7 +19,13 @@ function CaseRow({ c }: { c: StaffConcern }) {
     <Card as={Link} to={`/staff/cases/${c.id}`} className="text-decoration-none text-body mb-2 case-row">
       <Card.Body className="py-2 px-3">
         <div className="d-flex flex-wrap align-items-center gap-2 mb-1">
+          <UrgencyBadge code={c.priority_code} name={c.priority_name} color={c.priority_color} />
           <PriorityBadge tier={c.priority_tier} score={c.priority_score} />
+          {c.stage === "for_acceptance" && <Badge bg="primary">For acceptance</Badge>}
+          {c.return_reason && c.stage === "returned" && <Badge bg="danger" title={c.return_reason}>Ibinalik ng opisina</Badge>}
+          {!c.responded_at && c.response_due_at && new Date(c.response_due_at) < new Date() && (
+            <Badge bg="danger">Walang unang aksyon</Badge>
+          )}
           {c.danger_now && (
             <Badge bg="danger" title="Sinabi ng nag-report na may panganib">
               <i className="bi bi-exclamation-triangle-fill me-1" aria-hidden />
@@ -134,7 +141,10 @@ export function CasesPage() {
       </Form>
 
       {tab === "to_route" && (
-        <p className="small text-secondary">Na-verify na pero hindi pa naipapasa. Magsisimula ang ARTA target sa pagpasa.</p>
+        <p className="small text-secondary">Na-verify pero hindi pa naipapasa, o ibinalik ng opisina. Magsisimula ang ARTA target sa pagpasa.</p>
+      )}
+      {tab === "for_acceptance" && (
+        <p className="small text-secondary">Naipasa sa opisina pero hindi pa tinatanggap. Dapat tanggapin o ibalik sa loob ng 1 working day.</p>
       )}
       {tab === "triage" && (
         <p className="small text-secondary">

@@ -28,7 +28,11 @@ DEPARTMENTS = [
     ]),
     ("POSO", "Public Order and Safety Office", "internal", [
         ("POSO-POE", "Public Order & Enforcement Division"),
-        ("POSO-TM", "Traffic Management Division"),
+    ]),
+    ("CTMO", "City Traffic Management Office", "internal", [
+        ("CTMO-ENF", "Traffic Enforcement Division"),
+        ("CTMO-ENG", "Traffic Engineering & Signage Division"),
+        ("CTMO-PT", "Public Transport (Tricycle/Jeepney) Regulation Division"),
     ]),
     ("BPLO", "Business Permits and Licensing Office", "internal", [
         ("BPLO-IE", "Inspection & Enforcement Division"),
@@ -48,9 +52,47 @@ DEPARTMENTS = [
     ("DPWH", "DPWH District Engineering Office", "external", []),
     ("ELEC", "Electric Distribution Utility", "external", []),
     ("WATER", "Water District", "external", []),
+    ("LTO", "Land Transportation Office", "external", []),
+    ("PNP-HPG", "PNP Highway Patrol Group", "external", []),
 ]
 
 ARTA_DAYS = {"simple": 3, "complex": 7, "highly_technical": 20}
+
+# LGU service standard. Resolution target = min(cap, ARTA class); response = first field action / make-safe.
+# code, name, name_fil, description, response_hours, response_working_days, resolution_cap_days, color
+PRIORITY_LEVELS = [
+    ("P1", "Emergency", "Emergency", "Panganib sa buhay o kaligtasan. Make-safe agad (barricade, alis ng sagabal).",
+     4, None, 3, "danger"),
+    ("P2", "Urgent", "Agaran", "Malaking abala o maraming apektado; maaaring lumala.", None, 1, 7, "warning"),
+    ("P3", "Standard", "Karaniwan", "Karaniwang reklamo; ayon sa ARTA class.", None, 3, None, "info"),
+    ("P4", "Low", "Mababa", "Maliit ang epekto; maaaring isama sa regular na iskedyul.", None, 5, None, "secondary"),
+]
+
+# Each office's own receiving checklist (answered on acceptance). Editable per office in admin.
+SCREENING = {
+    "CEO": [
+        "Nasa city o barangay road / drainage (hindi national road ng DPWH)?",
+        "Kailangan ng site inspection bago aksyunan?",
+        "Kailangan ng materyales na wala sa stock (procurement)?",
+    ],
+    "GSO": [
+        "Pag-aari ng City ang poste/ilaw (hindi ng electric cooperative)?",
+        "May available na bombilya / piyesa sa bodega?",
+    ],
+    "CENRO": [
+        "Sakop ng city collection route ang lugar?",
+        "May kilalang nagtapon / lumabag (para sa notice of violation)?",
+    ],
+    "CTMO": [
+        "Nasa city road (hindi national highway na sakop ng PNP-HPG/DPWH)?",
+        "Enforcement ba (hindi signage o traffic engineering)?",
+        "May kaugnay na city traffic ordinance?",
+    ],
+    "POSO": ["Kailangan ng presensya ng enforcer sa lugar?", "Kailangan ng koordinasyon sa PNP?"],
+    "CDRRMO": ["May agarang panganib sa buhay o ari-arian?", "Kailangan ng koordinasyon sa ibang opisina (CEO, utility)?"],
+    "BPLO": ["Kilala ang pangalan / lokasyon ng negosyo?", "Kailangan ng joint inspection (BFP, sanitation)?"],
+    "CVO": ["Kailangan ng hulihan (impounding) ng hayop?"],
+}
 
 # code, name, name_fil, icon, dept, division, ARTA class, severity_weight, description
 CATEGORIES = [
@@ -66,7 +108,7 @@ CATEGORIES = [
      "Hazards to people: fallen wires, unsafe structures, disturbances."),
     ("business_permit", "Business Permit Concerns", "Business Permit", "briefcase", "BPLO", "BPLO-IE", "complex", 0.70,
      "Unlicensed operations, permit processing issues."),
-    ("traffic", "Traffic Concerns", "Trapiko", "stoplights", "POSO", "POSO-TM", "simple", 1.00,
+    ("traffic", "Traffic Concerns", "Trapiko", "stoplights", "CTMO", "CTMO-ENF", "simple", 1.00,
      "Congestion, illegal parking, missing traffic signs or signals."),
     ("other", "Other Community Issues", "Iba Pang Concern", "chat-square-dots", "CADMIN", "CADMIN-PACD", "complex", 0.80,
      "Any community concern not covered above."),
@@ -74,6 +116,9 @@ CATEGORIES = [
 
 # Sub-types that belong to a different office than their category. Editable in admin.
 SUBCATEGORY_ROUTING = {
+    "missing_signs": ("CTMO", "CTMO-ENG"),
+    "broken_signal": ("CTMO", "CTMO-ENG"),
+    "pub_violation": ("CTMO", "CTMO-PT"),
     "fallen_tree": ("CDRRMO", "CDRRMO-OPS"),
     "unsafe_structure": ("CEO", "CEO-BE"),
     "stray_animals": ("CVO", "CVO-AC"),
@@ -94,16 +139,40 @@ DEMO_USERS = [
     ("pacd.desk", "Liza", "Mendoza", "pacd", "CADMIN", "CADMIN-PACD", None),
     ("cityadmin", "Carlo", "Villanueva", "city_admin", "CADMIN", None, None),
     ("mayor", "Mayor's", "Office", "mayor", None, None, None),
+    ("ceo.desk", "Grace", "Villamor", "office_desk", "CEO", None, None),
     ("ceo.head", "Engr. Roberto", "Santos", "dept_head", "CEO", None, None),
     ("ceo.rdb.chief", "Engr. Teresa", "Lim", "division_chief", "CEO", "CEO-RDB", None),
     ("ceo.staff", "Engr. Ana", "Reyes", "dept_staff", "CEO", "CEO-RDB", None),
     ("ceo.crew", "Mario", "Bautista", "dept_staff", "CEO", "CEO-RDB", None),
+    ("gso.desk", "Joy", "Salazar", "office_desk", "GSO", None, None),
     ("gso.head", "Ramon", "Aquino", "dept_head", "GSO", None, None),
     ("gso.sl.chief", "Nestor", "Garcia", "division_chief", "GSO", "GSO-SL", None),
     ("gso.crew", "Jun", "Ramos", "dept_staff", "GSO", "GSO-SL", None),
+    ("cenro.desk", "Mylene", "Ocampo", "office_desk", "CENRO", None, None),
     ("cenro.head", "Elena", "Torres", "dept_head", "CENRO", None, None),
     ("cenro.swm.chief", "Paolo", "Cruz", "division_chief", "CENRO", "CENRO-SWM", None),
     ("cenro.staff", "Ben", "Cruz", "dept_staff", "CENRO", "CENRO-SWM", None),
+    ("ctmo.desk", "Rina", "Pascual", "office_desk", "CTMO", None, None),
+    ("ctmo.head", "Col. Edgar", "Manalo", "dept_head", "CTMO", None, None),
+    ("ctmo.enf.chief", "Arnel", "De Mesa", "division_chief", "CTMO", "CTMO-ENF", None),
+    ("ctmo.enforcer", "Dennis", "Rivera", "dept_staff", "CTMO", "CTMO-ENF", None),
+    ("ctmo.eng.chief", "Engr. Liza", "Ferrer", "division_chief", "CTMO", "CTMO-ENG", None),
+    ("poso.desk", "Aileen", "Ramirez", "office_desk", "POSO", None, None),
+    ("poso.head", "Rodrigo", "Valdez", "dept_head", "POSO", None, None),
+    ("poso.chief", "Victor", "Lagman", "division_chief", "POSO", "POSO-POE", None),
+    ("poso.officer", "Ronald", "Dimaano", "dept_staff", "POSO", "POSO-POE", None),
+    ("bplo.desk", "Cristina", "Umali", "office_desk", "BPLO", None, None),
+    ("bplo.head", "Atty. Marissa", "Tan", "dept_head", "BPLO", None, None),
+    ("bplo.ie.chief", "Joel", "Mercado", "division_chief", "BPLO", "BPLO-IE", None),
+    ("bplo.inspector", "Karen", "Sison", "dept_staff", "BPLO", "BPLO-IE", None),
+    ("cdrrmo.desk", "Jessa", "Alvarez", "office_desk", "CDRRMO", None, None),
+    ("cdrrmo.head", "Marlon", "Briones", "dept_head", "CDRRMO", None, None),
+    ("cdrrmo.ops.chief", "Ariel", "Castro", "division_chief", "CDRRMO", "CDRRMO-OPS", None),
+    ("cdrrmo.responder", "Mark", "Ilagan", "dept_staff", "CDRRMO", "CDRRMO-OPS", None),
+    ("cvo.desk", "Daisy", "Robles", "office_desk", "CVO", None, None),
+    ("cvo.head", "Dr. Paula", "Enriquez", "dept_head", "CVO", None, None),
+    ("cvo.ac.chief", "Lito", "Avila", "division_chief", "CVO", "CVO-AC", None),
+    ("cvo.catcher", "Boyet", "Llamas", "dept_staff", "CVO", "CVO-AC", None),
     ("brgy.gg", "Kagawad Rosa", "Dizon", "barangay", None, None, "Gulang-Gulang"),
     ("brgy.gg.kap", "Kap. Andres", "Navarro", "barangay", None, None, "Gulang-Gulang"),
 ]
@@ -181,11 +250,15 @@ class Command(BaseCommand):
 
         depts, divs = {}, {}
         for code, name, kind, divisions in DEPARTMENTS:
-            depts[code], _ = Department.objects.update_or_create(code=code, defaults={"name": name, "kind": kind})
+            depts[code], _ = Department.objects.update_or_create(code=code, defaults={
+                "name": name, "kind": kind, "screening_checklist": SCREENING.get(code, []),
+            })
             for dcode, dname in divisions:
                 divs[dcode], _ = Division.objects.update_or_create(
                     code=dcode, defaults={"department": depts[code], "name": dname}
                 )
+        # Retired units from earlier versions (traffic moved from POSO to its own CTMO)
+        Division.objects.filter(code__in=["POSO-TM"]).update(is_active=False)
         self.stdout.write(self.style.SUCCESS(f"Offices: {len(depts)} ({len(divs)} divisions)"))
 
         cat_div = {}
@@ -209,6 +282,15 @@ class Command(BaseCommand):
                 ))
                 n += 1
         self.stdout.write(self.style.SUCCESS(f"Subcategories: {n}"))
+
+        from apps.cases.models import PriorityLevel
+
+        for i, (code, name, fil, desc, hrs, wd, cap, color) in enumerate(PRIORITY_LEVELS):
+            PriorityLevel.objects.update_or_create(code=code, defaults=dict(
+                name=name, name_fil=fil, description=desc, response_hours=hrs, response_working_days=wd,
+                resolution_cap_days=cap, color=color, sort_order=i,
+            ))
+        self.stdout.write(self.style.SUCCESS(f"Priority levels: {len(PRIORITY_LEVELS)}"))
 
         year = date.today().year
         h = 0

@@ -1,0 +1,127 @@
+=====================================================================
+ CCADSS — DEMO LOGIN ACCOUNTS
+ LGU Citizen Concern Analytics and Decision Support System
+=====================================================================
+
+ PASSWORD FOR ALL ACCOUNTS:  Test#12345
+
+ Staff portal login ..... http://localhost:5173/login
+ Citizen portal ......... http://localhost:5173/        (no login needed)
+ Django admin ........... http://127.0.0.1:8000/admin/  (your superuser only)
+
+ Created by:  python manage.py seed_reference_data --lucena --demo-users
+
+ !! DEMO ONLY. Delete or change these before any real pilot/deployment.
+ !! Do not commit this file to GitHub (add it to .gitignore).
+
+---------------------------------------------------------------------
+ HOW A COMPLAINT FLOWS (who logs in when)
+---------------------------------------------------------------------
+ 1. Citizen submits at /report  (no account)
+ 2. PACD (pacd.desk)            verifies + routes to an office
+ 3. Office desk (xxx.desk)      screens checklist, accepts as P1–P4
+                                (or returns to PACD) within 1 working day
+ 4. Division chief (xxx.chief)  assigns an engineer / crew
+ 5. Field staff (crew/staff)    first response → inspection → work done + photo
+ 6. Division chief              validates the work  → citizen sees "Resolved"
+ 7. PACD                        closes the loop with the citizen
+    City Admin = override everything | Mayor = read-only oversight
+
+---------------------------------------------------------------------
+ CITY-WIDE
+---------------------------------------------------------------------
+ Username        Name                  Role
+ --------------- --------------------- ------------------------------
+ pacd.desk       Liza Mendoza          Public Assistance & Complaints Desk
+ cityadmin       Carlo Villanueva      City Administrator (full access)
+ mayor           Mayor's Office        Mayor's Office (read-only)
+
+---------------------------------------------------------------------
+ CEO — City Engineering Office   (roads, drainage, buildings)
+---------------------------------------------------------------------
+ ceo.desk        Grace Villamor        Office Receiving Officer
+ ceo.head        Engr. Roberto Santos  Department Head
+ ceo.rdb.chief   Engr. Teresa Lim      Division Chief – Road, Drainage & Bridges
+ ceo.staff       Engr. Ana Reyes       Field Engineer – Road, Drainage & Bridges
+ ceo.crew        Mario Bautista        Field Crew – Road, Drainage & Bridges
+
+---------------------------------------------------------------------
+ GSO — General Services Office   (streetlights)
+---------------------------------------------------------------------
+ gso.desk        Joy Salazar           Office Receiving Officer
+ gso.head        Ramon Aquino          Department Head
+ gso.sl.chief    Nestor Garcia         Division Chief – Streetlight & Electrical
+ gso.crew        Jun Ramos             Field Crew – Streetlight & Electrical
+
+---------------------------------------------------------------------
+ CENRO — City Environment & Natural Resources Office   (garbage)
+---------------------------------------------------------------------
+ cenro.desk      Mylene Ocampo         Office Receiving Officer
+ cenro.head      Elena Torres          Department Head
+ cenro.swm.chief Paolo Cruz            Division Chief – Solid Waste Management
+ cenro.staff     Ben Cruz              Field Staff – Solid Waste Management
+
+---------------------------------------------------------------------
+ CTMO — City Traffic Management Office   (traffic)
+---------------------------------------------------------------------
+ ctmo.desk       Rina Pascual          Office Receiving Officer
+ ctmo.head       Col. Edgar Manalo     Department Head
+ ctmo.enf.chief  Arnel De Mesa         Division Chief – Traffic Enforcement
+ ctmo.enforcer   Dennis Rivera         Traffic Enforcer – Traffic Enforcement
+ ctmo.eng.chief  Engr. Liza Ferrer     Division Chief – Traffic Engineering & Signage
+
+---------------------------------------------------------------------
+ POSO — Public Order & Safety Office   (hanging wires, disturbances)
+---------------------------------------------------------------------
+ poso.desk       Aileen Ramirez        Office Receiving Officer
+ poso.head       Rodrigo Valdez        Department Head
+ poso.chief      Victor Lagman         Division Chief – Public Order & Enforcement
+ poso.officer    Ronald Dimaano        Field Officer – Public Order & Enforcement
+
+---------------------------------------------------------------------
+ BPLO — Business Permits & Licensing Office
+---------------------------------------------------------------------
+ bplo.desk       Cristina Umali        Office Receiving Officer
+ bplo.head       Atty. Marissa Tan     Department Head
+ bplo.ie.chief   Joel Mercado          Division Chief – Inspection & Enforcement
+ bplo.inspector  Karen Sison           Inspector – Inspection & Enforcement
+
+---------------------------------------------------------------------
+ CDRRMO — City Disaster Risk Reduction & Management Office  (fallen trees)
+---------------------------------------------------------------------
+ cdrrmo.desk     Jessa Alvarez         Office Receiving Officer
+ cdrrmo.head     Marlon Briones        Department Head
+ cdrrmo.ops.chief Ariel Castro         Division Chief – Operations & Response
+ cdrrmo.responder Mark Ilagan          Responder – Operations & Response
+
+---------------------------------------------------------------------
+ CVO — City Veterinary Office   (stray animals)
+---------------------------------------------------------------------
+ cvo.desk        Daisy Robles          Office Receiving Officer
+ cvo.head        Dr. Paula Enriquez    Department Head
+ cvo.ac.chief    Lito Avila            Division Chief – Animal Control
+ cvo.catcher     Boyet Llamas          Animal Control Officer
+
+---------------------------------------------------------------------
+ BARANGAY GULANG-GULANG   (only barangay with demo accounts)
+---------------------------------------------------------------------
+ brgy.gg         Kagawad Rosa Dizon    Barangay Personnel (does the work)
+ brgy.gg.kap     Kap. Andres Navarro   Barangay Personnel (validates the work)
+   Note: barangay staff never see complaints marked
+   "about barangay officials" — those go straight to City Hall.
+
+---------------------------------------------------------------------
+ QUICK DEMO SCRIPT (about 5 minutes)
+---------------------------------------------------------------------
+ 1. /report ............ submit "Barado ang kanal" in Gulang-Gulang
+ 2. pacd.desk .......... Triage → Verify → Ipasa (Route)
+ 3. ceo.desk ........... For acceptance → answer checklist → Tanggapin
+ 4. ceo.rdb.chief ...... Italaga → Engr. Ana Reyes
+ 5. ceo.staff .......... Site inspection → Tapos na ang trabaho (+photo)
+ 6. ceo.rdb.chief ...... For validation → Aprubahan
+ 7. pacd.desk .......... Isara
+ 8. /track/<ref no.> ... citizen sees full timeline + proof photo
+ 9. cityadmin .......... GIS Map → hotspots
+
+ Total: 39 accounts, 1 password.
+=====================================================================

@@ -36,7 +36,7 @@ class HistoryInline(admin.TabularInline):
 class ConcernAdmin(admin.ModelAdmin):
     list_display = ("reference_no", "title", "category", "subcategory", "barangay", "status",
                     "is_verified", "danger_now", "priority_score", "channel", "created_at")
-    list_filter = ("status", "is_verified", "danger_now", "involves_barangay_officials",
+    list_filter = ("is_synthetic", "status", "is_verified", "danger_now", "involves_barangay_officials",
                    "category", "channel", "severity", "barangay")
     search_fields = ("reference_no", "title", "description", "reporter_name")
     readonly_fields = ("reference_no", "priority_score", "created_at", "updated_at", "consent_at",

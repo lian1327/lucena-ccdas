@@ -178,6 +178,10 @@ class Concern(models.Model):
     )
     verified_at = models.DateTimeField(null=True, blank=True)
 
+    is_synthetic = models.BooleanField(
+        default=False, db_index=True, help_text="Generated demo/test data. Purge with generate_synthetic_data --purge.",
+    )
+
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -237,6 +241,7 @@ class ConcernAttachment(models.Model):
     class Kind(models.TextChoices):
         REPORT = "report", "Report photo (from reporter)"
         RESOLUTION = "resolution", "Resolution photo (proof of fix)"
+        PROGRESS = "progress", "Progress / make-safe photo (staff, internal)"
 
     concern = models.ForeignKey(Concern, on_delete=models.CASCADE, related_name="attachments")
     kind = models.CharField(max_length=12, choices=Kind.choices, default=Kind.REPORT)

@@ -21,7 +21,9 @@ import {
   ValidatePanel,
   VerifyPanel,
 } from "@/features/cases/ActionPanels";
+import { AcceptPanel, PriorityPanel, RespondPanel } from "@/features/cases/ScreeningPanels";
 import { ErrorText, Panel, Stepper } from "@/features/cases/ui";
+import { UrgencyBadge } from "@/components/UrgencyBadge";
 import { dueLabel, fmtDate, fmtDateTime, timeAgo } from "@/utils/format";
 
 function NotesPanel({ c }: { c: StaffConcernDetail }) {
@@ -141,8 +143,11 @@ export function CaseDetailPage() {
     <>
       <Link to="/staff/cases" className="small text-decoration-none">‹ Mga Kaso</Link>
       <div className="d-flex flex-wrap align-items-center gap-2 mt-2 mb-1">
+        <UrgencyBadge code={c.priority_code} name={c.priority_name} color={c.priority_color} />
         <PriorityBadge tier={c.priority_tier} score={c.priority_score} />
         <StatusBadge status={c.status} label={c.status_display} />
+        {k?.stage === "for_acceptance" && <Badge bg="primary">Hinihintay ang pagtanggap ng {k.department}</Badge>}
+        {k?.stage === "returned" && <Badge bg="danger">Ibinalik sa PACD</Badge>}
         {c.is_verified ? (
           <Badge bg="success-subtle" text="success-emphasis" className="border border-success-subtle">Verified</Badge>
         ) : (
@@ -193,6 +198,12 @@ export function CaseDetailPage() {
                       {k.division && <div className="text-secondary">{k.division}</div>}
                       {k.assigned_to && <div>{k.assigned_to}</div>}
                     </dd>
+                    {k.accepted_at && (
+                      <>
+                        <dt className="col-4 text-secondary">Tinanggap</dt>
+                        <dd className="col-8">{fmtDateTime(k.accepted_at)} · {k.accepted_by}</dd>
+                      </>
+                    )}
                     <dt className="col-4 text-secondary">Target</dt>
                     <dd className={`col-8 ${due?.overdue ? "text-danger fw-semibold" : ""}`}>
                       {fmtDate(k.due_at)} {due && c.status !== "closed" && c.status !== "resolved" && `(${due.text})`}
@@ -262,15 +273,23 @@ export function CaseDetailPage() {
               Walang hakbang na para sa iyo sa yugtong ito. Makikita mo pa rin ang progreso dito.
             </Alert>
           )}
+          {k?.stage === "returned" && k.return_reason && (
+            <Alert variant="danger" className="small">
+              <strong>Ibinalik ng opisina:</strong> {k.return_reason}
+            </Alert>
+          )}
           <Hotline8888Panel c={c} />
           <VerifyPanel c={c} />
+          <AcceptPanel c={c} />
           <RoutePanel c={c} />
+          <RespondPanel c={c} />
           <AssignPanel c={c} />
           <InspectPanel c={c} />
           <CompletePanel c={c} />
           <ValidatePanel c={c} />
           <EndorsementPanel c={c} />
           <EndorsePanel c={c} compact={!!k} />
+          <PriorityPanel c={c} />
           <DeadlinePanel c={c} />
           <OutcomePanel c={c} />
           <DuplicatesPanel c={c} />

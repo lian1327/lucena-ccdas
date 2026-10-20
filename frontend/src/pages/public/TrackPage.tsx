@@ -68,6 +68,12 @@ export function TrackPage() {
               <dd className="col-7 col-sm-8">{c.barangay}</dd>
               <dt className="col-5 col-sm-4 text-secondary">Handling office</dt>
               <dd className="col-7 col-sm-8">{c.assigned_office ?? "Not yet assigned"}</dd>
+              {c.priority_level && (
+                <>
+                  <dt className="col-5 col-sm-4 text-secondary">Antas</dt>
+                  <dd className="col-7 col-sm-8">{c.priority_level}</dd>
+                </>
+              )}
               {c.target_date && (
                 <>
                   <dt className="col-5 col-sm-4 text-secondary">Target na petsa</dt>

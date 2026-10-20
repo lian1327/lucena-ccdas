@@ -204,7 +204,8 @@ export function CaseDetailPage() {
                 <dd className="col-8">{c.category ?? "—"}{c.subcategory && ` › ${c.subcategory}`}</dd>
                 <dt className="col-4 text-secondary">Lokasyon</dt>
                 <dd className="col-8">
-                  {c.location_description}, {c.barangay}
+                  {c.location_description}{c.purok_name ? `, ${c.purok_name}` : ""}, {c.barangay}
+                  {c.purok_name && <span className="text-secondary small ms-1">({c.purok_source === "pin" ? "purok mula sa pin" : "purok pinili ng nag-report"})</span>}
                   {c.latitude && c.longitude && (
                     <a className="ms-2" target="_blank" rel="noopener" href={`https://www.google.com/maps?q=${c.latitude},${c.longitude}`}>
                       <i className="bi bi-map" aria-hidden /> Mapa

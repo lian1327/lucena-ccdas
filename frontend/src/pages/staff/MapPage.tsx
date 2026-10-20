@@ -6,24 +6,63 @@ import "leaflet/dist/leaflet.css";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Badge, ButtonGroup, Card, Form, ListGroup, Nav, ToggleButton } from "react-bootstrap";
-import { Circle, CircleMarker, MapContainer, Popup, TileLayer, Tooltip, useMap } from "react-leaflet";
+import L from "leaflet";
+import { Circle, GeoJSON, MapContainer, Popup, TileLayer, Tooltip, useMap } from "react-leaflet";
 import { useNavigate } from "react-router-dom";
 
-import { useBarangayStats, useHotspots, useMapPoints, type MapFilters } from "@/api/gis";
+import { useBarangayPuroks, useBarangayStats, useBoundaries, useHotspots, useMapPoints, type MapFilters } from "@/api/gis";
 import { useCategories } from "@/api/public";
-import type { BarangayStat, Hotspot } from "@/api/types";
+import type { BarangayStat, Boundaries, BoundaryProps, Hotspot } from "@/api/types";
 import { FullPageSpinner } from "@/components/FullPageSpinner";
 import { LGU_CENTER } from "@/config";
 import { ClusterLayer, HeatLayer } from "@/features/gis/layers";
 import { fmtDate } from "@/utils/format";
 
-type LayerKey = "heat" | "markers" | "barangays" | "hotspots";
+type LayerKey = "heat" | "markers" | "barangays" | "puroks" | "hotspots";
 const LAYERS: { key: LayerKey; label: string; icon: string }[] = [
   { key: "heat", label: "Heatmap", icon: "fire" },
   { key: "markers", label: "Reports", icon: "geo-alt" },
-  { key: "barangays", label: "Barangays", icon: "bullseye" },
+  { key: "barangays", label: "Barangays", icon: "bounding-box" },
+  { key: "puroks", label: "Puroks", icon: "grid-3x3" },
   { key: "hotspots", label: "Hotspots", icon: "exclamation-octagon" },
 ];
+// Sequential blue ramp (validated reference palette) for shading by number of problems
+const RAMP = ["#cde2fb", "#9ec5f4", "#6da7ec", "#3987e5", "#256abf", "#184f95"];
+const shade = (v: number, max: number) => (v <= 0 ? "#ffffff" : RAMP[Math.min(RAMP.length - 1, Math.floor((v / Math.max(max, 1)) * RAMP.length))]);
+
+/** Outlines + shading. Keyed by the data so react-leaflet redraws when counts change. */
+function Outlines({ data, onPick, selected, thin }: {
+  data: Boundaries; onPick?: (p: BoundaryProps, b: L.LatLngBounds) => void; selected?: number | null; thin?: boolean;
+}) {
+  const max = Math.max(1, ...data.features.map((f) => f.properties.concerns));
+  const key = `${data.level}-${data.features.length}-${data.features.reduce((a, f) => a + f.properties.concerns, 0)}-${selected}`;
+  return (
+    <GeoJSON key={key} data={data}
+      style={(f) => {
+        const p = f!.properties as BoundaryProps;
+        const sel = selected === p.id;
+        return {
+          color: sel ? "#000" : thin ? "#5f6b7a" : "#2b3440", weight: sel ? 3 : thin ? 0.8 : 1.4,
+          fillColor: p.is_zone ? "#e9ecef" : shade(p.concerns, max), fillOpacity: thin ? 0.45 : 0.35,
+          dashArray: p.is_zone ? "3 3" : undefined,
+        };
+      }}
+      onEachFeature={(f, layer) => {
+        const p = f.properties as BoundaryProps;
+        layer.bindTooltip(`<strong>${p.name}</strong>${p.barangay ? ` · ${p.barangay}` : ""}<br/>${p.concerns} problema · ${p.open} bukas`
+          + (p.is_zone ? "<br/><em>land-use zone</em>" : ""), { sticky: true });
+        if (onPick) layer.on("click", () => onPick(p, (layer as L.Polygon).getBounds()));
+      }} />
+  );
+}
+
+function FitBounds({ bounds }: { bounds: L.LatLngBounds | null }) {
+  const map = useMap();
+  useEffect(() => {
+    if (bounds) map.flyToBounds(bounds, { padding: [20, 20], duration: 0.8 });
+  }, [map, bounds]);
+  return null;
+}
 const WINDOWS = [
   { days: 30, label: "30 araw" },
   { days: 90, label: "90 araw" },
@@ -38,30 +77,31 @@ function FlyTo({ target }: { target: [number, number] | null }) {
   return null;
 }
 
-function openShare(b: BarangayStat) {
-  return b.concerns ? b.open / b.concerns : 0;
-}
-
-function barangayColor(b: BarangayStat) {
-  const s = openShare(b);
-  return s > 0.3 ? "#d7191c" : s > 0.15 ? "#fdae61" : "#1a9641";
-}
-
 export function MapPage() {
   const navigate = useNavigate();
   const categories = useCategories();
   const [filters, setFilters] = useState<MapFilters>({ days: 365, status: "all" });
-  const [layers, setLayers] = useState<Record<LayerKey, boolean>>({ heat: true, markers: false, barangays: false, hotspots: true });
-  const [side, setSide] = useState<"hotspots" | "barangays">("hotspots");
+  const [layers, setLayers] = useState<Record<LayerKey, boolean>>({ heat: true, markers: false, barangays: true, puroks: false, hotspots: true });
+  const [side, setSide] = useState<"hotspots" | "barangays" | "puroks">("hotspots");
+  const [brgyId, setBrgyId] = useState<number | null>(null);
+  const [bounds, setBounds] = useState<L.LatLngBounds | null>(null);
   const [target, setTarget] = useState<[number, number] | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
 
   const points = useMapPoints(filters);
   const brgys = useBarangayStats(filters);
   const hot = useHotspots(filters);
+  const outlines = useBoundaries("barangay", filters, null, layers.barangays);
+  const purokShapes = useBoundaries("purok", filters, brgyId, layers.puroks);
+  const purokStats = useBarangayPuroks(brgyId, filters);
+  const pickBarangay = (id: number, b?: L.LatLngBounds) => {
+    setBrgyId(id);
+    setSide("puroks");
+    setLayers((l) => ({ ...l, puroks: true }));
+    if (b) setBounds(b);
+  };
   const openCase = useCallback((id: number) => navigate(`/staff/cases/${id}`), [navigate]);
   const pts = useMemo(() => points.data?.points ?? [], [points.data]);
-  const maxConcerns = Math.max(1, ...(brgys.data ?? []).map((b) => b.concerns));
 
   const set = <K extends keyof MapFilters>(k: K, v: MapFilters[K]) => setFilters((f) => ({ ...f, [k]: v }));
   const fly = (lat: number | null | undefined, lng: number | null | undefined, idx?: number) => {
@@ -126,17 +166,11 @@ export function MapPage() {
               <FlyTo target={target} />
               {layers.heat && <HeatLayer points={pts} />}
               {layers.markers && <ClusterLayer points={pts} onOpen={openCase} />}
-              {layers.barangays && brgys.data?.filter((b) => b.lat != null).map((b) => (
-                <CircleMarker key={b.id} center={[b.lat!, b.lng!]} radius={8 + 22 * Math.sqrt(b.concerns / maxConcerns)}
-                  pathOptions={{ color: barangayColor(b), fillColor: barangayColor(b), fillOpacity: 0.35, weight: 2 }}>
-                  <Tooltip direction="top">
-                    <strong>{b.name}</strong><br />
-                    {b.concerns} concerns · {b.open} bukas{b.overdue ? ` · ${b.overdue} overdue` : ""}<br />
-                    {b.per_10k != null && <>{b.per_10k} bawat 10k residente<br /></>}
-                    Top: {b.top_issues[0]?.name}
-                  </Tooltip>
-                </CircleMarker>
-              ))}
+              <FitBounds bounds={bounds} />
+              {layers.barangays && outlines.data && !(layers.puroks && brgyId) && (
+                <Outlines data={outlines.data} selected={brgyId} onPick={(p, b) => pickBarangay(p.id, b)} />
+              )}
+              {layers.puroks && purokShapes.data && <Outlines data={purokShapes.data} thin />}
               {layers.hotspots && hot.data?.hotspots.map((h, i) => (
                 <Circle key={`${h.lat},${h.lng}`} center={[h.lat, h.lng]} radius={Math.max(40, h.radius_m)}
                   pathOptions={{ color: selected === i ? "#000" : "#e8590c", fillColor: "#fd7e14", fillOpacity: 0.25,
@@ -158,10 +192,18 @@ export function MapPage() {
                 Hotspots {hot.data && <Badge bg="secondary">{hot.data.hotspots.length}</Badge>}
               </Nav.Link></Nav.Item>
               <Nav.Item><Nav.Link active={side === "barangays"} onClick={() => setSide("barangays")}>Barangays</Nav.Link></Nav.Item>
+              <Nav.Item><Nav.Link active={side === "puroks"} onClick={() => setSide("puroks")}>Puroks</Nav.Link></Nav.Item>
             </Nav>
           </Card.Header>
           <div style={{ maxHeight: 560, overflowY: "auto" }}>
-            {side === "hotspots" ? (
+            {side === "puroks" ? (
+              <PurokPanel stats={purokStats.data} brgys={brgys.data ?? []} brgyId={brgyId}
+                onPick={(id) => {
+                  const f = outlines.data?.features.find((x) => x.properties.id === id);
+                  pickBarangay(id, f ? L.geoJSON(f).getBounds() : undefined);
+                }}
+                onClear={() => { setBrgyId(null); setLayers((l) => ({ ...l, puroks: false })); }} />
+            ) : side === "hotspots" ? (
               <>
                 <div className="small text-secondary px-3 pt-2">
                   Paulit-ulit na problema sa iisang lugar (≥{hot.data?.min_samples ?? 4} reports sa loob ng
@@ -175,7 +217,7 @@ export function MapPage() {
                         <span className="fw-semibold">{h.top_issue}</span>
                         <Badge bg={h.open ? "danger" : "success"}>{h.open ? `${h.open} bukas` : "naayos"}</Badge>
                       </div>
-                      <div>{h.barangay}{h.landmark && ` · ${h.landmark}`}</div>
+                      <div>{h.barangay}{h.purok && ` · ${h.purok}`}{h.landmark && ` · ${h.landmark}`}</div>
                       <div className={selected === i ? "" : "text-secondary"}>
                         {h.count} problema · {h.reports} reports · {h.months_active} buwan · {h.top_issue_share}% iisang isyu
                       </div>
@@ -186,7 +228,10 @@ export function MapPage() {
             ) : (
               <ListGroup variant="flush">
                 {brgys.data?.map((b) => (
-                  <ListGroup.Item key={b.id} action onClick={() => { fly(b.lat, b.lng); setLayers((l) => ({ ...l, barangays: true })); }} className="small">
+                  <ListGroup.Item key={b.id} action onClick={() => {
+                    const f = outlines.data?.features.find((x) => x.properties.id === b.id);
+                    if (f) pickBarangay(b.id, L.geoJSON(f).getBounds()); else fly(b.lat, b.lng);
+                  }} className="small">
                     <div className="d-flex justify-content-between">
                       <span className="fw-semibold">{b.name}</span>
                       <span>{b.concerns}</span>
@@ -208,10 +253,54 @@ export function MapPage() {
   );
 }
 
+function PurokPanel({ stats, brgys, brgyId, onPick, onClear }: {
+  stats?: import("@/api/types").BarangayPuroks; brgys: BarangayStat[]; brgyId: number | null;
+  onPick: (id: number) => void; onClear: () => void;
+}) {
+  return (
+    <div className="small">
+      <div className="d-flex gap-2 p-2 border-bottom align-items-center">
+        <Form.Select size="sm" value={brgyId ?? ""} onChange={(e) => (e.target.value ? onPick(Number(e.target.value)) : onClear())}
+          aria-label="Barangay">
+          <option value="">Pumili ng barangay (o i-click sa mapa)</option>
+          {[...brgys].sort((a, b) => a.name.localeCompare(b.name)).map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+        </Form.Select>
+      </div>
+      {!brgyId || !stats ? (
+        <div className="p-3 text-secondary">I-click ang isang barangay sa mapa para makita ang bawat purok.</div>
+      ) : (
+        <>
+          <div className="px-3 pt-2 text-secondary">
+            {stats.concerns} problema · {stats.located} may purok ({stats.by_pin} mula sa pin, {stats.by_reporter} pinili ng nag-report)
+            · {stats.concerns - stats.located} walang purok. Gumamit ng 3 buwan pataas: maliit ang bilang bawat purok.
+          </div>
+          <ListGroup variant="flush">
+            {stats.puroks.map((p) => (
+              <ListGroup.Item key={p.id ?? "none"} className={`small ${p.concerns === 0 ? "text-secondary" : ""}`}>
+                <div className="d-flex justify-content-between gap-2">
+                  <span className="fw-semibold">{p.name}{p.is_zone && <Badge bg="light" text="dark" className="ms-1 border">zone</Badge>}</span>
+                  <span>{p.concerns}{p.open ? <span className="text-danger"> · {p.open} bukas</span> : null}</span>
+                </div>
+                {p.share != null && p.concerns > 0 && (
+                  <div style={{ height: 4, background: "#e1e0d9", borderRadius: 2 }} className="my-1">
+                    <div style={{ width: `${p.share * 100}%`, height: 4, background: "#2a78d6", borderRadius: 2 }} />
+                  </div>
+                )}
+                {p.top_issues.length > 0 && <div className="text-secondary">{p.top_issues.map((t) => `${t.name} (${t.count})`).join(", ")}</div>}
+                {p.concerns > 0 && p.concerns < stats.min_sample && <div className="text-secondary fst-italic">kaunti pa ang datos</div>}
+              </ListGroup.Item>
+            ))}
+          </ListGroup>
+        </>
+      )}
+    </div>
+  );
+}
+
 function HotspotDetail({ h, onOpen }: { h: Hotspot; onOpen: (id: number) => void }) {
   return (
     <div className="small" style={{ minWidth: 220 }}>
-      <div className="fw-semibold">{h.top_issue} · {h.barangay}</div>
+      <div className="fw-semibold">{h.top_issue} · {h.barangay}{h.purok ? ` · ${h.purok}` : ""}</div>
       {h.landmark && <div className="text-secondary">{h.landmark}</div>}
       <div className="mt-1">{h.count} problema · {h.reports} reports · {h.open} bukas</div>
       <div>Aktibo {h.months_active} buwan: {fmtDate(h.first_report)} – {fmtDate(h.last_report)}</div>

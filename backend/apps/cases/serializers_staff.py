@@ -384,6 +384,12 @@ class StaffConcernDetailSerializer(StaffConcernListSerializer):
     suggested_priority = serializers.SerializerMethodField()
     trail = serializers.SerializerMethodField()
     recurrence_of = serializers.CharField(source="recurrence_of.reference_no", default=None)
+    purok_name = serializers.CharField(source="purok.name", default=None)
+    ai_category = serializers.CharField(source="ai_category.code", default=None)
+    ai_category_name = serializers.CharField(source="ai_category.name", default=None)
+    ai_subcategory = serializers.CharField(source="ai_subcategory.code", default=None)
+    ai_subcategory_name = serializers.CharField(source="ai_subcategory.name", default=None)
+    ai_model_version = serializers.IntegerField(source="ai_model.version", default=None)
     recurrences = LinkedReportSerializer(many=True, read_only=True)
 
     class Meta(StaffConcernListSerializer.Meta):
@@ -395,6 +401,8 @@ class StaffConcernDetailSerializer(StaffConcernListSerializer):
             "verified_by", "verified_at", "acknowledged_at", "resolved_at",
             "duplicate_of", "duplicates", "attachments", "history", "case", "notes",
             "priority", "permissions", "suggested_route", "suggested_priority",
+            "purok", "purok_name", "purok_source", "category_source",
+            "ai_category", "ai_category_name", "ai_subcategory", "ai_subcategory_name", "ai_confidence", "ai_model_version",
             "trail", "citizen_confirmation", "citizen_confirmed_at", "citizen_feedback", "recurrence_of", "recurrences",
         ]
 

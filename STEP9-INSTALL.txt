@@ -1,0 +1,36 @@
+CCADSS - STEP 9: OFFICE PERFORMANCE ANALYTICS
+=============================================
+
+What's in the zip (extract into your project root, "lucena-ccdas", and allow it to overwrite files):
+  backend/apps/analytics/          NEW  KPI engine + API (no database tables, so no migration needed)
+  backend/config/urls.py           UPDATED  adds  api/v1/staff/analytics/
+  frontend/src/...                 NEW/UPDATED  Performance pages, charts, routes, sidebar, print styles
+
+Steps (PowerShell, in VS Code):
+  1. Confirm backend\config\settings.py has "apps.analytics" in INSTALLED_APPS (it already should).
+  2. cd backend
+     .\.venv\Scripts\Activate.ps1
+     python manage.py check
+     python manage.py runserver
+  3. Open a new terminal:
+     cd frontend
+     npm install
+     npm run gen:api        (optional: regenerates src\api\schema.d.ts from the backend)
+     npm run dev
+  4. Log in as  cityadmin / Test#12345  and choose "Performance" in the sidebar.
+
+Who sees what:
+  cityadmin, mayor       all offices: league table, CSV, drill-down to any office
+  xxx.head, xxx.desk     go straight to their OWN office's page (desk: no per-staff workload)
+  chiefs, crew, PACD     no Performance menu (the API returns 403)
+
+API:
+  GET /api/v1/staff/analytics/offices/?period=90d        scorecard (this_month | last_month | quarter | 90d | 12m)
+  GET /api/v1/staff/analytics/offices.csv?period=12m     Excel-ready CSV
+  GET /api/v1/staff/analytics/offices/<id>/?period=90d   one office in detail
+
+Then commit:
+  git add backend/apps/analytics backend/config/urls.py frontend/src
+  git commit -m "Step 9: office performance analytics (ARTA KPIs, scorecard, drill-down, CSV, print)"
+  git push
+  (Do NOT add CCADSS-demo-accounts.txt or .env.)

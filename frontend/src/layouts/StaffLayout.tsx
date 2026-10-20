@@ -19,6 +19,7 @@ const NAV: NavItem[] = [
     roles: ["city_admin", "mayor", "dept_head", "division_chief"] },
   { to: "/staff/people/me", icon: "person-check", label: "Aking mga aksyon", ready: true,
     roles: ["pacd", "barangay", "office_desk", "dept_head", "division_chief", "dept_staff", "city_admin"] },
+  { to: "/staff/ml", icon: "stars", label: "AI Classifier", ready: true, roles: ["city_admin", "mayor", "pacd"] },
   { to: "/staff/executive", icon: "briefcase", label: "Executive", ready: true, executiveOnly: true },
 ];
 

@@ -1,0 +1,6117 @@
+openapi: 3.0.3
+info:
+  title: CCADSS API
+  version: 1.0.0
+  description: LGU Citizen Concern Analytics and Decision Support System
+paths:
+  /api/schema/:
+    get:
+      operationId: schema_retrieve
+      description: |-
+        OpenApi3 schema for this API. Format can be selected via content negotiation.
+
+        - YAML: application/vnd.oai.openapi
+        - JSON: application/vnd.oai.openapi+json
+      parameters:
+      - in: query
+        name: format
+        schema:
+          type: string
+          enum:
+          - json
+          - yaml
+      - in: query
+        name: lang
+        schema:
+          type: string
+          enum:
+          - af
+          - ar
+          - ar-dz
+          - ast
+          - az
+          - be
+          - bg
+          - bn
+          - br
+          - bs
+          - ca
+          - ckb
+          - cs
+          - cy
+          - da
+          - de
+          - dsb
+          - el
+          - en
+          - en-au
+          - en-gb
+          - eo
+          - es
+          - es-ar
+          - es-co
+          - es-mx
+          - es-ni
+          - es-ve
+          - et
+          - eu
+          - fa
+          - fi
+          - fr
+          - fy
+          - ga
+          - gd
+          - gl
+          - he
+          - hi
+          - hr
+          - hsb
+          - ht
+          - hu
+          - hy
+          - ia
+          - id
+          - ig
+          - io
+          - is
+          - it
+          - ja
+          - ka
+          - kab
+          - kk
+          - km
+          - kn
+          - ko
+          - ky
+          - lb
+          - lt
+          - lv
+          - mk
+          - ml
+          - mn
+          - mr
+          - ms
+          - my
+          - nb
+          - ne
+          - nl
+          - nn
+          - os
+          - pa
+          - pl
+          - pt
+          - pt-br
+          - ro
+          - ru
+          - sk
+          - sl
+          - sq
+          - sr
+          - sr-latn
+          - sv
+          - sw
+          - ta
+          - te
+          - tg
+          - th
+          - tk
+          - tr
+          - tt
+          - udm
+          - ug
+          - uk
+          - ur
+          - uz
+          - vi
+          - zh-hans
+          - zh-hant
+      tags:
+      - schema
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.oai.openapi:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/yaml:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/vnd.oai.openapi+json:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/auth/logout/:
+    post:
+      operationId: v1_auth_logout_create
+      description: |-
+        Takes a token and blacklists it. Must be used with the
+        `rest_framework_simplejwt.token_blacklist` app installed.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenBlacklistRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenBlacklistRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenBlacklistRequest'
+        required: true
+      responses:
+        '200':
+          description: No response body
+  /api/v1/auth/me/:
+    get:
+      operationId: v1_auth_me_retrieve
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Me'
+          description: ''
+  /api/v1/auth/token/:
+    post:
+      operationId: v1_auth_token_create
+      description: |-
+        Takes a set of user credentials and returns an access and refresh JSON web
+        token pair to prove the authentication of those credentials.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CCADSSTokenObtainPairRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CCADSSTokenObtainPairRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CCADSSTokenObtainPairRequest'
+        required: true
+      responses:
+        '200':
+          description: No response body
+  /api/v1/auth/token/refresh/:
+    post:
+      operationId: v1_auth_token_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/v1/public/barangays/:
+    get:
+      operationId: v1_public_barangays_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - v1
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PublicBarangay'
+          description: ''
+  /api/v1/public/categories/:
+    get:
+      operationId: v1_public_categories_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - v1
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PublicCategory'
+          description: ''
+  /api/v1/public/concerns/:
+    post:
+      operationId: v1_public_concerns_create
+      description: Citizen submission. Accepts multipart/form-data (with `images`)
+        or JSON (without).
+      tags:
+      - v1
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PublicConcernCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PublicConcernCreateRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublicConcernCreateRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicConcernCreate'
+          description: ''
+  /api/v1/public/concerns/track/{reference_no}/:
+    get:
+      operationId: v1_public_concerns_track_retrieve
+      parameters:
+      - in: path
+        name: reference_no
+        schema:
+          type: string
+        required: true
+      tags:
+      - v1
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicTrack'
+          description: ''
+  /api/v1/public/concerns/track/{reference_no}/confirm/:
+    post:
+      operationId: v1_public_concerns_track_confirm_create
+      description: |-
+        "Naayos ba talaga?" — the reporter confirms or disputes the fix (within 30 days, once).
+        Not fixed → the case reopens for the office and counts against it. Throttled like submissions.
+      parameters:
+      - in: path
+        name: reference_no
+        schema:
+          type: string
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublicConfirmRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PublicConfirmRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PublicConfirmRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicTrack'
+          description: ''
+  /api/v1/public/stats/:
+    get:
+      operationId: v1_public_stats_retrieve
+      description: Transparency stats for the landing page. Aggregates only — no individual
+        records. Cached 5 min.
+      tags:
+      - v1
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicStats'
+          description: ''
+  /api/v1/staff/analytics/accountability/:
+    get:
+      operationId: analytics_accountability
+      description: Proof-of-work quality per office + the supervisor watchlist.
+      parameters:
+      - in: query
+        name: date_from
+        schema:
+          type: string
+        description: YYYY-MM-DD (period=custom)
+      - in: query
+        name: date_to
+        schema:
+          type: string
+        description: YYYY-MM-DD (period=custom)
+      - in: query
+        name: period
+        schema:
+          type: string
+          enum:
+          - 12m
+          - 90d
+          - custom
+          - last_month
+          - quarter
+          - this_month
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Accountability'
+          description: ''
+  /api/v1/staff/analytics/offices/:
+    get:
+      operationId: analytics_office_scorecard
+      parameters:
+      - in: query
+        name: date_from
+        schema:
+          type: string
+        description: YYYY-MM-DD (period=custom)
+      - in: query
+        name: date_to
+        schema:
+          type: string
+        description: YYYY-MM-DD (period=custom)
+      - in: query
+        name: period
+        schema:
+          type: string
+          enum:
+          - 12m
+          - 90d
+          - custom
+          - last_month
+          - quarter
+          - this_month
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Scorecard'
+          description: ''
+  /api/v1/staff/analytics/offices.csv:
+    get:
+      operationId: analytics_office_scorecard_csv
+      description: Spreadsheet export of the scorecard (opens in Excel / Google Sheets).
+      parameters:
+      - in: query
+        name: date_from
+        schema:
+          type: string
+        description: YYYY-MM-DD (period=custom)
+      - in: query
+        name: date_to
+        schema:
+          type: string
+        description: YYYY-MM-DD (period=custom)
+      - in: query
+        name: period
+        schema:
+          type: string
+          enum:
+          - 12m
+          - 90d
+          - custom
+          - last_month
+          - quarter
+          - this_month
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            text/csv:
+              schema:
+                type: string
+          description: ''
+  /api/v1/staff/analytics/offices/{id}/:
+    get:
+      operationId: analytics_office_detail
+      parameters:
+      - in: query
+        name: date_from
+        schema:
+          type: string
+        description: YYYY-MM-DD (period=custom)
+      - in: query
+        name: date_to
+        schema:
+          type: string
+        description: YYYY-MM-DD (period=custom)
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: period
+        schema:
+          type: string
+          enum:
+          - 12m
+          - 90d
+          - custom
+          - last_month
+          - quarter
+          - this_month
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OfficeDetail'
+          description: ''
+  /api/v1/staff/analytics/offices/{id}/people/:
+    get:
+      operationId: analytics_office_people
+      description: What each person in an office did, and the quality of their proof.
+        Sorted by name, not ranked.
+      parameters:
+      - in: query
+        name: date_from
+        schema:
+          type: string
+        description: YYYY-MM-DD (period=custom)
+      - in: query
+        name: date_to
+        schema:
+          type: string
+        description: YYYY-MM-DD (period=custom)
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: period
+        schema:
+          type: string
+          enum:
+          - 12m
+          - 90d
+          - custom
+          - last_month
+          - quarter
+          - this_month
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/People'
+          description: ''
+  /api/v1/staff/analytics/people/{id}/:
+    get:
+      operationId: analytics_person_ledger
+      description: One person's actions with the evidence for each. Anyone may view
+        their own.
+      parameters:
+      - in: query
+        name: date_from
+        schema:
+          type: string
+        description: YYYY-MM-DD (period=custom)
+      - in: query
+        name: date_to
+        schema:
+          type: string
+        description: YYYY-MM-DD (period=custom)
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: period
+        schema:
+          type: string
+          enum:
+          - 12m
+          - 90d
+          - custom
+          - last_month
+          - quarter
+          - this_month
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ledger'
+          description: ''
+  /api/v1/staff/concerns/:
+    get:
+      operationId: v1_staff_concerns_list
+      description: Staff case inbox and workflow. Visibility and every action are
+        decided in scoping.py.
+      parameters:
+      - in: query
+        name: barangay
+        schema:
+          type: integer
+      - in: query
+        name: category
+        schema:
+          type: string
+      - in: query
+        name: include_duplicates
+        schema:
+          type: boolean
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Search reference no., title, landmark, description
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: tab
+        schema:
+          type: string
+          enum:
+          - all
+          - closed
+          - endorsed
+          - for_acceptance
+          - mine
+          - open
+          - overdue
+          - to_route
+          - triage
+          - validation
+        description: 'Inbox view (default: open)'
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedStaffConcernListList'
+          description: ''
+    post:
+      operationId: v1_staff_concerns_create
+      description: Staff case inbox and workflow. Visibility and every action are
+        decided in scoping.py.
+      parameters:
+      - in: query
+        name: barangay
+        schema:
+          type: integer
+      - in: query
+        name: category
+        schema:
+          type: string
+      - in: query
+        name: include_duplicates
+        schema:
+          type: boolean
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Search reference no., title, landmark, description
+      - in: query
+        name: tab
+        schema:
+          type: string
+          enum:
+          - all
+          - closed
+          - endorsed
+          - for_acceptance
+          - mine
+          - open
+          - overdue
+          - to_route
+          - triage
+          - validation
+        description: 'Inbox view (default: open)'
+      tags:
+      - v1
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StaffEncodeRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffConcernDetail'
+          description: ''
+  /api/v1/staff/concerns/{id}/:
+    get:
+      operationId: v1_staff_concerns_retrieve
+      description: Staff case inbox and workflow. Visibility and every action are
+        decided in scoping.py.
+      parameters:
+      - in: query
+        name: barangay
+        schema:
+          type: integer
+      - in: query
+        name: category
+        schema:
+          type: string
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this concern.
+        required: true
+      - in: query
+        name: include_duplicates
+        schema:
+          type: boolean
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Search reference no., title, landmark, description
+      - in: query
+        name: tab
+        schema:
+          type: string
+          enum:
+          - all
+          - closed
+          - endorsed
+          - for_acceptance
+          - mine
+          - open
+          - overdue
+          - to_route
+          - triage
+          - validation
+        description: 'Inbox view (default: open)'
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffConcernDetail'
+          description: ''
+  /api/v1/staff/concerns/{id}/accept/:
+    post:
+      operationId: v1_staff_concerns_accept_create
+      description: Staff case inbox and workflow. Visibility and every action are
+        decided in scoping.py.
+      parameters:
+      - in: query
+        name: barangay
+        schema:
+          type: integer
+      - in: query
+        name: category
+        schema:
+          type: string
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this concern.
+        required: true
+      - in: query
+        name: include_duplicates
+        schema:
+          type: boolean
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Search reference no., title, landmark, description
+      - in: query
+        name: tab
+        schema:
+          type: string
+          enum:
+          - all
+          - closed
+          - endorsed
+          - for_acceptance
+          - mine
+          - open
+          - overdue
+          - to_route
+          - triage
+          - validation
+        description: 'Inbox view (default: open)'
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AcceptRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AcceptRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AcceptRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffConcernDetail'
+          description: ''
+  /api/v1/staff/concerns/{id}/assign-division/:
+    post:
+      operationId: v1_staff_concerns_assign_division_create
+      description: Staff case inbox and workflow. Visibility and every action are
+        decided in scoping.py.
+      parameters:
+      - in: query
+        name: barangay
+        schema:
+          type: integer
+      - in: query
+        name: category
+        schema:
+          type: string
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this concern.
+        required: true
+      - in: query
+        name: include_duplicates
+        schema:
+          type: boolean
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Search reference no., title, landmark, description
+      - in: query
+        name: tab
+        schema:
+          type: string
+          enum:
+          - all
+          - closed
+          - endorsed
+          - for_acceptance
+          - mine
+          - open
+          - overdue
+          - to_route
+          - triage
+          - validation
+        description: 'Inbox view (default: open)'
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignDivisionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AssignDivisionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AssignDivisionRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffConcernDetail'
+          description: ''
+  /api/v1/staff/concerns/{id}/assign-person/:
+    post:
+      operationId: v1_staff_concerns_assign_person_create
+      description: Staff case inbox and workflow. Visibility and every action are
+        decided in scoping.py.
+      parameters:
+      - in: query
+        name: barangay
+        schema:
+          type: integer
+      - in: query
+        name: category
+        schema:
+          type: string
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this concern.
+        required: true
+      - in: query
+        name: include_duplicates
+        schema:
+          type: boolean
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Search reference no., title, landmark, description
+      - in: query
+        name: tab
+        schema:
+          type: string
+          enum:
+          - all
+          - closed
+          - endorsed
+          - for_acceptance
+          - mine
+          - open
+          - overdue
+          - to_route
+          - triage
+          - validation
+        description: 'Inbox view (default: open)'
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignPersonRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AssignPersonRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AssignPersonRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffConcernDetail'
+          description: ''
+  /api/v1/staff/concerns/{id}/close/:
+    post:
+      operationId: v1_staff_concerns_close_create
+      description: Staff case inbox and workflow. Visibility and every action are
+        decided in scoping.py.
+      parameters:
+      - in: query
+        name: barangay
+        schema:
+          type: integer
+      - in: query
+        name: category
+        schema:
+          type: string
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this concern.
+        required: true
+      - in: query
+        name: include_duplicates
+        schema:
+          type: boolean
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Search reference no., title, landmark, description
+      - in: query
+        name: tab
+        schema:
+          type: string
+          enum:
+          - all
+          - closed
+          - endorsed
+          - for_acceptance
+          - mine
+          - open
+          - overdue
+          - to_route
+          - triage
+          - validation
+        description: 'Inbox view (default: open)'
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OptionalRemarksRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/OptionalRemarksRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/OptionalRemarksRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffConcernDetail'
+          description: ''
+  /api/v1/staff/concerns/{id}/complete/:
+    post:
+      operationId: v1_staff_concerns_complete_create
+      description: Staff case inbox and workflow. Visibility and every action are
+        decided in scoping.py.
+      parameters:
+      - in: query
+        name: barangay
+        schema:
+          type: integer
+      - in: query
+        name: category
+        schema:
+          type: string
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this concern.
+        required: true
+      - in: query
+        name: include_duplicates
+        schema:
+          type: boolean
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Search reference no., title, landmark, description
+      - in: query
+        name: tab
+        schema:
+          type: string
+          enum:
+          - all
+          - closed
+          - endorsed
+          - for_acceptance
+          - mine
+          - open
+          - overdue
+          - to_route
+          - triage
+          - validation
+        description: 'Inbox view (default: open)'
+      tags:
+      - v1
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CompleteRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffConcernDetail'
+          description: ''
+  /api/v1/staff/concerns/{id}/endorse/:
+    post:
+      operationId: v1_staff_concerns_endorse_create
+      description: Staff case inbox and workflow. Visibility and every action are
+        decided in scoping.py.
+      parameters:
+      - in: query
+        name: barangay
+        schema:
+          type: integer
+      - in: query
+        name: category
+        schema:
+          type: string
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this concern.
+        required: true
+      - in: query
+        name: include_duplicates
+        schema:
+          type: boolean
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Search reference no., title, landmark, description
+      - in: query
+        name: tab
+        schema:
+          type: string
+          enum:
+          - all
+          - closed
+          - endorsed
+          - for_acceptance
+          - mine
+          - open
+          - overdue
+          - to_route
+          - triage
+          - validation
+        description: 'Inbox view (default: open)'
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EndorseRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EndorseRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EndorseRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffConcernDetail'
+          description: ''
+  /api/v1/staff/concerns/{id}/escalate/:
+    post:
+      operationId: v1_staff_concerns_escalate_create
+      description: Staff case inbox and workflow. Visibility and every action are
+        decided in scoping.py.
+      parameters:
+      - in: query
+        name: barangay
+        schema:
+          type: integer
+      - in: query
+        name: category
+        schema:
+          type: string
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this concern.
+        required: true
+      - in: query
+        name: include_duplicates
+        schema:
+          type: boolean
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Search reference no., title, landmark, description
+      - in: query
+        name: tab
+        schema:
+          type: string
+          enum:
+          - all
+          - closed
+          - endorsed
+          - for_acceptance
+          - mine
+          - open
+          - overdue
+          - to_route
+          - triage
+          - validation
+        description: 'Inbox view (default: open)'
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EscalateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EscalateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EscalateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffConcernDetail'
+          description: ''
+  /api/v1/staff/concerns/{id}/extend/:
+    post:
+      operationId: v1_staff_concerns_extend_create
+      description: Staff case inbox and workflow. Visibility and every action are
+        decided in scoping.py.
+      parameters:
+      - in: query
+        name: barangay
+        schema:
+          type: integer
+      - in: query
+        name: category
+        schema:
+          type: string
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this concern.
+        required: true
+      - in: query
+        name: include_duplicates
+        schema:
+          type: boolean
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Search reference no., title, landmark, description
+      - in: query
+        name: tab
+        schema:
+          type: string
+          enum:
+          - all
+          - closed
+          - endorsed
+          - for_acceptance
+          - mine
+          - open
+          - overdue
+          - to_route
+          - triage
+          - validation
+        description: 'Inbox view (default: open)'
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExtendRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ExtendRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ExtendRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffConcernDetail'
+          description: ''
+  /api/v1/staff/concerns/{id}/feedback-8888/:
+    post:
+      operationId: v1_staff_concerns_feedback_8888_create
+      description: Staff case inbox and workflow. Visibility and every action are
+        decided in scoping.py.
+      parameters:
+      - in: query
+        name: barangay
+        schema:
+          type: integer
+      - in: query
+        name: category
+        schema:
+          type: string
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this concern.
+        required: true
+      - in: query
+        name: include_duplicates
+        schema:
+          type: boolean
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Search reference no., title, landmark, description
+      - in: query
+        name: tab
+        schema:
+          type: string
+          enum:
+          - all
+          - closed
+          - endorsed
+          - for_acceptance
+          - mine
+          - open
+          - overdue
+          - to_route
+          - triage
+          - validation
+        description: 'Inbox view (default: open)'
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Feedback8888Request'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Feedback8888Request'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Feedback8888Request'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffConcernDetail'
+          description: ''
+  /api/v1/staff/concerns/{id}/follow-up/:
+    post:
+      operationId: v1_staff_concerns_follow_up_create
+      description: Staff case inbox and workflow. Visibility and every action are
+        decided in scoping.py.
+      parameters:
+      - in: query
+        name: barangay
+        schema:
+          type: integer
+      - in: query
+        name: category
+        schema:
+          type: string
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this concern.
+        required: true
+      - in: query
+        name: include_duplicates
+        schema:
+          type: boolean
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Search reference no., title, landmark, description
+      - in: query
+        name: tab
+        schema:
+          type: string
+          enum:
+          - all
+          - closed
+          - endorsed
+          - for_acceptance
+          - mine
+          - open
+          - overdue
+          - to_route
+          - triage
+          - validation
+        description: 'Inbox view (default: open)'
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EndorsementFollowUpRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EndorsementFollowUpRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EndorsementFollowUpRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffConcernDetail'
+          description: ''
+  /api/v1/staff/concerns/{id}/inspect/:
+    post:
+      operationId: v1_staff_concerns_inspect_create
+      description: Staff case inbox and workflow. Visibility and every action are
+        decided in scoping.py.
+      parameters:
+      - in: query
+        name: barangay
+        schema:
+          type: integer
+      - in: query
+        name: category
+        schema:
+          type: string
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this concern.
+        required: true
+      - in: query
+        name: include_duplicates
+        schema:
+          type: boolean
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Search reference no., title, landmark, description
+      - in: query
+        name: tab
+        schema:
+          type: string
+          enum:
+          - all
+          - closed
+          - endorsed
+          - for_acceptance
+          - mine
+          - open
+          - overdue
+          - to_route
+          - triage
+          - validation
+        description: 'Inbox view (default: open)'
+      tags:
+      - v1
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InspectRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InspectRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffConcernDetail'
+          description: ''
+  /api/v1/staff/concerns/{id}/link-duplicate/:
+    post:
+      operationId: v1_staff_concerns_link_duplicate_create
+      description: Staff case inbox and workflow. Visibility and every action are
+        decided in scoping.py.
+      parameters:
+      - in: query
+        name: barangay
+        schema:
+          type: integer
+      - in: query
+        name: category
+        schema:
+          type: string
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this concern.
+        required: true
+      - in: query
+        name: include_duplicates
+        schema:
+          type: boolean
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Search reference no., title, landmark, description
+      - in: query
+        name: tab
+        schema:
+          type: string
+          enum:
+          - all
+          - closed
+          - endorsed
+          - for_acceptance
+          - mine
+          - open
+          - overdue
+          - to_route
+          - triage
+          - validation
+        description: 'Inbox view (default: open)'
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LinkDuplicateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LinkDuplicateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LinkDuplicateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffConcernDetail'
+          description: ''
+  /api/v1/staff/concerns/{id}/notes/:
+    post:
+      operationId: v1_staff_concerns_notes_create
+      description: Staff case inbox and workflow. Visibility and every action are
+        decided in scoping.py.
+      parameters:
+      - in: query
+        name: barangay
+        schema:
+          type: integer
+      - in: query
+        name: category
+        schema:
+          type: string
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this concern.
+        required: true
+      - in: query
+        name: include_duplicates
+        schema:
+          type: boolean
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Search reference no., title, landmark, description
+      - in: query
+        name: tab
+        schema:
+          type: string
+          enum:
+          - all
+          - closed
+          - endorsed
+          - for_acceptance
+          - mine
+          - open
+          - overdue
+          - to_route
+          - triage
+          - validation
+        description: 'Inbox view (default: open)'
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NoteCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NoteCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/NoteCreateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffConcernDetail'
+          description: ''
+  /api/v1/staff/concerns/{id}/reject/:
+    post:
+      operationId: v1_staff_concerns_reject_create
+      description: Staff case inbox and workflow. Visibility and every action are
+        decided in scoping.py.
+      parameters:
+      - in: query
+        name: barangay
+        schema:
+          type: integer
+      - in: query
+        name: category
+        schema:
+          type: string
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this concern.
+        required: true
+      - in: query
+        name: include_duplicates
+        schema:
+          type: boolean
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Search reference no., title, landmark, description
+      - in: query
+        name: tab
+        schema:
+          type: string
+          enum:
+          - all
+          - closed
+          - endorsed
+          - for_acceptance
+          - mine
+          - open
+          - overdue
+          - to_route
+          - triage
+          - validation
+        description: 'Inbox view (default: open)'
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RemarksRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RemarksRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RemarksRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffConcernDetail'
+          description: ''
+  /api/v1/staff/concerns/{id}/reopen/:
+    post:
+      operationId: v1_staff_concerns_reopen_create
+      description: Staff case inbox and workflow. Visibility and every action are
+        decided in scoping.py.
+      parameters:
+      - in: query
+        name: barangay
+        schema:
+          type: integer
+      - in: query
+        name: category
+        schema:
+          type: string
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this concern.
+        required: true
+      - in: query
+        name: include_duplicates
+        schema:
+          type: boolean
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Search reference no., title, landmark, description
+      - in: query
+        name: tab
+        schema:
+          type: string
+          enum:
+          - all
+          - closed
+          - endorsed
+          - for_acceptance
+          - mine
+          - open
+          - overdue
+          - to_route
+          - triage
+          - validation
+        description: 'Inbox view (default: open)'
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RemarksRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RemarksRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RemarksRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffConcernDetail'
+          description: ''
+  /api/v1/staff/concerns/{id}/respond/:
+    post:
+      operationId: v1_staff_concerns_respond_create
+      description: Staff case inbox and workflow. Visibility and every action are
+        decided in scoping.py.
+      parameters:
+      - in: query
+        name: barangay
+        schema:
+          type: integer
+      - in: query
+        name: category
+        schema:
+          type: string
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this concern.
+        required: true
+      - in: query
+        name: include_duplicates
+        schema:
+          type: boolean
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Search reference no., title, landmark, description
+      - in: query
+        name: tab
+        schema:
+          type: string
+          enum:
+          - all
+          - closed
+          - endorsed
+          - for_acceptance
+          - mine
+          - open
+          - overdue
+          - to_route
+          - triage
+          - validation
+        description: 'Inbox view (default: open)'
+      tags:
+      - v1
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RespondRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffConcernDetail'
+          description: ''
+  /api/v1/staff/concerns/{id}/return-to-pacd/:
+    post:
+      operationId: v1_staff_concerns_return_to_pacd_create
+      description: Staff case inbox and workflow. Visibility and every action are
+        decided in scoping.py.
+      parameters:
+      - in: query
+        name: barangay
+        schema:
+          type: integer
+      - in: query
+        name: category
+        schema:
+          type: string
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this concern.
+        required: true
+      - in: query
+        name: include_duplicates
+        schema:
+          type: boolean
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Search reference no., title, landmark, description
+      - in: query
+        name: tab
+        schema:
+          type: string
+          enum:
+          - all
+          - closed
+          - endorsed
+          - for_acceptance
+          - mine
+          - open
+          - overdue
+          - to_route
+          - triage
+          - validation
+        description: 'Inbox view (default: open)'
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReturnRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReturnRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ReturnRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffConcernDetail'
+          description: ''
+  /api/v1/staff/concerns/{id}/route/:
+    post:
+      operationId: v1_staff_concerns_route_create
+      description: Staff case inbox and workflow. Visibility and every action are
+        decided in scoping.py.
+      parameters:
+      - in: query
+        name: barangay
+        schema:
+          type: integer
+      - in: query
+        name: category
+        schema:
+          type: string
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this concern.
+        required: true
+      - in: query
+        name: include_duplicates
+        schema:
+          type: boolean
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Search reference no., title, landmark, description
+      - in: query
+        name: tab
+        schema:
+          type: string
+          enum:
+          - all
+          - closed
+          - endorsed
+          - for_acceptance
+          - mine
+          - open
+          - overdue
+          - to_route
+          - triage
+          - validation
+        description: 'Inbox view (default: open)'
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RouteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RouteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RouteRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffConcernDetail'
+          description: ''
+  /api/v1/staff/concerns/{id}/set-priority/:
+    post:
+      operationId: v1_staff_concerns_set_priority_create
+      description: Staff case inbox and workflow. Visibility and every action are
+        decided in scoping.py.
+      parameters:
+      - in: query
+        name: barangay
+        schema:
+          type: integer
+      - in: query
+        name: category
+        schema:
+          type: string
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this concern.
+        required: true
+      - in: query
+        name: include_duplicates
+        schema:
+          type: boolean
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Search reference no., title, landmark, description
+      - in: query
+        name: tab
+        schema:
+          type: string
+          enum:
+          - all
+          - closed
+          - endorsed
+          - for_acceptance
+          - mine
+          - open
+          - overdue
+          - to_route
+          - triage
+          - validation
+        description: 'Inbox view (default: open)'
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetPriorityRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SetPriorityRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SetPriorityRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffConcernDetail'
+          description: ''
+  /api/v1/staff/concerns/{id}/unlink-duplicate/:
+    post:
+      operationId: v1_staff_concerns_unlink_duplicate_create
+      description: Staff case inbox and workflow. Visibility and every action are
+        decided in scoping.py.
+      parameters:
+      - in: query
+        name: barangay
+        schema:
+          type: integer
+      - in: query
+        name: category
+        schema:
+          type: string
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this concern.
+        required: true
+      - in: query
+        name: include_duplicates
+        schema:
+          type: boolean
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Search reference no., title, landmark, description
+      - in: query
+        name: tab
+        schema:
+          type: string
+          enum:
+          - all
+          - closed
+          - endorsed
+          - for_acceptance
+          - mine
+          - open
+          - overdue
+          - to_route
+          - triage
+          - validation
+        description: 'Inbox view (default: open)'
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffConcernDetail'
+          description: ''
+  /api/v1/staff/concerns/{id}/validate/:
+    post:
+      operationId: v1_staff_concerns_validate_create
+      description: Staff case inbox and workflow. Visibility and every action are
+        decided in scoping.py.
+      parameters:
+      - in: query
+        name: barangay
+        schema:
+          type: integer
+      - in: query
+        name: category
+        schema:
+          type: string
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this concern.
+        required: true
+      - in: query
+        name: include_duplicates
+        schema:
+          type: boolean
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Search reference no., title, landmark, description
+      - in: query
+        name: tab
+        schema:
+          type: string
+          enum:
+          - all
+          - closed
+          - endorsed
+          - for_acceptance
+          - mine
+          - open
+          - overdue
+          - to_route
+          - triage
+          - validation
+        description: 'Inbox view (default: open)'
+      tags:
+      - v1
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ValidateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffConcernDetail'
+          description: ''
+  /api/v1/staff/concerns/{id}/verify/:
+    post:
+      operationId: v1_staff_concerns_verify_create
+      description: Staff case inbox and workflow. Visibility and every action are
+        decided in scoping.py.
+      parameters:
+      - in: query
+        name: barangay
+        schema:
+          type: integer
+      - in: query
+        name: category
+        schema:
+          type: string
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this concern.
+        required: true
+      - in: query
+        name: include_duplicates
+        schema:
+          type: boolean
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Search reference no., title, landmark, description
+      - in: query
+        name: tab
+        schema:
+          type: string
+          enum:
+          - all
+          - closed
+          - endorsed
+          - for_acceptance
+          - mine
+          - open
+          - overdue
+          - to_route
+          - triage
+          - validation
+        description: 'Inbox view (default: open)'
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/VerifyRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/VerifyRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffConcernDetail'
+          description: ''
+  /api/v1/staff/departments/:
+    get:
+      operationId: v1_staff_departments_list
+      parameters:
+      - in: query
+        name: kind
+        schema:
+          type: string
+          enum:
+          - external
+          - internal
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Department'
+          description: ''
+  /api/v1/staff/divisions/:
+    get:
+      operationId: v1_staff_divisions_list
+      parameters:
+      - in: query
+        name: department
+        schema:
+          type: integer
+        required: true
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Division'
+          description: ''
+  /api/v1/staff/map/barangays/:
+    get:
+      operationId: v1_staff_map_barangays_list
+      description: Per-barangay load, including reports without a pin (located by
+        barangay).
+      parameters:
+      - in: query
+        name: barangay
+        schema:
+          type: integer
+      - in: query
+        name: category
+        schema:
+          type: string
+      - in: query
+        name: date_from
+        schema:
+          type: string
+        description: YYYY-MM-DD
+      - in: query
+        name: date_to
+        schema:
+          type: string
+        description: YYYY-MM-DD
+      - in: query
+        name: days
+        schema:
+          type: integer
+        description: Look-back window in days (default 90). Ignored if date_from is
+          set.
+      - in: query
+        name: department
+        schema:
+          type: integer
+      - in: query
+        name: priority
+        schema:
+          type: string
+        description: P1..P4
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - all
+          - open
+          - resolved
+      - in: query
+        name: subcategory
+        schema:
+          type: string
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BarangayStat'
+          description: ''
+  /api/v1/staff/map/hotspots/:
+    get:
+      operationId: v1_staff_map_hotspots_retrieve
+      description: |-
+        DBSCAN hotspots over distinct problems (original reports, not duplicates), so one problem reported
+        by many people doesn't masquerade as a recurring hotspot. Recurrence = distinct months active.
+      parameters:
+      - in: query
+        name: barangay
+        schema:
+          type: integer
+      - in: query
+        name: category
+        schema:
+          type: string
+      - in: query
+        name: date_from
+        schema:
+          type: string
+        description: YYYY-MM-DD
+      - in: query
+        name: date_to
+        schema:
+          type: string
+        description: YYYY-MM-DD
+      - in: query
+        name: days
+        schema:
+          type: integer
+        description: Look-back window in days (default 90). Ignored if date_from is
+          set.
+      - in: query
+        name: department
+        schema:
+          type: integer
+      - in: query
+        name: eps_m
+        schema:
+          type: integer
+        description: Cluster radius in meters (default 75)
+      - in: query
+        name: min_samples
+        schema:
+          type: integer
+        description: Minimum distinct reports per hotspot (default 4)
+      - in: query
+        name: priority
+        schema:
+          type: string
+        description: P1..P4
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - all
+          - open
+          - resolved
+      - in: query
+        name: subcategory
+        schema:
+          type: string
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Hotspots'
+          description: ''
+  /api/v1/staff/map/points/:
+    get:
+      operationId: v1_staff_map_points_retrieve
+      description: Pinned reports for markers and the heatmap (weight = number of
+        residents who reported it).
+      parameters:
+      - in: query
+        name: barangay
+        schema:
+          type: integer
+      - in: query
+        name: category
+        schema:
+          type: string
+      - in: query
+        name: date_from
+        schema:
+          type: string
+        description: YYYY-MM-DD
+      - in: query
+        name: date_to
+        schema:
+          type: string
+        description: YYYY-MM-DD
+      - in: query
+        name: days
+        schema:
+          type: integer
+        description: Look-back window in days (default 90). Ignored if date_from is
+          set.
+      - in: query
+        name: department
+        schema:
+          type: integer
+      - in: query
+        name: priority
+        schema:
+          type: string
+        description: P1..P4
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - all
+          - open
+          - resolved
+      - in: query
+        name: subcategory
+        schema:
+          type: string
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MapPoints'
+          description: ''
+  /api/v1/staff/priority-levels/:
+    get:
+      operationId: v1_staff_priority_levels_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PriorityLevel'
+          description: ''
+  /api/v1/staff/summary/:
+    get:
+      operationId: v1_staff_summary_retrieve
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffSummary'
+          description: ''
+  /api/v1/staff/users/:
+    get:
+      operationId: v1_staff_users_list
+      description: People in an office (optionally a division), for the 'assign to'
+        dropdown.
+      parameters:
+      - in: query
+        name: department
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: division
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StaffUser'
+          description: ''
+components:
+  schemas:
+    AcceptRequest:
+      type: object
+      properties:
+        priority_level:
+          type: integer
+        priority_reason:
+          type: string
+          maxLength: 300
+        screening:
+          type: object
+          additionalProperties:
+            type: boolean
+        division:
+          type: integer
+          nullable: true
+        remarks:
+          type: string
+          maxLength: 500
+      required:
+      - priority_level
+    AccomplishmentReport:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/AccomplishmentReportStatusEnum'
+        status_display:
+          type: string
+        submitted_by:
+          type: string
+          nullable: true
+          readOnly: true
+        submitted_at:
+          type: string
+          format: date-time
+          readOnly: true
+        work_done:
+          type: string
+        started_at:
+          type: string
+          format: date-time
+          nullable: true
+        finished_at:
+          type: string
+          format: date-time
+          nullable: true
+        crew:
+          type: array
+          items:
+            type: string
+          readOnly: true
+        other_workers:
+          type: string
+          description: Job-order / barangay workers without accounts.
+          maxLength: 300
+        headcount:
+          type: integer
+        man_hours:
+          type: number
+          format: double
+          nullable: true
+        materials:
+          type: array
+          items:
+            $ref: '#/components/schemas/Material'
+        equipment:
+          type: string
+          maxLength: 300
+        reviewed_by:
+          type: string
+          nullable: true
+          readOnly: true
+        reviewed_at:
+          type: string
+          format: date-time
+          nullable: true
+        review_remarks:
+          type: string
+        override_reason:
+          type: string
+          description: Why the validator approved even though the photo checks raised
+            a red flag.
+      required:
+      - crew
+      - headcount
+      - id
+      - man_hours
+      - materials
+      - reviewed_by
+      - status_display
+      - submitted_at
+      - submitted_by
+      - work_done
+    AccomplishmentReportStatusEnum:
+      enum:
+      - submitted
+      - approved
+      - returned
+      type: string
+      description: |-
+        * `submitted` - Submitted, awaiting validation
+        * `approved` - Approved
+        * `returned` - Returned to the field
+    Accountability:
+      type: object
+      properties:
+        period:
+          $ref: '#/components/schemas/Period'
+        offices:
+          type: array
+          items:
+            $ref: '#/components/schemas/OfficeProofRow'
+        watchlist:
+          type: array
+          items:
+            $ref: '#/components/schemas/WatchItem'
+        proof_target:
+          type: number
+          format: double
+      required:
+      - offices
+      - period
+      - proof_target
+      - watchlist
+    AffectedScaleEnum:
+      enum:
+      - self
+      - household
+      - street
+      - barangay
+      type: string
+      description: |-
+        * `self` - self
+        * `household` - household
+        * `street` - street
+        * `barangay` - barangay
+    Aging:
+      type: object
+      properties:
+        bucket:
+          type: string
+        count:
+          type: integer
+      required:
+      - bucket
+      - count
+    AssignDivisionRequest:
+      type: object
+      properties:
+        division:
+          type: integer
+        remarks:
+          type: string
+          maxLength: 500
+      required:
+      - division
+    AssignPersonRequest:
+      type: object
+      properties:
+        person:
+          type: integer
+        remarks:
+          type: string
+          maxLength: 500
+      required:
+      - person
+    Attachment:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        kind:
+          $ref: '#/components/schemas/AttachmentKindEnum'
+        url:
+          type: string
+          readOnly: true
+        caption:
+          type: string
+          maxLength: 150
+        uploaded_at:
+          type: string
+          format: date-time
+          readOnly: true
+        uploaded_by:
+          type: string
+          nullable: true
+          readOnly: true
+        report_id:
+          type: integer
+          nullable: true
+          description: The accomplishment report this before/after photo was submitted
+            with.
+          readOnly: true
+        taken_at:
+          type: string
+          format: date-time
+          nullable: true
+        time_source:
+          $ref: '#/components/schemas/TimeSourceEnum'
+        latitude:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,6})?$
+          nullable: true
+        longitude:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,6})?$
+          nullable: true
+        gps_source:
+          $ref: '#/components/schemas/GpsSourceEnum'
+        gps_accuracy_m:
+          type: number
+          format: double
+          nullable: true
+        distance_m:
+          type: number
+          format: double
+          nullable: true
+          description: Distance from the reported location.
+        flags:
+          type: array
+          items:
+            $ref: '#/components/schemas/EvidenceFlag'
+          readOnly: true
+      required:
+      - flags
+      - id
+      - report_id
+      - uploaded_at
+      - uploaded_by
+      - url
+    AttachmentKindEnum:
+      enum:
+      - report
+      - before
+      - progress
+      - resolution
+      type: string
+      description: |-
+        * `report` - Report photo (from reporter)
+        * `before` - Before photo (staff, at the site before work)
+        * `progress` - Progress / make-safe photo (staff, internal)
+        * `resolution` - After photo (proof of fix)
+    BarangayStat:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        lat:
+          type: number
+          format: double
+          nullable: true
+        lng:
+          type: number
+          format: double
+          nullable: true
+        population:
+          type: integer
+        concerns:
+          type: integer
+        reports:
+          type: integer
+        open:
+          type: integer
+        overdue:
+          type: integer
+        per_10k:
+          type: number
+          format: double
+          nullable: true
+        median_days_to_resolve:
+          type: number
+          format: double
+          nullable: true
+        top_issues:
+          type: array
+          items:
+            $ref: '#/components/schemas/IssueCount'
+      required:
+      - concerns
+      - id
+      - lat
+      - lng
+      - median_days_to_resolve
+      - name
+      - open
+      - overdue
+      - per_10k
+      - population
+      - reports
+      - top_issues
+    BlankEnum:
+      enum:
+      - ''
+    CCADSSTokenObtainPairRequest:
+      type: object
+      description: Adds role/scope claims so the frontend can route without an extra
+        request.
+      properties:
+        username:
+          type: string
+          writeOnly: true
+          minLength: 1
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - password
+      - username
+    CaseInfo:
+      type: object
+      properties:
+        level:
+          $ref: '#/components/schemas/CaseInfoLevelEnum'
+        level_display:
+          type: string
+        stage:
+          type: string
+        department_id:
+          type: integer
+          nullable: true
+          description: Empty for barangay-level cases.
+          readOnly: true
+        department:
+          type: string
+        division_id:
+          type: integer
+          nullable: true
+          readOnly: true
+        division:
+          type: string
+        assigned_to_id:
+          type: integer
+          nullable: true
+          readOnly: true
+        assigned_to:
+          type: string
+          nullable: true
+          readOnly: true
+        assigned_at:
+          type: string
+          format: date-time
+          readOnly: true
+        due_at:
+          type: string
+          format: date-time
+          nullable: true
+        original_due_at:
+          type: string
+          format: date-time
+          nullable: true
+        extended_at:
+          type: string
+          format: date-time
+          nullable: true
+        extension_reason:
+          type: string
+        max_extension_due:
+          type: string
+          nullable: true
+          readOnly: true
+        inspected_at:
+          type: string
+          format: date-time
+          nullable: true
+        inspected_by:
+          type: string
+          nullable: true
+          readOnly: true
+        inspection_findings:
+          type: string
+        action_plan:
+          type: string
+        scheduled_for:
+          type: string
+          format: date
+          nullable: true
+        work_completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        work_completed_by:
+          type: string
+          nullable: true
+          readOnly: true
+        completion_remarks:
+          type: string
+        validated_at:
+          type: string
+          format: date-time
+          nullable: true
+        validated_by:
+          type: string
+          nullable: true
+          readOnly: true
+        escalation_level:
+          allOf:
+          - $ref: '#/components/schemas/EscalationLevelEnum'
+          minimum: 0
+          maximum: 32767
+        escalation_level_display:
+          type: string
+        escalated_at:
+          type: string
+          format: date-time
+          nullable: true
+        escalation_reason:
+          type: string
+        resolution_summary:
+          type: string
+        resolved_at:
+          type: string
+          format: date-time
+          nullable: true
+        endorsements:
+          type: array
+          items:
+            $ref: '#/components/schemas/Endorsement'
+          readOnly: true
+        routed_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: When the current office received it (clock start).
+        accepted_at:
+          type: string
+          format: date-time
+          nullable: true
+        accepted_by:
+          type: string
+          nullable: true
+          readOnly: true
+        acceptance_due_at:
+          type: string
+          format: date-time
+          nullable: true
+        screening:
+          description: Answers to the office's screening checklist.
+        screening_checklist:
+          type: array
+          items:
+            type: string
+          readOnly: true
+        returned_at:
+          type: string
+          format: date-time
+          nullable: true
+        return_reason:
+          type: string
+        return_count:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        priority_level:
+          allOf:
+          - $ref: '#/components/schemas/PriorityLevel'
+          readOnly: true
+        priority_reason:
+          type: string
+          maxLength: 300
+        response_due_at:
+          type: string
+          format: date-time
+          nullable: true
+        responded_at:
+          type: string
+          format: date-time
+          nullable: true
+        responded_by:
+          type: string
+          nullable: true
+          readOnly: true
+        response_remarks:
+          type: string
+        breaches:
+          type: array
+          items:
+            type: string
+          readOnly: true
+        reports:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccomplishmentReport'
+          readOnly: true
+        evidence:
+          allOf:
+          - $ref: '#/components/schemas/EvidenceSummary'
+          nullable: true
+          readOnly: true
+      required:
+      - accepted_by
+      - assigned_at
+      - assigned_to
+      - assigned_to_id
+      - breaches
+      - department_id
+      - division_id
+      - endorsements
+      - escalation_level_display
+      - evidence
+      - inspected_by
+      - level_display
+      - max_extension_due
+      - priority_level
+      - reports
+      - responded_by
+      - screening_checklist
+      - stage
+      - validated_by
+      - work_completed_by
+    CaseInfoLevelEnum:
+      enum:
+      - city
+      - barangay
+      - external
+      type: string
+      description: |-
+        * `city` - City office
+        * `barangay` - Barangay-level
+        * `external` - Endorsed to external agency
+    CitizenConfirmationEnum:
+      enum:
+      - fixed
+      - not_fixed
+      type: string
+      description: |-
+        * `` - Not asked / no answer
+        * `fixed` - Citizen confirmed it is fixed
+        * `not_fixed` - Citizen says it is NOT fixed
+    CompleteRequest:
+      type: object
+      description: Accomplishment report + before/after photos.
+      properties:
+        remarks:
+          type: string
+          minLength: 1
+          description: Work done (shown to the citizen once validated).
+          maxLength: 1000
+        photos:
+          type: array
+          items:
+            type: string
+            format: binary
+          description: AFTER photos.
+          maxItems: 3
+        photo_meta:
+          description: 'JSON list aligned with the photos: [{exif_lat, exif_lng, exif_time,
+            device_lat, ...}]'
+        before_photos:
+          type: array
+          items:
+            type: string
+            format: binary
+          maxItems: 3
+        before_meta:
+          description: 'JSON list aligned with the photos: [{exif_lat, exif_lng, exif_time,
+            device_lat, ...}]'
+        started_at:
+          type: string
+          format: date-time
+          nullable: true
+        finished_at:
+          type: string
+          format: date-time
+          nullable: true
+        crew:
+          description: JSON list of user ids.
+        other_workers:
+          type: string
+          maxLength: 300
+        materials:
+          description: 'JSON list: [{"item": "Cold mix", "qty": 4, "unit": "sacks"}]'
+        equipment:
+          type: string
+          maxLength: 300
+      required:
+      - remarks
+    ConcernChannelEnum:
+      enum:
+      - web
+      - facebook
+      - messenger
+      - walk_in
+      - barangay
+      - hotline
+      - '8888'
+      type: string
+      description: |-
+        * `web` - Web Portal
+        * `facebook` - Facebook Comment
+        * `messenger` - Messenger
+        * `walk_in` - Walk-in
+        * `barangay` - Barangay Report
+        * `hotline` - Hotline / Call
+        * `8888` - 8888 Citizens' Complaint Center
+    ConcernStatusEnum:
+      enum:
+      - submitted
+      - under_review
+      - assigned
+      - in_progress
+      - resolved
+      - closed
+      - rejected
+      type: string
+      description: |-
+        * `submitted` - Submitted
+        * `under_review` - Under Review
+        * `assigned` - Assigned
+        * `in_progress` - In Progress
+        * `resolved` - Resolved
+        * `closed` - Closed
+        * `rejected` - Rejected
+    Department:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        code:
+          type: string
+          maxLength: 20
+        name:
+          type: string
+          maxLength: 150
+        kind:
+          $ref: '#/components/schemas/DepartmentKindEnum'
+      required:
+      - code
+      - id
+      - name
+    DepartmentKindEnum:
+      enum:
+      - internal
+      - external
+      type: string
+      description: |-
+        * `internal` - LGU office
+        * `external` - External agency (endorsement only)
+    DeptRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        code:
+          type: string
+        name:
+          type: string
+      required:
+      - code
+      - id
+      - name
+    Division:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        code:
+          type: string
+          maxLength: 30
+        name:
+          type: string
+          maxLength: 150
+        department:
+          type: integer
+      required:
+      - code
+      - department
+      - id
+      - name
+    DivisionRow:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        received:
+          type: integer
+        resolved:
+          type: integer
+        on_time_rate:
+          type: number
+          format: double
+          nullable: true
+        response_rate:
+          type: number
+          format: double
+          nullable: true
+        median_days:
+          type: number
+          format: double
+          nullable: true
+        backlog:
+          type: integer
+        overdue:
+          type: integer
+        aging_30:
+          type: integer
+        proof_rate:
+          type: number
+          format: double
+          nullable: true
+      required:
+      - aging_30
+      - backlog
+      - id
+      - median_days
+      - name
+      - on_time_rate
+      - overdue
+      - proof_rate
+      - received
+      - resolved
+      - response_rate
+    EndorseRequest:
+      type: object
+      properties:
+        agency:
+          type: integer
+        letter_reference:
+          type: string
+          maxLength: 120
+        contact_person:
+          type: string
+          maxLength: 150
+        remarks:
+          type: string
+          maxLength: 500
+      required:
+      - agency
+    Endorsement:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        agency:
+          type: string
+        status:
+          $ref: '#/components/schemas/EndorsementStatusEnum'
+        status_display:
+          type: string
+        endorsed_at:
+          type: string
+          format: date-time
+          readOnly: true
+        endorsed_by:
+          type: string
+          nullable: true
+          readOnly: true
+        letter_reference:
+          type: string
+          description: Endorsement letter / memo no.
+          maxLength: 120
+        contact_person:
+          type: string
+          maxLength: 150
+        agency_response:
+          type: string
+        next_follow_up_at:
+          type: string
+          format: date-time
+          nullable: true
+        follow_up_due:
+          type: boolean
+          readOnly: true
+        follow_up_count:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        follow_ups:
+          type: array
+          items:
+            $ref: '#/components/schemas/FollowUp'
+          readOnly: true
+      required:
+      - agency
+      - endorsed_at
+      - endorsed_by
+      - follow_up_due
+      - follow_ups
+      - id
+      - status_display
+    EndorsementFollowUpRequest:
+      type: object
+      properties:
+        method:
+          $ref: '#/components/schemas/MethodEnum'
+        notes:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        status:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/EndorsementStatusEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        agency_response:
+          type: string
+          maxLength: 1000
+        public_message:
+          type: string
+          maxLength: 500
+      required:
+      - method
+      - notes
+    EndorsementStatusEnum:
+      enum:
+      - endorsed
+      - acknowledged
+      - scheduled
+      - completed
+      - declined
+      type: string
+      description: |-
+        * `endorsed` - Endorsed, awaiting response
+        * `acknowledged` - Acknowledged by agency
+        * `scheduled` - Agency scheduled action
+        * `completed` - Agency reports completed
+        * `declined` - Declined / not their jurisdiction
+    EscalateRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 500
+      required:
+      - reason
+    EscalationLevelEnum:
+      enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      type: integer
+      description: |-
+        * `0` - Not escalated
+        * `1` - Department Head
+        * `2` - City Administrator
+        * `3` - Mayor's Office
+    EvidenceFlag:
+      type: object
+      properties:
+        code:
+          type: string
+        level:
+          $ref: '#/components/schemas/EvidenceFlagLevelEnum'
+        label:
+          type: string
+      required:
+      - code
+      - label
+      - level
+    EvidenceFlagLevelEnum:
+      enum:
+      - red
+      - amber
+      - info
+      type: string
+      description: |-
+        * `red` - red
+        * `amber` - amber
+        * `info` - info
+    EvidenceSummary:
+      type: object
+      properties:
+        before:
+          type: integer
+        after:
+          type: integer
+        located:
+          type: integer
+        has_before_after:
+          type: boolean
+        verified:
+          type: boolean
+        red_flags:
+          type: array
+          items:
+            $ref: '#/components/schemas/EvidenceFlag'
+        amber_flags:
+          type: array
+          items:
+            $ref: '#/components/schemas/EvidenceFlag'
+      required:
+      - after
+      - amber_flags
+      - before
+      - has_before_after
+      - located
+      - red_flags
+      - verified
+    ExtendRequest:
+      type: object
+      properties:
+        new_due_date:
+          type: string
+          format: date
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 500
+      required:
+      - new_due_date
+      - reason
+    Feedback8888Request:
+      type: object
+      properties:
+        feedback:
+          type: string
+          minLength: 1
+          maxLength: 2000
+      required:
+      - feedback
+    Flag:
+      type: object
+      properties:
+        code:
+          type: string
+        level:
+          type: string
+        label:
+          type: string
+      required:
+      - code
+      - label
+      - level
+    FollowUp:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        at:
+          type: string
+          format: date-time
+          readOnly: true
+        by:
+          type: string
+          readOnly: true
+        method:
+          type: string
+          description: call / letter / email / visit / meeting
+          maxLength: 30
+        notes:
+          type: string
+      required:
+      - at
+      - by
+      - id
+      - notes
+    GpsSourceEnum:
+      enum:
+      - exif
+      - device
+      - none
+      type: string
+      description: |-
+        * `exif` - Camera (photo metadata)
+        * `device` - Phone location at upload
+        * `none` - No location
+    GradeEnum:
+      enum:
+      - good
+      - watch
+      - attention
+      - insufficient
+      type: string
+      description: |-
+        * `good` - good
+        * `watch` - watch
+        * `attention` - attention
+        * `insufficient` - insufficient
+    History:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        from_status:
+          oneOf:
+          - $ref: '#/components/schemas/ConcernStatusEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        status:
+          $ref: '#/components/schemas/ConcernStatusEnum'
+        status_display:
+          type: string
+        remarks:
+          type: string
+        is_public:
+          type: boolean
+        changed_by:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - changed_by
+      - created_at
+      - id
+      - status
+      - status_display
+    Hotspot:
+      type: object
+      properties:
+        lat:
+          type: number
+          format: double
+        lng:
+          type: number
+          format: double
+        radius_m:
+          type: integer
+        count:
+          type: integer
+          description: Distinct problems (original reports) in the cluster
+        reports:
+          type: integer
+          description: Including duplicate reports from other residents
+        open:
+          type: integer
+        top_issue:
+          type: string
+        top_issue_share:
+          type: integer
+        issues:
+          type: array
+          items:
+            $ref: '#/components/schemas/IssueCount'
+        barangay:
+          type: string
+        landmark:
+          type: string
+        months_active:
+          type: integer
+          description: 'Distinct months with reports: recurrence'
+        first_report:
+          type: string
+          format: date-time
+        last_report:
+          type: string
+          format: date-time
+        concern_ids:
+          type: array
+          items:
+            type: integer
+      required:
+      - barangay
+      - concern_ids
+      - count
+      - first_report
+      - issues
+      - landmark
+      - last_report
+      - lat
+      - lng
+      - months_active
+      - open
+      - radius_m
+      - reports
+      - top_issue
+      - top_issue_share
+    Hotspots:
+      type: object
+      properties:
+        hotspots:
+          type: array
+          items:
+            $ref: '#/components/schemas/Hotspot'
+        eps_m:
+          type: integer
+        min_samples:
+          type: integer
+        points_considered:
+          type: integer
+        noise:
+          type: integer
+          description: Isolated reports not in any hotspot
+      required:
+      - eps_m
+      - hotspots
+      - min_samples
+      - noise
+      - points_considered
+    InspectRequest:
+      type: object
+      properties:
+        findings:
+          type: string
+          minLength: 1
+          maxLength: 2000
+        action_plan:
+          type: string
+          maxLength: 2000
+        scheduled_for:
+          type: string
+          format: date
+          nullable: true
+        public_message:
+          type: string
+          maxLength: 500
+        photos:
+          type: array
+          items:
+            type: string
+            format: binary
+          description: BEFORE photos of the site.
+          maxItems: 3
+        photo_meta:
+          description: 'JSON list aligned with the photos: [{exif_lat, exif_lng, exif_time,
+            device_lat, ...}]'
+      required:
+      - findings
+    IssueCount:
+      type: object
+      properties:
+        name:
+          type: string
+        count:
+          type: integer
+      required:
+      - count
+      - name
+    Kpi:
+      type: object
+      properties:
+        received:
+          type: integer
+        resolved:
+          type: integer
+        on_time:
+          type: integer
+        on_time_rate:
+          type: number
+          format: double
+          nullable: true
+        acceptance_rate:
+          type: number
+          format: double
+          nullable: true
+        response_rate:
+          type: number
+          format: double
+          nullable: true
+        p1_cases:
+          type: integer
+        p1_make_safe_rate:
+          type: number
+          format: double
+          nullable: true
+        median_days:
+          type: number
+          format: double
+          nullable: true
+        p90_days:
+          type: number
+          format: double
+          nullable: true
+        backlog:
+          type: integer
+        overdue:
+          type: integer
+        aging_30:
+          type: integer
+        extension_rate:
+          type: number
+          format: double
+          nullable: true
+        escalation_rate:
+          type: number
+          format: double
+          nullable: true
+        reopen_rate:
+          type: number
+          format: double
+          nullable: true
+        returned:
+          type: integer
+        proof_rate:
+          type: number
+          format: double
+          nullable: true
+        overrides:
+          type: integer
+        recurrence_rate:
+          type: number
+          format: double
+          nullable: true
+        citizen_answered:
+          type: integer
+        citizen_not_fixed:
+          type: integer
+        not_fixed_rate:
+          type: number
+          format: double
+          nullable: true
+        quality_rate:
+          type: number
+          format: double
+          nullable: true
+        index:
+          type: number
+          format: double
+          nullable: true
+        grade:
+          $ref: '#/components/schemas/GradeEnum'
+        flags:
+          type: array
+          items:
+            type: string
+      required:
+      - acceptance_rate
+      - aging_30
+      - backlog
+      - citizen_answered
+      - citizen_not_fixed
+      - escalation_rate
+      - extension_rate
+      - flags
+      - grade
+      - index
+      - median_days
+      - not_fixed_rate
+      - on_time
+      - on_time_rate
+      - overdue
+      - overrides
+      - p1_cases
+      - p1_make_safe_rate
+      - p90_days
+      - proof_rate
+      - quality_rate
+      - received
+      - recurrence_rate
+      - reopen_rate
+      - resolved
+      - response_rate
+      - returned
+    Ledger:
+      type: object
+      properties:
+        period:
+          $ref: '#/components/schemas/Period'
+        person:
+          $ref: '#/components/schemas/PersonRef'
+        summary:
+          allOf:
+          - $ref: '#/components/schemas/PersonRow'
+          nullable: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/LedgerItem'
+      required:
+      - items
+      - period
+      - person
+      - summary
+    LedgerItem:
+      type: object
+      properties:
+        at:
+          type: string
+          format: date-time
+        kind:
+          type: string
+        label:
+          type: string
+        concern_id:
+          type: integer
+        reference_no:
+          type: string
+        title:
+          type: string
+        barangay:
+          type: string
+        detail:
+          type: string
+        ok:
+          type: boolean
+          nullable: true
+        flags:
+          type: array
+          items:
+            $ref: '#/components/schemas/Flag'
+        photos:
+          type: array
+          items:
+            $ref: '#/components/schemas/LedgerPhoto'
+      required:
+      - at
+      - barangay
+      - concern_id
+      - detail
+      - flags
+      - kind
+      - label
+      - ok
+      - photos
+      - reference_no
+      - title
+    LedgerPhoto:
+      type: object
+      properties:
+        url:
+          type: string
+        kind:
+          type: string
+        distance_m:
+          type: number
+          format: double
+          nullable: true
+        gps_source:
+          type: string
+        flags:
+          type: array
+          items:
+            $ref: '#/components/schemas/Flag'
+      required:
+      - distance_m
+      - flags
+      - gps_source
+      - kind
+      - url
+    LinkDuplicateRequest:
+      type: object
+      properties:
+        master_reference:
+          type: string
+          minLength: 1
+          maxLength: 20
+      required:
+      - master_reference
+    LinkedReport:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        reference_no:
+          type: string
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/ConcernStatusEnum'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        channel:
+          $ref: '#/components/schemas/ConcernChannelEnum'
+      required:
+      - created_at
+      - id
+      - reference_no
+    MapPoint:
+      type: object
+      properties:
+        id:
+          type: integer
+        ref:
+          type: string
+        lat:
+          type: number
+          format: double
+        lng:
+          type: number
+          format: double
+        category:
+          type: string
+          nullable: true
+        subcategory:
+          type: string
+          nullable: true
+        status:
+          type: string
+        priority:
+          type: string
+          nullable: true
+        reports:
+          type: integer
+          description: 1 + linked duplicate reports
+        overdue:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        barangay:
+          type: string
+      required:
+      - barangay
+      - category
+      - created_at
+      - id
+      - lat
+      - lng
+      - overdue
+      - priority
+      - ref
+      - reports
+      - status
+      - subcategory
+    MapPoints:
+      type: object
+      properties:
+        points:
+          type: array
+          items:
+            $ref: '#/components/schemas/MapPoint'
+        total:
+          type: integer
+        unpinned:
+          type: integer
+          description: Matching reports without a map pin (counted in barangay stats
+            only)
+      required:
+      - points
+      - total
+      - unpinned
+    Material:
+      type: object
+      properties:
+        item:
+          type: string
+          maxLength: 120
+        qty:
+          type: number
+          format: double
+          nullable: true
+        unit:
+          type: string
+          maxLength: 30
+      required:
+      - item
+    Me:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          readOnly: true
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+        email:
+          type: string
+          format: email
+          readOnly: true
+          title: Email address
+        first_name:
+          type: string
+          readOnly: true
+        last_name:
+          type: string
+          readOnly: true
+        full_name:
+          type: string
+          readOnly: true
+        role:
+          allOf:
+          - $ref: '#/components/schemas/RoleEnum'
+          readOnly: true
+        role_display:
+          type: string
+          readOnly: true
+        barangay:
+          type: string
+          readOnly: true
+        barangay_id:
+          type: integer
+          nullable: true
+          readOnly: true
+        department:
+          type: string
+          readOnly: true
+        department_id:
+          type: integer
+          nullable: true
+          readOnly: true
+        division:
+          type: string
+          readOnly: true
+        division_id:
+          type: integer
+          nullable: true
+          readOnly: true
+      required:
+      - barangay
+      - barangay_id
+      - department
+      - department_id
+      - division
+      - division_id
+      - email
+      - first_name
+      - full_name
+      - id
+      - last_name
+      - role
+      - role_display
+      - username
+    MethodEnum:
+      enum:
+      - call
+      - letter
+      - email
+      - visit
+      - meeting
+      type: string
+      description: |-
+        * `call` - call
+        * `letter` - letter
+        * `email` - email
+        * `visit` - visit
+        * `meeting` - meeting
+    NamedCount:
+      type: object
+      properties:
+        name:
+          type: string
+        count:
+          type: integer
+      required:
+      - count
+      - name
+    Note:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        author:
+          type: string
+          readOnly: true
+        body:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - author
+      - body
+      - created_at
+      - id
+    NoteCreateRequest:
+      type: object
+      properties:
+        body:
+          type: string
+          minLength: 1
+          maxLength: 2000
+      required:
+      - body
+    NullEnum:
+      enum:
+      - null
+    OfficeDetail:
+      type: object
+      properties:
+        period:
+          $ref: '#/components/schemas/Period'
+        department:
+          $ref: '#/components/schemas/DeptRef'
+        kpis:
+          $ref: '#/components/schemas/Kpi'
+        city:
+          $ref: '#/components/schemas/Kpi'
+        divisions:
+          type: array
+          items:
+            $ref: '#/components/schemas/DivisionRow'
+        aging:
+          type: array
+          items:
+            $ref: '#/components/schemas/Aging'
+        top_issues:
+          type: array
+          items:
+            $ref: '#/components/schemas/NamedCount'
+        trend:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrendPoint'
+        city_trend:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrendPoint'
+        oldest_overdue:
+          type: array
+          items:
+            $ref: '#/components/schemas/OverdueCase'
+        workload:
+          type: array
+          items:
+            $ref: '#/components/schemas/Workload'
+      required:
+      - aging
+      - city
+      - city_trend
+      - department
+      - divisions
+      - kpis
+      - oldest_overdue
+      - period
+      - top_issues
+      - trend
+      - workload
+    OfficeProofRow:
+      type: object
+      properties:
+        department_id:
+          type: integer
+        code:
+          type: string
+        name:
+          type: string
+        resolved:
+          type: integer
+        before_after:
+          type: integer
+        verified_proof:
+          type: integer
+        proof_rate:
+          type: number
+          format: double
+          nullable: true
+        photos:
+          type: integer
+        red_flag_photos:
+          type: integer
+        reports:
+          type: integer
+        reports_returned:
+          type: integer
+        overrides:
+          type: integer
+        citizen_answered:
+          type: integer
+        citizen_fixed:
+          type: integer
+        citizen_not_fixed:
+          type: integer
+        recurrences:
+          type: integer
+      required:
+      - before_after
+      - citizen_answered
+      - citizen_fixed
+      - citizen_not_fixed
+      - code
+      - department_id
+      - name
+      - overrides
+      - photos
+      - proof_rate
+      - recurrences
+      - red_flag_photos
+      - reports
+      - reports_returned
+      - resolved
+      - verified_proof
+    OfficeRow:
+      type: object
+      properties:
+        received:
+          type: integer
+        resolved:
+          type: integer
+        on_time:
+          type: integer
+        on_time_rate:
+          type: number
+          format: double
+          nullable: true
+        acceptance_rate:
+          type: number
+          format: double
+          nullable: true
+        response_rate:
+          type: number
+          format: double
+          nullable: true
+        p1_cases:
+          type: integer
+        p1_make_safe_rate:
+          type: number
+          format: double
+          nullable: true
+        median_days:
+          type: number
+          format: double
+          nullable: true
+        p90_days:
+          type: number
+          format: double
+          nullable: true
+        backlog:
+          type: integer
+        overdue:
+          type: integer
+        aging_30:
+          type: integer
+        extension_rate:
+          type: number
+          format: double
+          nullable: true
+        escalation_rate:
+          type: number
+          format: double
+          nullable: true
+        reopen_rate:
+          type: number
+          format: double
+          nullable: true
+        returned:
+          type: integer
+        proof_rate:
+          type: number
+          format: double
+          nullable: true
+        overrides:
+          type: integer
+        recurrence_rate:
+          type: number
+          format: double
+          nullable: true
+        citizen_answered:
+          type: integer
+        citizen_not_fixed:
+          type: integer
+        not_fixed_rate:
+          type: number
+          format: double
+          nullable: true
+        quality_rate:
+          type: number
+          format: double
+          nullable: true
+        index:
+          type: number
+          format: double
+          nullable: true
+        grade:
+          $ref: '#/components/schemas/GradeEnum'
+        flags:
+          type: array
+          items:
+            type: string
+        department_id:
+          type: integer
+        code:
+          type: string
+        name:
+          type: string
+        rank:
+          type: integer
+          nullable: true
+      required:
+      - acceptance_rate
+      - aging_30
+      - backlog
+      - citizen_answered
+      - citizen_not_fixed
+      - code
+      - department_id
+      - escalation_rate
+      - extension_rate
+      - flags
+      - grade
+      - index
+      - median_days
+      - name
+      - not_fixed_rate
+      - on_time
+      - on_time_rate
+      - overdue
+      - overrides
+      - p1_cases
+      - p1_make_safe_rate
+      - p90_days
+      - proof_rate
+      - quality_rate
+      - rank
+      - received
+      - recurrence_rate
+      - reopen_rate
+      - resolved
+      - response_rate
+      - returned
+    OptionalRemarksRequest:
+      type: object
+      properties:
+        remarks:
+          type: string
+          maxLength: 1000
+    OverdueCase:
+      type: object
+      properties:
+        id:
+          type: integer
+        reference_no:
+          type: string
+        title:
+          type: string
+        barangay:
+          type: string
+        priority:
+          type: string
+          nullable: true
+        due_at:
+          type: string
+          format: date-time
+        days_overdue:
+          type: integer
+        escalation_level:
+          type: integer
+        stage:
+          type: string
+      required:
+      - barangay
+      - days_overdue
+      - due_at
+      - escalation_level
+      - id
+      - priority
+      - reference_no
+      - stage
+      - title
+    PaginatedStaffConcernListList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/StaffConcernList'
+    People:
+      type: object
+      properties:
+        period:
+          $ref: '#/components/schemas/Period'
+        department:
+          $ref: '#/components/schemas/DeptRef'
+        people:
+          type: array
+          items:
+            $ref: '#/components/schemas/PersonRow'
+      required:
+      - department
+      - people
+      - period
+    Period:
+      type: object
+      properties:
+        label:
+          type: string
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+      required:
+      - end
+      - label
+      - start
+    Permissions:
+      type: object
+      properties:
+        can_act:
+          type: boolean
+        verify:
+          type: boolean
+        route:
+          type: boolean
+        route_any_office:
+          type: boolean
+        endorse:
+          type: boolean
+        accept:
+          type: boolean
+        return_to_pacd:
+          type: boolean
+        set_priority:
+          type: boolean
+        respond:
+          type: boolean
+        assign_division:
+          type: boolean
+        assign_person:
+          type: boolean
+        inspect:
+          type: boolean
+        complete:
+          type: boolean
+        validate:
+          type: boolean
+        extend:
+          type: boolean
+        escalate:
+          type: boolean
+        reject:
+          type: boolean
+        close:
+          type: boolean
+        reopen:
+          type: boolean
+        notes:
+          type: boolean
+        link:
+          type: boolean
+        feedback_8888:
+          type: boolean
+        follow_up:
+          type: boolean
+      required:
+      - accept
+      - assign_division
+      - assign_person
+      - can_act
+      - close
+      - complete
+      - endorse
+      - escalate
+      - extend
+      - feedback_8888
+      - follow_up
+      - inspect
+      - link
+      - notes
+      - reject
+      - reopen
+      - respond
+      - return_to_pacd
+      - route
+      - route_any_office
+      - set_priority
+      - validate
+      - verify
+    PersonActions:
+      type: object
+      properties:
+        accepted:
+          type: integer
+        responded:
+          type: integer
+        inspected:
+          type: integer
+        submitted:
+          type: integer
+        crew:
+          type: integer
+        validated:
+          type: integer
+        returned:
+          type: integer
+        overrides:
+          type: integer
+      required:
+      - accepted
+      - crew
+      - inspected
+      - overrides
+      - responded
+      - returned
+      - submitted
+      - validated
+    PersonRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        role_display:
+          type: string
+        department:
+          type: string
+          nullable: true
+        department_id:
+          type: integer
+          nullable: true
+        division:
+          type: string
+          nullable: true
+      required:
+      - department
+      - department_id
+      - division
+      - id
+      - name
+      - role_display
+    PersonRow:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        role:
+          type: string
+        role_display:
+          type: string
+        division:
+          type: string
+          nullable: true
+        actions:
+          $ref: '#/components/schemas/PersonActions'
+        total_actions:
+          type: integer
+        open_assigned:
+          type: integer
+        photos:
+          type: integer
+        red_flag_photos:
+          type: integer
+        located_rate:
+          type: number
+          format: double
+          nullable: true
+        reports_returned:
+          type: integer
+        citizen_not_fixed:
+          type: integer
+        recurrences:
+          type: integer
+      required:
+      - actions
+      - citizen_not_fixed
+      - division
+      - id
+      - located_rate
+      - name
+      - open_assigned
+      - photos
+      - recurrences
+      - red_flag_photos
+      - reports_returned
+      - role
+      - role_display
+      - total_actions
+    PriorityBreakdown:
+      type: object
+      properties:
+        severity_component:
+          type: number
+          format: double
+        affected_component:
+          type: number
+          format: double
+        duplicate_component:
+          type: number
+          format: double
+        delay_component:
+          type: number
+          format: double
+        duplicate_count:
+          type: integer
+        days_open:
+          type: number
+          format: double
+        total:
+          type: number
+          format: double
+      required:
+      - affected_component
+      - days_open
+      - delay_component
+      - duplicate_component
+      - duplicate_count
+      - severity_component
+      - total
+    PriorityLevel:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        code:
+          type: string
+          maxLength: 4
+        name:
+          type: string
+          maxLength: 40
+        name_fil:
+          type: string
+          maxLength: 40
+        description:
+          type: string
+          maxLength: 255
+        response_hours:
+          type: integer
+          maximum: 32767
+          minimum: 0
+          nullable: true
+          description: Calendar hours (emergencies don't wait for working days).
+        response_working_days:
+          type: integer
+          maximum: 32767
+          minimum: 0
+          nullable: true
+        resolution_cap_days:
+          type: integer
+          maximum: 32767
+          minimum: 0
+          nullable: true
+          description: Working days. Empty = use the ARTA class maximum.
+        color:
+          type: string
+          description: 'Bootstrap color: danger, warning, info, secondary'
+          maxLength: 20
+      required:
+      - code
+      - id
+      - name
+    PublicBarangay:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 120
+        center_lat:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,6})?$
+          nullable: true
+        center_lng:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,6})?$
+          nullable: true
+      required:
+      - id
+      - name
+    PublicCategory:
+      type: object
+      properties:
+        code:
+          type: string
+          maxLength: 40
+          pattern: ^[-a-zA-Z0-9_]+$
+        name:
+          type: string
+          maxLength: 80
+        name_fil:
+          type: string
+          title: Name (Filipino)
+          maxLength: 80
+        description:
+          type: string
+        icon:
+          type: string
+          description: Bootstrap Icons name, e.g. 'cone-striped'
+          maxLength: 50
+        subcategories:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicSubcategory'
+          readOnly: true
+      required:
+      - code
+      - name
+      - subcategories
+    PublicConcernCreate:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 150
+        description:
+          type: string
+        category:
+          type: string
+          nullable: true
+        subcategory:
+          type: string
+          nullable: true
+        barangay:
+          type: integer
+        latitude:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,6})?$
+          nullable: true
+        longitude:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,6})?$
+          nullable: true
+        location_description:
+          type: string
+          description: Landmark / street
+          maxLength: 255
+        reference_no:
+          type: string
+          readOnly: true
+        status:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        linked_to_existing:
+          type: boolean
+          readOnly: true
+      required:
+      - barangay
+      - created_at
+      - description
+      - linked_to_existing
+      - location_description
+      - reference_no
+      - status
+    PublicConcernCreateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 150
+        description:
+          type: string
+          minLength: 1
+        category:
+          type: string
+          minLength: 1
+          nullable: true
+        subcategory:
+          type: string
+          minLength: 1
+          nullable: true
+        danger_now:
+          type: boolean
+          writeOnly: true
+          description: 'Citizen answered: is anyone in danger right now? (severity
+            hint, not a score)'
+        affected_scale:
+          allOf:
+          - $ref: '#/components/schemas/AffectedScaleEnum'
+          writeOnly: true
+          default: street
+        involves_barangay_officials:
+          type: boolean
+          writeOnly: true
+          description: Complaint concerns barangay officials — hidden from barangay
+            personnel, routed to City.
+        barangay:
+          type: integer
+        latitude:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,6})?$
+          nullable: true
+        longitude:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,6})?$
+          nullable: true
+        location_description:
+          type: string
+          minLength: 1
+          description: Landmark / street
+          maxLength: 255
+        reporter_name:
+          type: string
+          writeOnly: true
+          maxLength: 150
+        reporter_contact:
+          type: string
+          writeOnly: true
+          maxLength: 20
+        reporter_email:
+          writeOnly: true
+          oneOf:
+          - type: string
+            format: email
+            maxLength: 254
+          - type: string
+            maxLength: 0
+        is_anonymous:
+          type: boolean
+          writeOnly: true
+        consent_given:
+          type: boolean
+          writeOnly: true
+        images:
+          type: array
+          items:
+            type: string
+            format: binary
+          writeOnly: true
+          maxItems: 3
+      required:
+      - barangay
+      - description
+      - location_description
+    PublicConfirmRequest:
+      type: object
+      properties:
+        fixed:
+          type: boolean
+        feedback:
+          type: string
+          maxLength: 1000
+        mobile_last4:
+          oneOf:
+          - type: string
+            pattern: ^\d{4}$
+          - type: string
+            maxLength: 0
+      required:
+      - fixed
+    PublicStats:
+      type: object
+      properties:
+        totals:
+          $ref: '#/components/schemas/PublicStatsTotals'
+        by_category:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicStatsCategory'
+        by_barangay:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicStatsBarangay'
+        generated_at:
+          type: string
+          format: date-time
+      required:
+      - by_barangay
+      - by_category
+      - generated_at
+      - totals
+    PublicStatsBarangay:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        center_lat:
+          type: number
+          format: double
+          nullable: true
+        center_lng:
+          type: number
+          format: double
+          nullable: true
+        open:
+          type: integer
+        total_90d:
+          type: integer
+      required:
+      - center_lat
+      - center_lng
+      - id
+      - name
+      - open
+      - total_90d
+    PublicStatsCategory:
+      type: object
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        count:
+          type: integer
+      required:
+      - code
+      - count
+      - name
+    PublicStatsTotals:
+      type: object
+      properties:
+        total:
+          type: integer
+        open:
+          type: integer
+        resolved:
+          type: integer
+        this_month:
+          type: integer
+        resolved_this_month:
+          type: integer
+        avg_resolution_hours:
+          type: number
+          format: double
+          nullable: true
+        resolution_rate:
+          type: number
+          format: double
+        reports_received:
+          type: integer
+      required:
+      - avg_resolution_hours
+      - open
+      - reports_received
+      - resolution_rate
+      - resolved
+      - resolved_this_month
+      - this_month
+      - total
+    PublicSubcategory:
+      type: object
+      properties:
+        code:
+          type: string
+          maxLength: 50
+          pattern: ^[-a-zA-Z0-9_]+$
+        name:
+          type: string
+          maxLength: 100
+        name_fil:
+          type: string
+          title: Name (Filipino)
+          maxLength: 100
+      required:
+      - code
+      - name
+    PublicTimeline:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/ConcernStatusEnum'
+        status_display:
+          type: string
+        remarks:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - status
+      - status_display
+    PublicTrack:
+      type: object
+      description: Only non-personal fields. No reporter data, no staff names, no
+        internal notes.
+      properties:
+        reference_no:
+          type: string
+          readOnly: true
+        title:
+          type: string
+          maxLength: 150
+        category:
+          type: string
+        subcategory:
+          type: string
+        barangay:
+          type: string
+        status:
+          allOf:
+          - $ref: '#/components/schemas/ConcernStatusEnum'
+          readOnly: true
+        status_display:
+          type: string
+        assigned_office:
+          type: string
+          nullable: true
+          readOnly: true
+        linked_to_reference:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        resolved_at:
+          type: string
+          format: date-time
+          nullable: true
+        timeline:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicTimeline'
+          readOnly: true
+        resolution_photos:
+          type: array
+          items:
+            type: string
+          description: Proof-of-fix photos from staff. Citizen-uploaded photos are
+            never public (faces, homes, plates).
+          readOnly: true
+        target_date:
+          type: string
+          nullable: true
+          description: 'ARTA transparency: the citizen sees the committed date.'
+          readOnly: true
+        deadline_extended:
+          type: boolean
+          readOnly: true
+        endorsed_to:
+          type: string
+          nullable: true
+          readOnly: true
+        priority_level:
+          type: string
+          nullable: true
+          readOnly: true
+        before_photos:
+          type: array
+          items:
+            type: string
+          description: Staff 'before' photos, shown beside the 'after' photos so the
+            citizen can compare.
+          readOnly: true
+        citizen_confirmation:
+          oneOf:
+          - $ref: '#/components/schemas/CitizenConfirmationEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        can_confirm:
+          type: boolean
+          readOnly: true
+        confirm_needs_mobile:
+          type: boolean
+          description: If the reporter left a mobile number, the last 4 digits are
+            asked so a stranger can't answer for them.
+          readOnly: true
+      required:
+      - assigned_office
+      - barangay
+      - before_photos
+      - can_confirm
+      - confirm_needs_mobile
+      - created_at
+      - deadline_extended
+      - endorsed_to
+      - priority_level
+      - reference_no
+      - resolution_photos
+      - status
+      - status_display
+      - target_date
+      - timeline
+      - title
+    RemarksRequest:
+      type: object
+      properties:
+        remarks:
+          type: string
+          minLength: 1
+          maxLength: 1000
+      required:
+      - remarks
+    RespondRequest:
+      type: object
+      properties:
+        remarks:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        photos:
+          type: array
+          items:
+            type: string
+            format: binary
+          maxItems: 3
+        photo_meta:
+          description: 'JSON list aligned with the photos: [{exif_lat, exif_lng, exif_time,
+            device_lat, ...}]'
+      required:
+      - remarks
+    ReturnRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 500
+      required:
+      - reason
+    RoleEnum:
+      enum:
+      - citizen
+      - pacd
+      - barangay
+      - office_desk
+      - dept_head
+      - division_chief
+      - dept_staff
+      - city_admin
+      - mayor
+      type: string
+      description: |-
+        * `citizen` - Citizen
+        * `pacd` - Public Assistance & Complaints Desk
+        * `barangay` - Barangay Personnel
+        * `office_desk` - Office Receiving Officer
+        * `dept_head` - Department Head
+        * `division_chief` - Division Chief / Supervisor
+        * `dept_staff` - Field Personnel (Engineer / Crew)
+        * `city_admin` - City Administrator
+        * `mayor` - Mayor's Office
+    RouteLevelEnum:
+      enum:
+      - city
+      - barangay
+      type: string
+      description: |-
+        * `city` - city
+        * `barangay` - barangay
+    RouteRequest:
+      type: object
+      properties:
+        level:
+          $ref: '#/components/schemas/RouteLevelEnum'
+        department:
+          type: integer
+          nullable: true
+        division:
+          type: integer
+          nullable: true
+        remarks:
+          type: string
+          maxLength: 500
+      required:
+      - level
+    Scorecard:
+      type: object
+      properties:
+        period:
+          $ref: '#/components/schemas/Period'
+        city:
+          $ref: '#/components/schemas/Kpi'
+        offices:
+          type: array
+          items:
+            $ref: '#/components/schemas/OfficeRow'
+        weights:
+          type: object
+          additionalProperties:
+            type: number
+            format: double
+        targets:
+          type: object
+          additionalProperties:
+            type: number
+            format: double
+        min_sample:
+          type: integer
+      required:
+      - city
+      - min_sample
+      - offices
+      - period
+      - targets
+      - weights
+    SetPriorityRequest:
+      type: object
+      properties:
+        priority_level:
+          type: integer
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 300
+      required:
+      - priority_level
+      - reason
+    SeverityEnum:
+      enum:
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      type: integer
+      description: |-
+        * `1` - Minor
+        * `2` - Moderate
+        * `3` - Serious
+        * `4` - Severe
+        * `5` - Critical
+    StaffConcernDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        reference_no:
+          type: string
+          readOnly: true
+        title:
+          type: string
+          maxLength: 150
+        category:
+          type: string
+        subcategory:
+          type: string
+        barangay:
+          type: string
+        location_description:
+          type: string
+          description: Landmark / street
+          maxLength: 255
+        status:
+          $ref: '#/components/schemas/ConcernStatusEnum'
+        status_display:
+          type: string
+        priority_score:
+          type: number
+          format: double
+        priority_tier:
+          type: string
+        danger_now:
+          type: boolean
+          description: 'Citizen answered: is anyone in danger right now? (severity
+            hint, not a score)'
+        is_verified:
+          type: boolean
+        is_overdue:
+          type: boolean
+        involves_barangay_officials:
+          type: boolean
+          description: Complaint concerns barangay officials — hidden from barangay
+            personnel, routed to City.
+        channel:
+          $ref: '#/components/schemas/ConcernChannelEnum'
+        channel_display:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        level:
+          type: string
+        stage:
+          type: string
+        department:
+          type: string
+        department_is_external:
+          type: boolean
+          default: false
+        division:
+          type: string
+        assigned_to:
+          type: string
+          nullable: true
+          readOnly: true
+        due_at:
+          type: string
+          format: date-time
+        extended:
+          type: boolean
+          readOnly: true
+        escalation_level:
+          type: integer
+          default: 0
+        duplicate_count:
+          type: integer
+          readOnly: true
+          default: 0
+        external_ticket_no:
+          type: string
+          description: e.g. 8888 ticket number
+          maxLength: 60
+        external_feedback_due_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: '8888: concrete and specific feedback due within 72 hours of
+            receipt.'
+        external_feedback_sent_at:
+          type: string
+          format: date-time
+          nullable: true
+        priority_code:
+          type: string
+        priority_name:
+          type: string
+        priority_color:
+          type: string
+        response_due_at:
+          type: string
+          format: date-time
+        responded_at:
+          type: string
+          format: date-time
+        acceptance_due_at:
+          type: string
+          format: date-time
+        return_reason:
+          type: string
+        description:
+          type: string
+        category_code:
+          type: string
+        subcategory_code:
+          type: string
+        severity:
+          allOf:
+          - $ref: '#/components/schemas/SeverityEnum'
+          minimum: 0
+          maximum: 32767
+        severity_display:
+          type: string
+        affected_count:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          description: Estimated number of affected citizens.
+        latitude:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,6})?$
+          nullable: true
+        longitude:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,6})?$
+          nullable: true
+        reporter_name:
+          type: string
+          maxLength: 150
+        reporter_contact:
+          type: string
+          maxLength: 20
+        reporter_email:
+          oneOf:
+          - type: string
+            format: email
+            maxLength: 254
+          - type: string
+            maxLength: 0
+        is_anonymous:
+          type: boolean
+        source_reference:
+          type: string
+          description: 'Where staff got it: FB post/comment link, logbook entry no.,
+            caller name, etc.'
+          maxLength: 300
+        encoded_by:
+          type: string
+          nullable: true
+          readOnly: true
+        external_feedback:
+          type: string
+        verified_by:
+          type: string
+          nullable: true
+          readOnly: true
+        verified_at:
+          type: string
+          format: date-time
+          nullable: true
+        acknowledged_at:
+          type: string
+          format: date-time
+          nullable: true
+        resolved_at:
+          type: string
+          format: date-time
+          nullable: true
+        duplicate_of:
+          type: string
+        duplicates:
+          type: array
+          items:
+            $ref: '#/components/schemas/LinkedReport'
+          readOnly: true
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Attachment'
+          readOnly: true
+        history:
+          type: array
+          items:
+            $ref: '#/components/schemas/History'
+          readOnly: true
+        case:
+          allOf:
+          - $ref: '#/components/schemas/CaseInfo'
+          readOnly: true
+        notes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Note'
+          readOnly: true
+        priority:
+          allOf:
+          - $ref: '#/components/schemas/PriorityBreakdown'
+          nullable: true
+          readOnly: true
+        permissions:
+          allOf:
+          - $ref: '#/components/schemas/Permissions'
+          readOnly: true
+        suggested_route:
+          allOf:
+          - $ref: '#/components/schemas/SuggestedRoute'
+          readOnly: true
+        suggested_priority:
+          allOf:
+          - $ref: '#/components/schemas/PriorityLevel'
+          nullable: true
+          readOnly: true
+        trail:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrailStep'
+          readOnly: true
+        citizen_confirmation:
+          oneOf:
+          - $ref: '#/components/schemas/CitizenConfirmationEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        citizen_confirmed_at:
+          type: string
+          format: date-time
+          nullable: true
+        citizen_feedback:
+          type: string
+        recurrence_of:
+          type: string
+        recurrences:
+          type: array
+          items:
+            $ref: '#/components/schemas/LinkedReport'
+          readOnly: true
+      required:
+      - assigned_to
+      - attachments
+      - barangay
+      - case
+      - channel_display
+      - created_at
+      - description
+      - duplicate_count
+      - duplicates
+      - encoded_by
+      - extended
+      - history
+      - id
+      - is_overdue
+      - notes
+      - permissions
+      - priority
+      - priority_score
+      - priority_tier
+      - recurrences
+      - reference_no
+      - severity_display
+      - status_display
+      - suggested_priority
+      - suggested_route
+      - title
+      - trail
+      - verified_by
+    StaffConcernList:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        reference_no:
+          type: string
+          readOnly: true
+        title:
+          type: string
+          maxLength: 150
+        category:
+          type: string
+        subcategory:
+          type: string
+        barangay:
+          type: string
+        location_description:
+          type: string
+          description: Landmark / street
+          maxLength: 255
+        status:
+          $ref: '#/components/schemas/ConcernStatusEnum'
+        status_display:
+          type: string
+        priority_score:
+          type: number
+          format: double
+        priority_tier:
+          type: string
+        danger_now:
+          type: boolean
+          description: 'Citizen answered: is anyone in danger right now? (severity
+            hint, not a score)'
+        is_verified:
+          type: boolean
+        is_overdue:
+          type: boolean
+        involves_barangay_officials:
+          type: boolean
+          description: Complaint concerns barangay officials — hidden from barangay
+            personnel, routed to City.
+        channel:
+          $ref: '#/components/schemas/ConcernChannelEnum'
+        channel_display:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        level:
+          type: string
+        stage:
+          type: string
+        department:
+          type: string
+        department_is_external:
+          type: boolean
+          default: false
+        division:
+          type: string
+        assigned_to:
+          type: string
+          nullable: true
+          readOnly: true
+        due_at:
+          type: string
+          format: date-time
+        extended:
+          type: boolean
+          readOnly: true
+        escalation_level:
+          type: integer
+          default: 0
+        duplicate_count:
+          type: integer
+          readOnly: true
+          default: 0
+        external_ticket_no:
+          type: string
+          description: e.g. 8888 ticket number
+          maxLength: 60
+        external_feedback_due_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: '8888: concrete and specific feedback due within 72 hours of
+            receipt.'
+        external_feedback_sent_at:
+          type: string
+          format: date-time
+          nullable: true
+        priority_code:
+          type: string
+        priority_name:
+          type: string
+        priority_color:
+          type: string
+        response_due_at:
+          type: string
+          format: date-time
+        responded_at:
+          type: string
+          format: date-time
+        acceptance_due_at:
+          type: string
+          format: date-time
+        return_reason:
+          type: string
+      required:
+      - assigned_to
+      - barangay
+      - channel_display
+      - created_at
+      - duplicate_count
+      - extended
+      - id
+      - is_overdue
+      - priority_score
+      - priority_tier
+      - reference_no
+      - status_display
+      - title
+    StaffEncodeRequest:
+      type: object
+      properties:
+        channel:
+          $ref: '#/components/schemas/ConcernChannelEnum'
+        source_reference:
+          type: string
+          maxLength: 300
+        external_ticket_no:
+          type: string
+          maxLength: 60
+        received_at:
+          type: string
+          format: date-time
+          writeOnly: true
+          nullable: true
+          description: 'When the LGU received it (8888: endorsement time).'
+        title:
+          type: string
+          maxLength: 150
+        description:
+          type: string
+          minLength: 1
+        category:
+          type: string
+          minLength: 1
+          nullable: true
+        subcategory:
+          type: string
+          minLength: 1
+          nullable: true
+        danger_now:
+          type: boolean
+          writeOnly: true
+          description: 'Citizen answered: is anyone in danger right now? (severity
+            hint, not a score)'
+        affected_scale:
+          allOf:
+          - $ref: '#/components/schemas/AffectedScaleEnum'
+          writeOnly: true
+          default: street
+        involves_barangay_officials:
+          type: boolean
+          writeOnly: true
+          description: Complaint concerns barangay officials — hidden from barangay
+            personnel, routed to City.
+        barangay:
+          type: integer
+        latitude:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,6})?$
+          nullable: true
+        longitude:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,6})?$
+          nullable: true
+        location_description:
+          type: string
+          minLength: 1
+          description: Landmark / street
+          maxLength: 255
+        reporter_name:
+          type: string
+          writeOnly: true
+          maxLength: 150
+        reporter_contact:
+          type: string
+          writeOnly: true
+          maxLength: 20
+        reporter_email:
+          writeOnly: true
+          oneOf:
+          - type: string
+            format: email
+            maxLength: 254
+          - type: string
+            maxLength: 0
+        is_anonymous:
+          type: boolean
+          writeOnly: true
+        consent_given:
+          type: boolean
+          writeOnly: true
+        images:
+          type: array
+          items:
+            type: string
+            format: binary
+          writeOnly: true
+          maxItems: 3
+      required:
+      - barangay
+      - channel
+      - description
+      - location_description
+    StaffSummary:
+      type: object
+      properties:
+        triage:
+          type: integer
+        for_acceptance:
+          type: integer
+        returned:
+          type: integer
+        response_overdue:
+          type: integer
+        p1_open:
+          type: integer
+        to_route:
+          type: integer
+        danger_unverified:
+          type: integer
+        mine:
+          type: integer
+        validation:
+          type: integer
+        endorsed:
+          type: integer
+        follow_up_due:
+          type: integer
+        feedback_8888_due:
+          type: integer
+        overdue:
+          type: integer
+        open:
+          type: integer
+        resolved_this_month:
+          type: integer
+      required:
+      - danger_unverified
+      - endorsed
+      - feedback_8888_due
+      - follow_up_due
+      - for_acceptance
+      - mine
+      - open
+      - overdue
+      - p1_open
+      - resolved_this_month
+      - response_overdue
+      - returned
+      - to_route
+      - triage
+      - validation
+    StaffUser:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        full_name:
+          type: string
+          readOnly: true
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+        role_display:
+          type: string
+        department:
+          type: integer
+          nullable: true
+        division:
+          type: integer
+          nullable: true
+      required:
+      - full_name
+      - id
+      - role_display
+      - username
+    SuggestedRoute:
+      type: object
+      properties:
+        department_id:
+          type: integer
+          nullable: true
+        department:
+          type: string
+          nullable: true
+        division_id:
+          type: integer
+          nullable: true
+      required:
+      - department
+      - department_id
+      - division_id
+    TimeSourceEnum:
+      enum:
+      - exif
+      - upload
+      type: string
+      description: |-
+        * `exif` - Camera (photo metadata)
+        * `upload` - Upload time only
+    TokenBlacklistRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - refresh
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+      required:
+      - access
+      - refresh
+    TokenRefreshRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+          minLength: 1
+      required:
+      - refresh
+    TrailStep:
+      type: object
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+        who:
+          type: string
+          nullable: true
+        at:
+          type: string
+          format: date-time
+          nullable: true
+        detail:
+          type: string
+        ok:
+          type: boolean
+          nullable: true
+      required:
+      - at
+      - detail
+      - key
+      - label
+      - ok
+      - who
+    TrendPoint:
+      type: object
+      properties:
+        month:
+          type: string
+        label:
+          type: string
+        received:
+          type: integer
+        resolved:
+          type: integer
+        on_time_rate:
+          type: number
+          format: double
+          nullable: true
+      required:
+      - label
+      - month
+      - on_time_rate
+      - received
+      - resolved
+    ValidateRequest:
+      type: object
+      properties:
+        approve:
+          type: boolean
+        remarks:
+          type: string
+          maxLength: 1000
+        photos:
+          type: array
+          items:
+            type: string
+            format: binary
+          maxItems: 3
+        photo_meta:
+          description: 'JSON list aligned with the photos: [{exif_lat, exif_lng, exif_time,
+            device_lat, ...}]'
+        override_reason:
+          type: string
+          description: Required when the photo checks raised a red flag.
+          maxLength: 1000
+      required:
+      - approve
+    VerifyRequest:
+      type: object
+      properties:
+        category:
+          type: string
+          minLength: 1
+        subcategory:
+          type: string
+          minLength: 1
+          nullable: true
+        severity:
+          $ref: '#/components/schemas/SeverityEnum'
+        remarks:
+          type: string
+          maxLength: 500
+      required:
+      - category
+      - severity
+    WatchItem:
+      type: object
+      properties:
+        kind:
+          $ref: '#/components/schemas/WatchItemKindEnum'
+        label:
+          type: string
+        level:
+          type: string
+        at:
+          type: string
+          format: date-time
+        who:
+          type: string
+          nullable: true
+        detail:
+          type: string
+        concern_id:
+          type: integer
+        reference_no:
+          type: string
+        title:
+          type: string
+        barangay:
+          type: string
+        office:
+          type: string
+          nullable: true
+      required:
+      - at
+      - barangay
+      - concern_id
+      - detail
+      - kind
+      - label
+      - level
+      - office
+      - reference_no
+      - title
+      - who
+    WatchItemKindEnum:
+      enum:
+      - pending_red
+      - override
+      - disputed
+      - recurrence
+      type: string
+      description: |-
+        * `pending_red` - pending_red
+        * `override` - override
+        * `disputed` - disputed
+        * `recurrence` - recurrence
+    Workload:
+      type: object
+      properties:
+        name:
+          type: string
+        open:
+          type: integer
+      required:
+      - name
+      - open
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

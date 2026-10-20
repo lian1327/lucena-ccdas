@@ -1,0 +1,35 @@
+CCADSS - STEP 12: PUROKS AND REAL BARANGAY BOUNDARIES
+=====================================================
+
+What it adds
+  * Your 33 purok GeoJSON files, converted from PRS92 / Philippines zone III (EPSG:3123) to WGS84 for Leaflet,
+    names cleaned, bundled as backend/apps/geo/data/lucena_boundaries.geojson:
+    33 barangay outlines (union of their puroks) + 262 puroks (6 marked as land-use zones: fishpond, port,
+    riceland, dumpsite)
+  * Barangay centers replaced by points inside the real outlines (the old demo centers were ~2 km off)
+  * Every report gets a purok automatically from its map pin (inside the barangay the citizen chose;
+    pins up to 30 m outside a purok snap to the nearest one). No pin -> the citizen can pick the purok.
+  * Report form: "Gamitin ang lokasyon ko" / pin -> barangay and purok are filled in for the citizen
+  * GIS Map: real barangay polygons shaded by number of problems (click one), Purok layer, Puroks tab
+    (per-purok counts, open, top issues, how many were located by pin vs chosen by the reporter);
+    hotspots now say which purok they're in
+  * Case page shows the purok and where it came from
+  * Django admin -> Puroks (rename, mark as zone)
+  * No GDAL/PostGIS/shapely needed: point-in-polygon is plain Python (apps/geo/geometry.py)
+
+Install (extract into lucena-ccdas, overwrite)
+  cd backend ; .\.venv\Scripts\Activate.ps1
+  python manage.py makemigrations geo concerns
+  python manage.py migrate
+  python manage.py import_boundaries --assign            (loads outlines + puroks, tags existing pinned reports)
+  python manage.py generate_synthetic_data --months 24 --count 3500   (demo pins now land inside real puroks)
+  python manage.py runserver
+  cd frontend ; npm run gen:api ; npm run dev
+
+Notes
+  * Keep your original 33 files in the repo too (e.g. data/source_puroks/) and credit the source in Chapter 3.
+    If you get the .prj file, confirm it says PRS92 / Philippines zone III.
+  * To load an updated purok map later: same command with --file your.geojson (WGS84, properties:
+    kind=purok|barangay, barangay, name, is_zone).
+  * Known data issues (documented, handled): small overlaps/gaps between neighbouring puroks and barangays,
+    Riceland/Dumpsite overlap 7.4 ha in Mayao Kanluran.

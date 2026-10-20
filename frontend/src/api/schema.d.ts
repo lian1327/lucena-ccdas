@@ -118,6 +118,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/public/barangays/{id}/puroks/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Puroks of a barangay, for the report form when the citizen doesn't drop a pin. */
+        get: operations["v1_public_barangays_puroks_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/categories/": {
         parameters: {
             query?: never;
@@ -128,6 +145,23 @@ export interface paths {
         get: operations["v1_public_categories_list"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/classify/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Live suggestion while the citizen types ("Mukhang ito ay…"). Nothing is stored. */
+        post: operations["public_classify"];
         delete?: never;
         options?: never;
         head?: never;
@@ -181,6 +215,23 @@ export interface paths {
          *     Not fixed → the case reopens for the office and counts against it. Throttled like submissions.
          */
         post: operations["v1_public_concerns_track_confirm_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/locate/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Pin → barangay + purok, so the form can fill them in for the citizen. */
+        get: operations["v1_public_locate_retrieve"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -812,6 +863,45 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/staff/map/barangays/{id}/puroks/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Purok breakdown inside one barangay (use a 3–6 month window; single puroks get small numbers). */
+        get: operations["map_barangay_puroks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/map/boundaries/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description GeoJSON outlines for the map, with the filtered problem counts in each feature's properties (for shading).
+         *       ?level=barangay (default)  → 33 barangay outlines
+         *       ?level=purok&barangay=<id> → that barangay's puroks (or every purok when no barangay is given)
+         *     Polygons are static, so the browser caches them; only the counts change with the filters.
+         */
+        get: operations["map_boundaries"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/staff/map/hotspots/": {
         parameters: {
             query?: never;
@@ -843,6 +933,56 @@ export interface paths {
         get: operations["v1_staff_map_points_retrieve"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/ml/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Active model, its evaluation, earlier versions, and live agreement with PACD. */
+        get: operations["ml_overview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/ml/train/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Retrain on all staff-verified reports (≈ 30–60 s). Activated only if not worse than the current model. */
+        post: operations["ml_train"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/ml/versions/{id}/activate/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ml_activate"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1017,6 +1157,16 @@ export interface components {
          * @enum {string}
          */
         AttachmentKindEnum: "report" | "before" | "progress" | "resolution";
+        BarangayPuroks: {
+            barangay: string;
+            concerns: number;
+            /** @description Problems with a purok (from the pin or chosen by the reporter) */
+            located: number;
+            by_pin: number;
+            by_reporter: number;
+            puroks: components["schemas"]["PurokStat"][];
+            min_sample: number;
+        };
         BarangayStat: {
             id: number;
             name: string;
@@ -1123,12 +1273,35 @@ export interface components {
          */
         CaseInfoLevelEnum: "city" | "barangay" | "external";
         /**
+         * @description * `citizen` - Selected by citizen
+         *     * `ml` - AI classification
+         *     * `staff` - Set by staff
+         * @enum {string}
+         */
+        CategorySourceEnum: "citizen" | "ml" | "staff";
+        /**
          * @description * `` - Not asked / no answer
          *     * `fixed` - Citizen confirmed it is fixed
          *     * `not_fixed` - Citizen says it is NOT fixed
          * @enum {string}
          */
         CitizenConfirmationEnum: "fixed" | "not_fixed";
+        ClassifyRequestRequest: {
+            text: string;
+        };
+        ClassifyResult: {
+            category: string;
+            category_name: string;
+            /** Format: double */
+            confidence: number;
+            subcategory: string | null;
+            subcategory_name: string | null;
+            /** Format: double */
+            subcategory_confidence: number | null;
+            top: components["schemas"]["Suggestion"][];
+            model_version: number;
+            auto: boolean;
+        };
         Cohort: {
             received: number;
             accomplished: number;
@@ -1219,6 +1392,11 @@ export interface components {
          * @enum {string}
          */
         ConcernStatusEnum: "submitted" | "under_review" | "assigned" | "in_progress" | "resolved" | "closed" | "rejected";
+        Confusion: {
+            actual: string;
+            predicted: string;
+            count: number;
+        };
         Department: {
             readonly id: number;
             code: string;
@@ -1479,6 +1657,7 @@ export interface components {
             issues: components["schemas"]["IssueCount"][];
             barangay: string;
             landmark: string;
+            purok: string | null;
             /** @description Distinct months with reports: recurrence */
             months_active: number;
             /** Format: date-time */
@@ -1609,6 +1788,44 @@ export interface components {
             readonly created_at: string;
             channel?: components["schemas"]["ConcernChannelEnum"];
         };
+        Live: {
+            n: number;
+            /** Format: double */
+            agreement: number | null;
+            /** Format: double */
+            sub_agreement: number | null;
+            auto_eligible: number;
+            /** Format: double */
+            auto_agreement: number | null;
+            by_month: components["schemas"]["LivePoint"][];
+            by_category: components["schemas"]["LiveCat"][];
+            top_confusions: components["schemas"]["Confusion"][];
+        };
+        LiveCat: {
+            code: string;
+            n: number;
+            /** Format: double */
+            agreement: number;
+        };
+        LivePoint: {
+            month: string;
+            n: number;
+            /** Format: double */
+            agreement: number;
+        };
+        Locate: {
+            barangay_id: number | null;
+            barangay: string | null;
+            purok_id: number | null;
+            purok: string | null;
+        };
+        MLOverview: {
+            active: components["schemas"]["ModelVersion"] | null;
+            versions: components["schemas"]["ModelVersion"][];
+            live: components["schemas"]["Live"];
+            /** Format: double */
+            auto_threshold: number;
+        };
         MapPoint: {
             id: number;
             ref: string;
@@ -1626,6 +1843,7 @@ export interface components {
             /** Format: date-time */
             created_at: string;
             barangay: string;
+            purok: string | null;
         };
         MapPoints: {
             points: components["schemas"]["MapPoint"][];
@@ -1669,6 +1887,24 @@ export interface components {
          * @enum {string}
          */
         MethodEnum: "call" | "letter" | "email" | "visit" | "meeting";
+        ModelVersion: {
+            readonly id: number;
+            version: number;
+            /** Format: date-time */
+            readonly created_at: string;
+            trained_by?: string;
+            algorithm: string;
+            n_train?: number;
+            n_test?: number;
+            /** @description {"synthetic": 3200, "real": 0, "extra_csv": 0} */
+            data_sources?: unknown;
+            /** @description Held-out test metrics, model comparison, confusion matrix. */
+            metrics?: unknown;
+            /** @description Hand-written challenge set (ml/challenge_set.csv). */
+            challenge_metrics?: unknown;
+            is_active?: boolean;
+            notes?: string;
+        };
         NamedCount: {
             name: string;
             count: number;
@@ -1934,6 +2170,8 @@ export interface components {
             category?: string | null;
             subcategory?: string | null;
             barangay: number;
+            /** @description Optional when there's no pin; a pin overrides it. */
+            purok?: number | null;
             /** Format: decimal */
             latitude?: string | null;
             /** Format: decimal */
@@ -1958,6 +2196,8 @@ export interface components {
             /** @description Complaint concerns barangay officials — hidden from barangay personnel, routed to City. */
             involves_barangay_officials?: boolean;
             barangay: number;
+            /** @description Optional when there's no pin; a pin overrides it. */
+            purok?: number | null;
             /** Format: decimal */
             latitude?: string | null;
             /** Format: decimal */
@@ -1975,6 +2215,12 @@ export interface components {
             fixed: boolean;
             feedback?: string;
             mobile_last4?: string;
+        };
+        PublicPurok: {
+            readonly id: number;
+            name: string;
+            /** @description Fishpond / port / dumpsite / riceland, not a residential purok. */
+            is_zone?: boolean;
         };
         PublicStats: {
             totals: components["schemas"]["PublicStatsTotals"];
@@ -2052,6 +2298,28 @@ export interface components {
             readonly can_confirm: boolean;
             /** @description If the reporter left a mobile number, the last 4 digits are asked so a stranger can't answer for them. */
             readonly confirm_needs_mobile: boolean;
+        };
+        /**
+         * @description * `pin` - From the map pin
+         *     * `reporter` - Chosen by the reporter
+         *     * `staff` - Set by staff
+         * @enum {string}
+         */
+        PurokSourceEnum: "pin" | "reporter" | "staff";
+        PurokStat: {
+            id: number | null;
+            name: string;
+            is_zone: boolean;
+            concerns: number;
+            reports: number;
+            open: number;
+            overdue: number;
+            /** Format: double */
+            share: number | null;
+            top_issues: components["schemas"]["IssueCount"][];
+            categories: {
+                [key: string]: number;
+            };
         };
         Range: {
             /** Format: double */
@@ -2276,6 +2544,17 @@ export interface components {
             readonly permissions: components["schemas"]["Permissions"];
             readonly suggested_route: components["schemas"]["SuggestedRoute"];
             readonly suggested_priority: components["schemas"]["PriorityLevel"] | null;
+            purok?: number | null;
+            purok_name?: string;
+            purok_source?: components["schemas"]["PurokSourceEnum"] | components["schemas"]["BlankEnum"];
+            category_source?: components["schemas"]["CategorySourceEnum"];
+            ai_category?: string;
+            ai_category_name?: string;
+            ai_subcategory?: string;
+            ai_subcategory_name?: string;
+            /** Format: double */
+            ai_confidence?: number | null;
+            ai_model_version?: number;
             readonly trail: components["schemas"]["TrailStep"][];
             citizen_confirmation?: components["schemas"]["CitizenConfirmationEnum"] | components["schemas"]["BlankEnum"];
             /** Format: date-time */
@@ -2362,6 +2641,8 @@ export interface components {
             /** @description Complaint concerns barangay officials — hidden from barangay personnel, routed to City. */
             involves_barangay_officials?: boolean;
             barangay: number;
+            /** @description Optional when there's no pin; a pin overrides it. */
+            purok?: number | null;
             /** Format: decimal */
             latitude?: string | null;
             /** Format: decimal */
@@ -2407,6 +2688,16 @@ export interface components {
             department: string | null;
             division_id: number | null;
         };
+        Suggestion: {
+            category: string;
+            category_name: string;
+            /** Format: double */
+            confidence: number;
+            subcategory: string | null;
+            subcategory_name: string | null;
+            /** Format: double */
+            subcategory_confidence: number | null;
+        };
         /**
          * @description * `exif` - Camera (photo metadata)
          *     * `upload` - Upload time only
@@ -2431,6 +2722,11 @@ export interface components {
             at: string | null;
             detail: string;
             ok: boolean | null;
+        };
+        TrainRequestRequest: {
+            /** @default false */
+            real_only: boolean;
+            notes?: string;
         };
         TrendPoint: {
             month: string;
@@ -2652,6 +2948,32 @@ export interface operations {
             };
         };
     };
+    v1_public_barangays_puroks_list: {
+        parameters: {
+            query?: {
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A search term. */
+                search?: string;
+            };
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicPurok"][];
+                };
+            };
+        };
+    };
     v1_public_categories_list: {
         parameters: {
             query?: {
@@ -2672,6 +2994,31 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PublicCategory"][];
+                };
+            };
+        };
+    };
+    public_classify: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClassifyRequestRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["ClassifyRequestRequest"];
+                "multipart/form-data": components["schemas"]["ClassifyRequestRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClassifyResult"];
                 };
             };
         };
@@ -2745,6 +3092,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PublicTrack"];
+                };
+            };
+        };
+    };
+    v1_public_locate_retrieve: {
+        parameters: {
+            query?: {
+                lat?: number;
+                lng?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Locate"];
                 };
             };
         };
@@ -3959,6 +4328,77 @@ export interface operations {
             };
         };
     };
+    map_barangay_puroks: {
+        parameters: {
+            query?: {
+                barangay?: number;
+                category?: string;
+                /** @description YYYY-MM-DD */
+                date_from?: string;
+                /** @description YYYY-MM-DD */
+                date_to?: string;
+                /** @description Look-back window in days (default 90). Ignored if date_from is set. */
+                days?: number;
+                department?: number;
+                /** @description P1..P4 */
+                priority?: string;
+                status?: "all" | "open" | "resolved";
+                subcategory?: string;
+            };
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BarangayPuroks"];
+                };
+            };
+        };
+    };
+    map_boundaries: {
+        parameters: {
+            query?: {
+                barangay?: number;
+                category?: string;
+                /** @description YYYY-MM-DD */
+                date_from?: string;
+                /** @description YYYY-MM-DD */
+                date_to?: string;
+                /** @description Look-back window in days (default 90). Ignored if date_from is set. */
+                days?: number;
+                department?: number;
+                level?: "barangay" | "purok";
+                /** @description P1..P4 */
+                priority?: string;
+                status?: "all" | "open" | "resolved";
+                subcategory?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
     v1_staff_map_hotspots_retrieve: {
         parameters: {
             query?: {
@@ -4025,6 +4465,71 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MapPoints"];
+                };
+            };
+        };
+    };
+    ml_overview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MLOverview"];
+                };
+            };
+        };
+    };
+    ml_train: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["TrainRequestRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["TrainRequestRequest"];
+                "multipart/form-data": components["schemas"]["TrainRequestRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelVersion"];
+                };
+            };
+        };
+    };
+    ml_activate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelVersion"];
                 };
             };
         };

@@ -1,0 +1,162 @@
+text,category,subcategory
+"Yung kalsada po sa Merchan St parang moon surface na, ang dami butas. Sana ma-repair bago may maaksidente",road_damage,pothole
+"Pakitapalan naman po yung butas sa tapat ng Pacific Mall, muntik na ako sumemplang kagabi",road_damage,pothole
+"may hukay sa may diversion road malapit sa gasolinahan, malalim at walang harang!!",road_damage,pothole
+"Gaano katagal bago ayusin yung lubak sa Gulang-Gulang? 2 months na po ito",road_damage,pothole
+"potholes everywhere along Quezon Ave extension, my car tire got damaged",road_damage,pothole
+"yung kalsada sa Purok 3 Ibabang Dupay nagkakabitak bitak na at may parteng lumubog",road_damage,damaged_pavement
+"The asphalt near the public market is peeling off, ang daming bato na nagkalat",road_damage,damaged_pavement
+"sira na yung concrete road papasok ng subdivision, umaangat na yung slab",road_damage,damaged_pavement
+"humihina na ang semento ng kalye namin, nadudurog pag dinaanan ng truck",road_damage,damaged_pavement
+"broken road surface sa Mayao Crossing, uneven at delikado sa motor",road_damage,damaged_pavement
+"yung sidewalk sa tapat ng school basag basag, may estudyanteng nadapa kanina",road_damage,damaged_sidewalk
+"Hindi na madaanan ng PWD yung bangketa sa Granja St kasi wasak na",road_damage,damaged_sidewalk
+"tiles ng sidewalk sa may plaza natanggal na, may butas pa",road_damage,damaged_sidewalk
+"Pakigawa naman po yung bangketa, mga senior napipilitang maglakad sa kalsada",road_damage,damaged_sidewalk
+"walkway sa park sira sira na po",road_damage,damaged_sidewalk
+"yung tulay sa Dalahican may crack na sa gitna, natatakot kami dumaan",road_damage,damaged_bridge
+"umaalog yung hanging bridge papuntang kabilang barangay",road_damage,damaged_bridge
+"railings ng tulay sa ilog sira na, baka may mahulog na bata",road_damage,damaged_bridge
+"bumigay na po ang gilid ng culvert sa Isabang, gumuguho na lupa",road_damage,damaged_bridge
+"bridge near the river is sinking, please inspect",road_damage,damaged_bridge
+"May tambak na graba at hollow blocks sa gitna ng kalye, walang ilaw o warning sign",road_damage,road_obstruction
+"nakaharang yung sirang 10-wheeler sa kalsada 3 araw na",road_damage,road_obstruction
+"may nagtambak ng lupa sa daan galing sa construction, isang lane na lang",road_damage,road_obstruction
+"debris po sa road after nung landslide, hindi pa nalilinis",road_damage,road_obstruction
+"Ang mga materyales ng ginagawang bahay nasa kalsada na po",road_damage,road_obstruction
+"Patay po yung ilaw ng poste sa kanto namin, 1 week na. Madilim pag gabi",streetlight,light_out
+"Streetlight sa harap ng chapel hindi na umiilaw",streetlight,light_out
+"walang ilaw yung poste malapit sa elementary school, ang dilim",streetlight,light_out
+"Pundido na po yung bumbilya ng street light sa Rizal St",streetlight,light_out
+"dark na dark yung daan sa Purok 5 kasi sira yung ilaw",streetlight,light_out
+"yung ilaw sa poste parang disco, patay sindi buong gabi haha pero nakakairita",streetlight,light_flickering
+"Kumukurap yung streetlight sa tapat ng bahay, minsan umiilaw minsan hindi",streetlight,light_flickering
+"blinking street lamp sa Maharlika, baka masira na tuluyan",streetlight,light_flickering
+"nagfi-flicker yung ilaw sa poste, ang sakit sa mata",streetlight,light_flickering
+"hindi stable ang ilaw ng poste, papatay patay",streetlight,light_flickering
+"Pwede po ba lagyan ng streetlight yung bagong daan sa may palayan? wala talagang ilaw",streetlight,no_streetlight
+"Request po: kahit isang poste ng ilaw lang sa kanto ng Purok 2",streetlight,no_streetlight
+"no lights at all sa road papuntang cemetery, delikado",streetlight,no_streetlight
+"kailangan po namin ng ilaw dito, madalas may nanghoholdap",streetlight,no_streetlight
+"wala pong street lights sa buong kahabaan ng kalye namin",streetlight,no_streetlight
+"yung poste ng ilaw nakahilig na, natamaan ng truck",streetlight,damaged_post
+"kinakalawang na yung base ng lamp post, umaalog pag mahangin",streetlight,damaged_post
+"natumba po ang poste ng streetlight sa gilid ng kalsada",streetlight,damaged_post
+"leaning na yung poste sa harap ng tindahan, baka bumagsak sa tao",streetlight,damaged_post
+"Sira yung poste ng ilaw, nakatagilid na",streetlight,damaged_post
+"Barado po yung kanal sa likod ng palengke, puro plastic at bote",drainage,clogged_canal
+"hindi umaagos yung tubig sa drainage, naiipon lang",drainage,clogged_canal
+"clogged yung estero dahil sa basura, pakilinis po",drainage,clogged_canal
+"puno ng putik ang imburnal sa amin, pag umulan aapaw na naman",drainage,clogged_canal
+"Paki-declog naman po yung kanal sa kanto, stagnant water na",drainage,clogged_canal
+"Baha na naman sa Market View, hanggang binti na",drainage,flooding
+"konting ulan lang lubog na agad yung kalsada sa amin",drainage,flooding
+"Flooded po yung highway near the terminal, hindi makadaan ang jeep",drainage,flooding
+"pumasok na yung tubig sa bahay namin, sana may gawin na sa baha",drainage,flooding
+"Every rainy season binabaha kami dito sa Cotta, wala pa ring solusyon",drainage,flooding
+"walang takip yung manhole sa tapat ng bakery!! may nahulog na aso",drainage,open_manhole
+"Open manhole po malapit sa simbahan, delikado sa mga bata",drainage,open_manhole
+"nawawala yung cover ng imburnal sa gitna ng daan",drainage,open_manhole
+"may bukas na manhole sa sidewalk, nilagyan lang ng sanga bilang tanda",drainage,open_manhole
+"Pakilagyan po ng takip yung manhole, gabi gabi may natatapilok",drainage,open_manhole
+"gumuho yung pader ng kanal sa likod ng bahay",drainage,damaged_drainage
+"basag na yung grating ng drainage, nahuhulog ang paa ng tao",drainage,damaged_drainage
+"broken drainage pipe sa ilalim ng kalsada, may sinkhole na",drainage,damaged_drainage
+"sira po ang drainage system sa subdivision namin",drainage,damaged_drainage
+"nasira yung kanal nung ginawa yung kalsada, hindi na naayos",drainage,damaged_drainage
+"Ang baho ng estero sa likod ng school, hindi na makahinga ang mga estudyante",drainage,foul_canal
+"umaalingasaw yung kanal lalo na pag mainit",drainage,foul_canal
+"foul smell galing sa drainage, parang patay na hayop",drainage,foul_canal
+"mabaho po yung tubig sa kanal, kulay itim na",drainage,foul_canal
+"amoy na amoy ang imburnal sa buong purok",drainage,foul_canal
+"Isang linggo nang hindi dumadaan ang garbage truck sa amin",solid_waste,uncollected
+"hindi pa nakokolekta basura namin since Monday",solid_waste,uncollected
+"kailan po ba ang schedule ng pagkuha ng basura? tambak na dito",solid_waste,uncollected
+"garbage collection skipped our street again",solid_waste,uncollected
+"Ang daming sako ng basura sa kanto, walang kumukuha",solid_waste,uncollected
+"May nagtatapon ng basura sa bakanteng lote tuwing gabi, may CCTV pa naman",solid_waste,illegal_dumping
+"ginagawang dumpsite yung gilid ng ilog",solid_waste,illegal_dumping
+"someone keeps dumping construction waste sa likod ng court",solid_waste,illegal_dumping
+"tinatapon ng mga taga-ibang lugar yung basura nila dito sa amin",solid_waste,illegal_dumping
+"may truck na nagtapon ng basura sa may palayan",solid_waste,illegal_dumping
+"may nagsusunog ng basura araw-araw, pumapasok ang usok sa bahay",solid_waste,burning
+"open burning sa kabilang lote, may hika pa naman anak ko",solid_waste,burning
+"Sinisigaan ng kapitbahay yung plastik at goma, ang itim ng usok",solid_waste,burning
+"garbage burning near the school during class hours",solid_waste,burning
+"Bawal po ba magsunog ng basura? may gumagawa kasi dito",solid_waste,burning
+"Umaapaw na po yung basurahan sa may terminal",solid_waste,overflowing_bin
+"overflowing yung trash bins sa park, kalat na",solid_waste,overflowing_bin
+"puno na yung drum ng basura sa kanto, nagkalat na sa daan",solid_waste,overflowing_bin
+"yung MRF namin sobrang puno na, hindi na makapagtapon",solid_waste,overflowing_bin
+"collection point umaapaw, pinupuntahan ng aso",solid_waste,overflowing_bin
+"Nakalaylay ang kable ng kuryente sa kalsada, sumasabit sa truck",public_safety,hanging_wires
+"mababang wire sa tapat ng bahay, abot kamay na",public_safety,hanging_wires
+"tangled cables hanging from the post, delikado pag umuulan",public_safety,hanging_wires
+"may putol na kable na nakalawit sa daan, baka may kuryente pa",public_safety,hanging_wires
+"Pakiayos po ng Meralco o cable company yung mga nakabitin na wire",public_safety,hanging_wires
+"may punong natumba sa daan after ng bagyo, hindi makadaan",public_safety,fallen_tree
+"yung puno ng acacia nakahilig na sa bahay namin, baka bumagsak",public_safety,fallen_tree
+"bumagsak yung malaking sanga sa kalsada kaninang madaling araw",public_safety,fallen_tree
+"fallen tree near the barangay hall, pakialis po",public_safety,fallen_tree
+"Delikadong puno sa gilid ng school, pa-trim po",public_safety,fallen_tree
+"yung lumang building sa bayan parang guguho na, may mga bitak",public_safety,unsafe_structure
+"may abandonadong bahay na sira-sira, tambayan pa ng adik",public_safety,unsafe_structure
+"pader ng bakanteng lote nakatagilid na, katabi ng daanan ng bata",public_safety,unsafe_structure
+"unsafe yung lumang gym ng barangay, bumabagsak ang kisame",public_safety,unsafe_structure
+"Pakisuri po yung gusali na may crack matapos ang lindol",public_safety,unsafe_structure
+"Ang daming aso sa kalye, hinahabol ang mga nagmomotor",public_safety,stray_animals
+"may asong gala na nangagat ng estudyante kahapon",public_safety,stray_animals
+"stray dogs sa palengke, ang dumi pa",public_safety,stray_animals
+"pakihuli naman po yung mga asong walang may-ari dito",public_safety,stray_animals
+"dumadami mga pusa at aso sa compound, may rabies pa yata",public_safety,stray_animals
+"Videoke hanggang 3am gabi gabi, may pasok pa kami",public_safety,disturbance
+"maingay yung bar sa kanto, ang lakas ng sounds",public_safety,disturbance
+"may mga nag-iinuman at nag-aaway sa kalsada tuwing weekend",public_safety,disturbance
+"karerahan ng motor sa diversion road tuwing gabi, ang ingay",public_safety,disturbance
+"noise complaint po sa kapitbahay, nagpaparty hanggang madaling araw",public_safety,disturbance
+"may bagong bukas na computer shop walang permit, bukas pa 24 hours",business_permit,no_permit
+"Yung junk shop sa amin walang business permit at ang kalat",business_permit,no_permit
+"is the carinderia near the school registered? walang permit na nakapaskil",business_permit,no_permit
+"may nagbebenta ng paputok na walang permit",business_permit,no_permit
+"illegal na piggery sa residential area, ang baho",business_permit,no_permit
+"Puno ng vendors yung sidewalk sa bayan, napipilitan kaming maglakad sa kalsada",business_permit,sidewalk_vending
+"mga ambulant vendor sa harap ng simbahan, wala nang madaanan",business_permit,sidewalk_vending
+"sidewalk sa may terminal ginawang palengke",business_permit,sidewalk_vending
+"nagtitinda ng prutas sa mismong kalsada, traffic tuloy",business_permit,sidewalk_vending
+"pakiayos po yung mga nakapwesto sa bangketa",business_permit,sidewalk_vending
+"3 weeks na po wala pa yung renewal ng business permit ko",business_permit,permit_processing
+"bakit ang tagal ng mayor's permit? kumpleto naman requirements",business_permit,permit_processing
+"follow up lang po sa application ko sa BPLO, walang update",business_permit,permit_processing
+"ang daming requirements tapos pinababalik pa ako paulit ulit",business_permit,permit_processing
+"permit processing is so slow, cannot open my store",business_permit,permit_processing
+"may mga sasakyang nakaparada sa magkabilang side ng kalsada, isang lane na lang",traffic,illegal_parking
+"double parking sa harap ng bangko araw araw",traffic,illegal_parking
+"yung mga tricycle nakapila sa no parking area",traffic,illegal_parking
+"cars parked on the sidewalk sa may school",traffic,illegal_parking
+"Ginawang garahe yung kalye namin, hindi makalabas ang sasakyan",traffic,illegal_parking
+"Grabe ang traffic sa Quezon Ave tuwing 5pm, isang oras para sa 1km",traffic,congestion
+"sobrang sikip ng daloy ng sasakyan sa may SM pag weekend",traffic,congestion
+"traffic jam everyday sa crossing, walang nagmamando",traffic,congestion
+"buhol buhol na trapiko sa harap ng palengke tuwing umaga",traffic,congestion
+"ang bagal ng usad ng mga sasakyan sa diversion road",traffic,congestion
+"walang stop sign sa intersection, maraming nagbabanggaan",traffic,missing_signs
+"nabura na yung pedestrian lane sa harap ng school",traffic,missing_signs
+"Pakilagyan po ng signage na may tawiran, mabilis ang mga sasakyan",traffic,missing_signs
+"missing road signs sa kurbada, may naaksidente na",traffic,missing_signs
+"natanggal yung karatula ng one way, nalilito ang mga driver",traffic,missing_signs
+"Sira ang traffic light sa crossing, naka-yellow blinking lang",traffic,broken_signal
+"stoplight sa may plaza patay po",traffic,broken_signal
+"traffic signal is stuck on red for 10 minutes",traffic,broken_signal
+"hindi gumagana ang ilaw trapiko sa intersection, gulo",traffic,broken_signal
+"yung traffic light sa may Pacific Mall sira na naman",traffic,broken_signal
+"Overcharging po ang tricycle, 50 pesos sa malapit lang",traffic,pub_violation
+"bastos yung driver ng jeep, sumigaw pa sa pasahero",traffic,pub_violation
+"colorum na van na nagsasakay sa terminal",traffic,pub_violation
+"ayaw magbigay ng sukli ng tricycle driver",traffic,pub_violation
+"jeep driver na nagsasakay sa gitna ng kalsada, delikado",traffic,pub_violation
+"walang tubig 3 araw na sa aming purok",other,_other
+"may tagas ang tubo ng water district sa kalsada, sayang ang tubig",other,_other
+"kailangan po ng tulong ng pamilyang nasunugan",other,_other
+"may nawawalang senior citizen sa aming lugar",other,_other
+"saan po pwede mag-apply ng scholarship ng city?",other,_other
+"mga batang namamalimos sa kalsada gabi-gabi",other,_other

@@ -52,6 +52,23 @@ def find_master_duplicate(concern):
     return None
 
 
+def tag_purok(concern, user=None):
+    """Pin → purok (inside the chosen barangay). Without a pin, keep the purok the reporter/encoder picked."""
+    from apps.geo.locate import find_purok
+
+    fields = []
+    if concern.latitude is not None:
+        p, _ = find_purok(concern.latitude, concern.longitude, concern.barangay_id)
+        if p:
+            concern.purok, concern.purok_source = p, "pin"
+            fields = ["purok", "purok_source"]
+    if not fields and concern.purok_id and not concern.purok_source:
+        concern.purok_source = "staff" if (user and user.is_authenticated and user.role != "citizen") else "reporter"
+        fields = ["purok_source"]
+    if fields:
+        concern.save(update_fields=fields)
+
+
 RECURRENCE_RADIUS_M = 75
 RECURRENCE_WINDOW_DAYS = 30
 
@@ -88,6 +105,10 @@ def on_concern_submitted(concern, user=None):
         remarks="Concern received.", changed_by=user if (user and user.is_authenticated) else None,
     )
 
+    from apps.classifier.services import apply_ai
+
+    apply_ai(concern)  # Module 3: suggestion always stored; category auto-filled only if none chosen and confident
+    tag_purok(concern, user)
     master = find_master_duplicate(concern)
     if master:
         concern.duplicate_of = master

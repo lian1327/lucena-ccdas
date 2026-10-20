@@ -151,6 +151,11 @@ class Concern(models.Model):
     latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     location_description = models.CharField(max_length=255, blank=True, help_text="Landmark / street")
+    purok = models.ForeignKey("geo.Purok", null=True, blank=True, on_delete=models.SET_NULL, related_name="concerns")
+    purok_source = models.CharField(
+        max_length=8, blank=True, choices=[("pin", "From the map pin"), ("reporter", "Chosen by the reporter"),
+                                           ("staff", "Set by staff")],
+    )
 
     # Reporter (RA 10173: collect only what is needed, with consent)
     reporter = models.ForeignKey(
@@ -191,6 +196,13 @@ class Concern(models.Model):
         "self", null=True, blank=True, on_delete=models.SET_NULL, related_name="recurrences",
         help_text="Same problem, same spot, reported again within 30 days after it was marked fixed.",
     )
+
+    # AI classification (Module 3): what the model suggested at submission, kept for monitoring live accuracy
+    ai_category = models.ForeignKey(Category, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    ai_subcategory = models.ForeignKey(Subcategory, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    ai_confidence = models.FloatField(null=True, blank=True)
+    ai_top = models.JSONField(default=list, blank=True)
+    ai_model = models.ForeignKey("classifier.ModelVersion", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
 
     is_synthetic = models.BooleanField(
         default=False, db_index=True, help_text="Generated demo/test data. Purge with generate_synthetic_data --purge.",

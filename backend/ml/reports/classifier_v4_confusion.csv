@@ -1,0 +1,9 @@
+actual \ predicted,business_permit,drainage,other,public_safety,road_damage,solid_waste,streetlight,traffic
+business_permit,27,0,0,0,0,0,0,0
+drainage,0,147,0,0,0,0,0,0
+other,0,0,49,0,0,0,0,0
+public_safety,0,0,0,72,0,0,0,0
+road_damage,0,0,0,0,128,0,0,0
+solid_waste,0,0,0,0,0,171,0,0
+streetlight,0,0,0,0,0,0,98,0
+traffic,0,0,0,0,0,0,0,123

@@ -1,0 +1,51 @@
+CCADSS - STEP 13: MODULE 3, AI CLASSIFICATION ENGINE
+====================================================
+
+What it adds
+  * scikit-learn classifier for Filipino / English / Taglish complaint text:
+      TF-IDF word 1-2-grams + character 2-5-grams on normalised text (texting abbreviations undone,
+      stretched letters squeezed). Character n-grams handle typos and spelling variants.
+      Complement Naive Bayes vs Logistic Regression vs linear SVM compared by 5-fold CV macro-F1;
+      the winner is evaluated on a held-out 20% split and on a hand-written challenge set.
+      Two models: category (8) and sub-type (restricted to the predicted category).
+  * Model registry (ModelVersion): every training run kept with its evaluation; one active; retrain from the
+    UI (City Admin) or the command line; a new model is activated only if it isn't worse.
+  * On every new report: the AI suggestion is stored. If the citizen didn't pick a category ("Hindi sigurado")
+    and confidence >= 70%, the AI fills it in (category_source = "ml"). PACD still verifies every report.
+  * Report form: live "Mukhang tungkol ito sa ... (95%) [Gamitin ito]" while the citizen types, and a
+    "Hindi sigurado" option so citizens don't have to guess.
+  * Triage panel: AI suggestion + confidence; highlighted when it disagrees with the citizen's choice.
+  * AI Classifier page (City Admin, Mayor, PACD): three honest measures (held-out synthetic, challenge set,
+    live agreement with PACD), model comparison, confidence vs auto-assign coverage, per-category
+    precision/recall/F1, confusion matrix, misclassified examples, versions.
+  * Synthetic data now uses a compositional Taglish generator (phrase banks + texting noise + some
+    reports that mention two issues) instead of 72 fixed templates.
+  * ml/challenge_set.csv: 161 hand-written complaints (all 31 sub-types + other) for a fairer test.
+  * ml/reports/classifier_vN.md: tables ready for Chapter 4 (+ confusion matrix CSV).
+
+Results on the demo data (v2): held-out synthetic 100% (optimistic), challenge set 91.3% accuracy,
+macro-F1 0.89; at the 70% threshold the AI auto-assigns 85% of challenge reports with 98.5% accuracy.
+Weakest: Road Damage precision (absorbs "sidewalk/kalsada" wording from vending, parking, flooding).
+
+Install (extract into lucena-ccdas, overwrite)
+  1. backend\config\settings.py: add "apps.classifier" to INSTALLED_APPS
+  2. cd backend ; .\.venv\Scripts\Activate.ps1
+     python manage.py makemigrations classifier concerns
+     python manage.py migrate
+     python manage.py generate_synthetic_data --months 24 --count 3500
+     Honest "live" demo (model only knew older reports, then "saw" the last 6 months first):
+       python manage.py train_classifier --before 2026-04-20 --activate --notes "temporal hold-out"
+       python manage.py classify_reports --since 2026-04-20
+     Full model for deployment:
+       python manage.py train_classifier
+     python manage.py runserver
+  3. cd frontend ; npm run gen:api ; npm run dev
+  4. cityadmin -> AI Classifier ; /report -> "Hindi sigurado" + type a description
+
+Notes
+  * Add backend/ml/models/ to .gitignore (trained files are rebuilt with train_classifier). Keep
+    ml/challenge_set.csv and ml/reports/ in the repo.
+  * When the LGU's anonymised complaints arrive: label them in a CSV (text,category,subcategory) and run
+      python manage.py train_classifier --extra-csv lgu_reports.csv
+    or, once they are encoded in the system and verified, --real-only. Report those numbers as the main result.
+  * Optional setting: ML_AUTO_ASSIGN_THRESHOLD = 0.70

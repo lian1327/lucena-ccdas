@@ -45,6 +45,7 @@ def summarize(cluster, open_statuses):
     months = {p["created_at"].strftime("%Y-%m") for p in m}
     brgy = Counter(p["barangay"] for p in m).most_common(1)[0][0]
     landmark = Counter(p["landmark"] for p in m if p["landmark"]).most_common(1)
+    purok = Counter(p.get("purok") for p in m if p.get("purok")).most_common(1)
     return {
         "lat": round(lat, 6), "lng": round(lng, 6), "radius_m": round(max(radius, 25)),
         "count": len(m),
@@ -53,6 +54,7 @@ def summarize(cluster, open_statuses):
         "issues": [{"name": k, "count": v} for k, v in subs.most_common(4)],
         "barangay": brgy,
         "landmark": landmark[0][0] if landmark else "",
+        "purok": purok[0][0] if purok else None,
         "months_active": len(months),
         "first_report": min(p["created_at"] for p in m).isoformat(),
         "last_report": max(p["created_at"] for p in m).isoformat(),

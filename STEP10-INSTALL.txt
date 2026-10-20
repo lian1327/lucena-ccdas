@@ -1,0 +1,50 @@
+CCADSS - STEP 10: PROOF OF WORK & ACCOUNTABILITY
+================================================
+
+What it adds
+  * BEFORE / AFTER photos with where + when they were taken (camera GPS, or the phone's location at upload)
+  * Automatic photo checks: taken far from the pin (>150 m), taken before the office got the case,
+    same photo reused on another case, "after" identical to "before", old photo, no location
+  * Accomplishment report when work is done: what was done, crew (+ job-order workers), materials,
+    equipment, time on site, man-hours. Every submission is kept, including returned ones. Printable.
+  * Validator must write a reason to approve when a photo has a red flag; that override is recorded under their name
+  * "Sino ang gumawa ng ano" trail on every case (who verified, routed, accepted, assigned, responded,
+    inspected, submitted, validated, and whether each met its target)
+  * Citizen "Naayos ba talaga?" on the tracking page (last 4 digits of their mobile required).
+    "Hindi pa" reopens the case and counts against the office.
+  * Recurrence: same problem reported again within 75 m / 30 days of a "fix" is linked to the old case
+  * New pages: Accountability (per office), Sino ang kumilos (per person in an office),
+    Aking mga aksyon / personal ledger (every action with its photos)
+  * Office scorecard: new "proof" KPIs and flags; the quality part of the index now also counts recurrences
+
+Install (PowerShell, VS Code) - extract into lucena-ccdas and overwrite
+  1. cd backend
+     .\.venv\Scripts\Activate.ps1
+     python manage.py makemigrations cases concerns
+     python manage.py migrate
+     python manage.py generate_synthetic_data        (rebuilds demo data incl. photos, reports, confirmations)
+     python manage.py runserver
+  2. new terminal:
+     cd frontend
+     npm install                (adds exifr, reads photo GPS in the browser)
+     npm run gen:api
+     npm run dev
+
+Try it
+  cityadmin    -> Accountability -> click CEO -> click a name -> see every action with its photos
+  ceo.staff    -> a case "May tauhan / Na-inspeksyon" -> Accomplishment report (use your phone)
+  ceo.rdb.chief-> "For validation" -> red-flag photo -> approve needs a written reason
+  /track/<ref> -> after Resolved, "Naayos ba talaga?"
+
+Notes
+  * Phone location works only on HTTPS (or localhost). On a LAN IP over http, only the camera's own GPS is used.
+    For phone testing use a tunnel with HTTPS (e.g. ngrok / cloudflared) or deploy with HTTPS.
+  * Turn on "Location tags" in the phone camera settings so photos carry GPS.
+  * Photo metadata is evidence, not proof: it can be edited by a determined person. The checks catch the common
+    shortcuts, and every approval has a named validator. Say this openly at the defense.
+  * Optional settings: EVIDENCE_MAX_DISTANCE_M = 150, EVIDENCE_MAX_AGE_DAYS = 3
+
+Commit
+  git add backend frontend/src frontend/package.json frontend/package-lock.json
+  git commit -m "Step 10: proof of work, accomplishment reports, citizen confirmation, accountability"
+  git push

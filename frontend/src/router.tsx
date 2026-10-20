@@ -30,6 +30,7 @@ const OfficePeoplePage = lazy(() => import("@/pages/staff/OfficePeoplePage"));
 const LedgerPage = lazy(() => import("@/pages/staff/LedgerPage"));
 const ExecutivePage = lazy(() => import("@/pages/staff/ExecutivePage"));
 const ExecutiveReportPage = lazy(() => import("@/pages/staff/ExecutiveReportPage"));
+const ClassifierPage = lazy(() => import("@/pages/staff/ClassifierPage"));
 const AccomplishmentPrintPage = lazy(() => import("@/pages/staff/AccomplishmentPrintPage"));
 function AccountabilityHome() {
   const { user } = useAuth();
@@ -69,6 +70,7 @@ export const router = createBrowserRouter([
           { path: "encode", element: <EncodePage /> },
           { path: "analytics", element: lazyEl(<AnalyticsHome />) },
           { path: "analytics/:id", element: lazyEl(<OfficePerformance />) },
+          { path: "ml", element: lazyEl(<ClassifierPage />) },
           { path: "executive", element: lazyEl(<ExecOnly><ExecutivePage /></ExecOnly>) },
           { path: "executive/report", element: lazyEl(<ExecOnly><ExecutiveReportPage /></ExecOnly>) },
           { path: "accountability", element: lazyEl(<AccountabilityHome />) },

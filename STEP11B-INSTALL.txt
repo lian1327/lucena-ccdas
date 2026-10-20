@@ -1,0 +1,31 @@
+CCADSS - STEP 11b: ACCOMPLISHMENT & YEAR-ON-YEAR (Executive tab)
+================================================================
+
+What it adds (top of the Executive tab + section 1b of the Monthly Report)
+  * "131/148 naayos (89%)": of the problems RECEIVED this month, how many are accomplished now, how many still open
+  * Same month last year, and year-to-date vs the same period last year:
+      received, accomplished, resolved within 30 days, on-time (ARTA), median days, with the change in points
+  * Chart: share resolved within 30 days per month, this year vs last year (by calendar month)
+  * Per issue (year-to-date vs last year) and per year (2024 / 2025 / 2026)
+
+Why "within 30 days" for comparisons: "accomplished so far" is always higher for older months (they've had more
+time). "Resolved within 30 days of the report" gives every month and year the same yardstick, so it's fair YoY.
+On-time counts only cases already resolved or already past their target (an open case not yet due isn't late).
+
+Install (extract into lucena-ccdas, overwrite) - no new tables
+  cd backend ; .\.venv\Scripts\Activate.ps1
+  python manage.py generate_synthetic_data --months 24 --count 3500     (about 1 minute; needed for last-year data)
+  python manage.py runserver
+  cd frontend ; npm run gen:api ; npm run dev
+
+DEMO ASSUMPTION (say this if asked): the generator's --improvement 0.15 makes offices 15% slower (and stall more)
+for reports older than 12 months, as if before the system was adopted, so the year-on-year view has something to
+show. Use --improvement 0 for identical years. Real data will show whatever really happened.
+With 24 months of data the forecast also tries "same month last year x recent trend" (rainy season) and keeps it
+only where it back-tests better. On the demo data the forecast now beats the naive guess (~39% vs ~56% average error).
+This zip also replaces executive.py from the Step 11 zip.
+
+Commit
+  git add backend frontend/src
+  git commit -m "Step 11b: accomplishment rate and year-on-year comparison"
+  git push

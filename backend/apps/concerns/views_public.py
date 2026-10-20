@@ -8,21 +8,23 @@ from django.core.cache import cache
 from django.db.models import Avg, Count, DurationField, ExpressionWrapper, F, Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import generics, status
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.geo.models import Barangay
+from apps.geo.models import Barangay, Purok
 
 from .models import Category, Concern
 from .serializers import (
     PublicBarangaySerializer,
     PublicCategorySerializer,
     PublicConcernCreateSerializer,
+    LocateSerializer,
     PublicConfirmSerializer,
+    PublicPurokSerializer,
     PublicStatsSerializer,
     PublicTrackSerializer,
 )
@@ -64,6 +66,35 @@ class PublicConcernCreateView(PublicMixin, generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class PublicPurokListView(PublicMixin, generics.ListAPIView):
+    """Puroks of a barangay, for the report form when the citizen doesn't drop a pin."""
+
+    serializer_class = PublicPurokSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        return Purok.objects.filter(barangay_id=self.kwargs["pk"]).order_by("is_zone", "name")
+
+
+class PublicLocateView(PublicMixin, APIView):
+    """Pin → barangay + purok, so the form can fill them in for the citizen."""
+
+    throttle_scope = "public_track"
+
+    @extend_schema(parameters=[OpenApiParameter("lat", float), OpenApiParameter("lng", float)], responses=LocateSerializer)
+    def get(self, request):
+        from apps.geo.locate import find_barangay, find_purok
+
+        try:
+            lat, lng = float(request.query_params["lat"]), float(request.query_params["lng"])
+        except (KeyError, ValueError):
+            return Response({"detail": "lat and lng are required."}, status=status.HTTP_400_BAD_REQUEST)
+        b = find_barangay(lat, lng)
+        p, _ = find_purok(lat, lng, b.id if b else None)
+        return Response({"barangay_id": b.id if b else None, "barangay": b.name if b else None,
+                         "purok_id": p.id if p else None, "purok": p.name if p else None})
 
 
 class PublicTrackView(PublicMixin, generics.RetrieveAPIView):

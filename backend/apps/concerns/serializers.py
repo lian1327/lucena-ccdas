@@ -7,7 +7,7 @@ from django.utils import timezone
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
-from apps.geo.models import Barangay
+from apps.geo.models import Barangay, Purok
 
 from .models import Category, Concern, ConcernAttachment, StatusHistory, Subcategory
 from .services import on_concern_submitted
@@ -61,6 +61,8 @@ class PublicConcernCreateSerializer(serializers.ModelSerializer):
         required=False, allow_null=True,
     )
     barangay = serializers.PrimaryKeyRelatedField(queryset=Barangay.objects.all())
+    purok = serializers.PrimaryKeyRelatedField(queryset=Purok.objects.all(), required=False, allow_null=True,
+                                               help_text="Optional when there's no pin; a pin overrides it.")
     affected_scale = serializers.ChoiceField(
         choices=list(AFFECTED_BUCKETS), write_only=True, required=False, default="street"
     )
@@ -80,7 +82,7 @@ class PublicConcernCreateSerializer(serializers.ModelSerializer):
         fields = [
             "title", "description", "category", "subcategory", "danger_now", "affected_scale",
             "involves_barangay_officials",
-            "barangay", "latitude", "longitude", "location_description",
+            "barangay", "purok", "latitude", "longitude", "location_description",
             "reporter_name", "reporter_contact", "reporter_email", "is_anonymous", "consent_given",
             "images",
             "reference_no", "status", "created_at", "linked_to_existing",
@@ -146,6 +148,9 @@ class PublicConcernCreateSerializer(serializers.ModelSerializer):
             if attrs.get("category") and attrs["category"].pk != sub.category_id:
                 raise serializers.ValidationError({"subcategory": "This sub-type does not belong to the chosen category."})
             attrs["category"] = sub.category
+
+        if attrs.get("purok") and attrs["purok"].barangay_id != attrs["barangay"].pk:
+            raise serializers.ValidationError({"purok": "Ang purok ay wala sa napiling barangay."})
 
         lat, lng = attrs.get("latitude"), attrs.get("longitude")
         if (lat is None) != (lng is None):
@@ -339,3 +344,16 @@ class PublicConfirmSerializer(serializers.Serializer):
     fixed = serializers.BooleanField()
     feedback = serializers.CharField(required=False, allow_blank=True, max_length=1000)
     mobile_last4 = serializers.RegexField(r"^\d{4}$", required=False, allow_blank=True)
+
+
+class PublicPurokSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Purok
+        fields = ["id", "name", "is_zone"]
+
+
+class LocateSerializer(serializers.Serializer):
+    barangay_id = serializers.IntegerField(allow_null=True)
+    barangay = serializers.CharField(allow_null=True)
+    purok_id = serializers.IntegerField(allow_null=True)
+    purok = serializers.CharField(allow_null=True)

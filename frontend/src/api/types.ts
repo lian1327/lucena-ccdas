@@ -84,3 +84,18 @@ export type Insight = S["Insight"];
 export type Resource = S["Resource"];
 export type ForecastCategory = S["ForecastCategory"];
 export type SimilarReport = S["SimilarReport"];
+
+// ----- Puroks / boundaries (Step 12) -----
+export type PurokStat = S["PurokStat"];
+export type BarangayPuroks = S["BarangayPuroks"];
+export type PublicPurok = S["PublicPurok"];
+export type Locate = S["Locate"];
+export type BoundaryProps = {
+  id: number; name: string; concerns: number; open: number;
+  population?: number; puroks?: number; barangay?: string; barangay_id?: number; is_zone?: boolean;
+};
+export type Boundaries = GeoJSON.FeatureCollection<GeoJSON.Geometry, BoundaryProps> & { level: "barangay" | "purok" };
+
+// ----- AI classifier (Module 3) -----
+export type MLOverview = S["MLOverview"];
+export type ModelVersionInfo = S["ModelVersion"];

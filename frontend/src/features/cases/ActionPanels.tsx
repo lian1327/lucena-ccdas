@@ -48,8 +48,9 @@ const SEVERITIES: { v: Severity; label: string }[] = [
 export function VerifyPanel({ c }: P) {
   const categories = useCategories();
   const verify = useVerify(c.id);
-  const [category, setCategory] = useState(c.category_code ?? "");
-  const [sub, setSub] = useState(c.subcategory_code ?? "");
+  // Start from the citizen's choice; if they didn't choose, from the AI's suggestion
+  const [category, setCategory] = useState(c.category_code ?? c.ai_category ?? "");
+  const [sub, setSub] = useState(c.subcategory_code ?? (c.category_code ? "" : c.ai_subcategory ?? ""));
   const [severity, setSeverity] = useState<Severity>(c.severity as Severity);
   const subs = categories.data?.find((x) => x.code === category)?.subcategories ?? [];
   if (!c.permissions.verify) return null;
@@ -59,6 +60,19 @@ export function VerifyPanel({ c }: P) {
       hint={<>Kumpirmahin ang uri at tunay na kalubhaan. Ang verified lang ang binibilang sa analytics.
         {c.danger_now && <strong className="text-danger d-block mt-1">Sinabi ng nag-report: may panganib ngayon.</strong>}</>}>
       <Form onSubmit={(e) => { e.preventDefault(); verify.mutate({ category, subcategory: sub || null, severity }); }}>
+        {c.ai_category && (
+          <div className={`small mb-2 p-2 rounded border ${c.ai_category === c.category_code || !c.category_code ? "bg-light" : "border-warning bg-warning-subtle"}`}>
+            <i className="bi bi-stars me-1 text-primary" aria-hidden />
+            AI (v{c.ai_model_version}): <strong>{c.ai_category_name}</strong>{c.ai_subcategory_name && <> › {c.ai_subcategory_name}</>}
+            <span className="text-secondary"> · {Math.round((c.ai_confidence ?? 0) * 100)}%</span>
+            {c.category_source === "ml" && <div className="text-secondary">Awtomatikong inilagay ng AI (hindi pumili ang nag-report).</div>}
+            {c.category_source === "citizen" && c.ai_category !== c.category_code && (
+              <div>Iba sa pinili ng nag-report ({c.category}).{" "}
+                <Button variant="link" size="sm" className="p-0 align-baseline" onClick={() => { setCategory(c.ai_category!); setSub(c.ai_subcategory ?? ""); }}>
+                  Gamitin ang mungkahi ng AI</Button></div>
+            )}
+          </div>
+        )}
         <Form.Select className="mb-2" value={category} onChange={(e) => { setCategory(e.target.value); setSub(""); }} aria-label="Kategorya">
           <option value="">— Kategorya —</option>
           {categories.data?.map((x) => <option key={x.code} value={x.code}>{x.name}</option>)}

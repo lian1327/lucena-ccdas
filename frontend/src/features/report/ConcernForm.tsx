@@ -3,11 +3,13 @@ import { Alert, Button, Card, Col, Container, Form, Row, Spinner } from "react-b
 import { Link } from "react-router-dom";
 
 import { apiErrorMessage, apiFieldErrors } from "@/api/client";
-import { useBarangays, useCategories, type SubmitConcernInput } from "@/api/public";
+import { useBarangays, useCategories, useSuggestion, type Suggestion, type SubmitConcernInput } from "@/api/public";
 import type { AffectedScale } from "@/api/types";
 import { FullPageSpinner } from "@/components/FullPageSpinner";
 import { LGU_CENTER } from "@/config";
 import type { LatLng } from "./LocationPicker";
+import { locatePin, usePuroks } from "@/api/public";
+import type { Locate } from "@/api/types";
 import { compressImage } from "@/utils/compressImage";
 
 const LocationPicker = lazy(() => import("./LocationPicker"));
@@ -24,8 +26,10 @@ const SCALES: { value: AffectedScale; fil: string; en: string }[] = [
 type FormState = {
   category: string;
   subcategory: string;
+  unsure: boolean;
   description: string;
   barangay: string;
+  purok: string;
   location_description: string;
   danger_now: boolean | null;
   affected_scale: AffectedScale | null;
@@ -39,8 +43,10 @@ type FormState = {
 const EMPTY: FormState = {
   category: "",
   subcategory: "",
+  unsure: false,
   description: "",
   barangay: "",
+  purok: "",
   location_description: "",
   danger_now: null,
   affected_scale: null,
@@ -57,7 +63,7 @@ type Errors = Partial<Record<keyof FormState | "images" | "latitude" | "form", s
 
 function validate(f: FormState, mode: Mode): Errors {
   const e: Errors = {};
-  if (!f.category) e.category = "Pumili ng uri ng problema.";
+  if (!f.category && !f.unsure) e.category = "Pumili ng uri ng problema, o piliin ang 'Hindi sigurado'.";
   if (f.description.trim().length < 10) e.description = "Pakilarawan nang kaunti pa (kahit isang pangungusap).";
   if (!f.barangay) e.barangay = "Piliin ang barangay.";
   if (f.location_description.trim().length < 4) e.location_description = "Ilagay ang palatandaan o kalye.";
@@ -113,6 +119,23 @@ export function ConcernForm({ mode, submitting, submitLabel, onSubmit: submitPay
   const [pin, setPin] = useState<LatLng | null>(null);
   const [showMap, setShowMap] = useState(false);
   const [geoMsg, setGeoMsg] = useState<string | null>(null);
+  const [located, setLocated] = useState<Locate | null>(null);
+  const puroks = usePuroks(form.barangay ? Number(form.barangay) : null);
+
+  // Pin → barangay + purok, filled in for the citizen (they can still change the barangay).
+  useEffect(() => {
+    if (!pin) { setLocated(null); return; }
+    let live = true;
+    locatePin(pin.lat, pin.lng).then((r) => {
+      if (!live) return;
+      setLocated(r);
+      if (r.barangay_id) {
+        setForm((f) => ({ ...f, barangay: String(r.barangay_id), purok: r.purok_id ? String(r.purok_id) : "" }));
+        setErrors((e) => ({ ...e, barangay: undefined }));
+      }
+    }).catch(() => live && setLocated(null));
+    return () => { live = false; };
+  }, [pin]);
   const [errors, setErrors] = useState<Errors>({});
   const topRef = useRef<HTMLDivElement>(null);
 
@@ -122,6 +145,7 @@ export function ConcernForm({ mode, submitting, submitLabel, onSubmit: submitPay
   };
 
   const selectedCategory = categories.data?.find((c) => c.code === form.category);
+  const suggestion = useSuggestion(form.description);
   const selectedBarangay = barangays.data?.find((b) => String(b.id) === form.barangay);
   const mapCenter = useMemo<[number, number]>(
     () =>
@@ -173,10 +197,11 @@ export function ConcernForm({ mode, submitting, submitLabel, onSubmit: submitPay
     }
     try {
       await submitPayload({
-        category: form.category,
+        category: form.category || null,
         subcategory: form.subcategory || null,
         description: form.description.trim(),
         barangay: Number(form.barangay),
+        purok: form.purok ? Number(form.purok) : null,
         location_description: form.location_description.trim(),
         latitude: pin ? pin.lat.toFixed(6) : null,
         longitude: pin ? pin.lng.toFixed(6) : null,
@@ -226,6 +251,7 @@ export function ConcernForm({ mode, submitting, submitLabel, onSubmit: submitPay
                     onClick={() => {
                       set("category", c.code);
                       set("subcategory", "");
+                      set("unsure", false);
                     }}
                     className={`btn w-100 h-100 text-start p-2 border ${active ? "btn-primary" : "btn-light"}`}
                     aria-pressed={active}
@@ -237,6 +263,13 @@ export function ConcernForm({ mode, submitting, submitLabel, onSubmit: submitPay
                 </Col>
               );
             })}
+            <Col xs={12}>
+              <Button size="sm" variant={form.unsure ? "secondary" : "outline-secondary"} className="w-100"
+                aria-pressed={form.unsure}
+                onClick={() => { set("unsure", !form.unsure); if (!form.unsure) { set("category", ""); set("subcategory", ""); } }}>
+                <i className="bi bi-question-circle me-1" aria-hidden />Hindi sigurado: ilarawan na lang, kami na ang bahala
+              </Button>
+            </Col>
           </Row>
           <FieldError msg={errors.category} />
 
@@ -272,6 +305,8 @@ export function ConcernForm({ mode, submitting, submitLabel, onSubmit: submitPay
               isInvalid={!!errors.description}
             />
             <FieldError msg={errors.description} />
+            <AiHint suggestion={suggestion.data ?? null} chosen={form.category} chosenSub={form.subcategory}
+              onUse={(cat, sub) => { set("category", cat); set("subcategory", sub ?? ""); set("unsure", false); }} />
           </Form.Group>
 
           <div className="mt-3" {...err("images")}>
@@ -320,7 +355,7 @@ export function ConcernForm({ mode, submitting, submitLabel, onSubmit: submitPay
         <Section n={2} title="Saan?" en="Where?">
           <Form.Group className="mb-3" controlId="barangay" {...err("barangay")}>
             <Form.Label className="fw-semibold small">Barangay</Form.Label>
-            <Form.Select value={form.barangay} onChange={(e) => set("barangay", e.target.value)} isInvalid={!!errors.barangay}>
+            <Form.Select value={form.barangay} onChange={(e) => { set("barangay", e.target.value); set("purok", ""); }} isInvalid={!!errors.barangay}>
               <option value="">— Piliin —</option>
               {barangays.data!.map((b) => (
                 <option key={b.id} value={b.id}>
@@ -330,6 +365,17 @@ export function ConcernForm({ mode, submitting, submitLabel, onSubmit: submitPay
             </Form.Select>
             <FieldError msg={errors.barangay} />
           </Form.Group>
+
+          {form.barangay && (puroks.data?.length ?? 0) > 0 && (
+            <Form.Group className="mb-3" controlId="purok">
+              <Form.Label className="fw-semibold small">Purok <span className="text-secondary fw-normal">(opsyonal)</span></Form.Label>
+              <Form.Select value={form.purok} onChange={(e) => set("purok", e.target.value)} disabled={!!located?.purok_id}>
+                <option value="">— Hindi alam / laktawan —</option>
+                {puroks.data!.filter((p) => !p.is_zone).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </Form.Select>
+              {located?.purok_id && <Form.Text>Kinuha mula sa pin sa mapa.</Form.Text>}
+            </Form.Group>
+          )}
 
           <Form.Group className="mb-3" controlId="landmark" {...err("location_description")}>
             <Form.Label className="fw-semibold small">Palatandaan o kalye</Form.Label>
@@ -363,6 +409,14 @@ export function ConcernForm({ mode, submitting, submitLabel, onSubmit: submitPay
             )}
           </div>
           {geoMsg && <div className="small text-secondary mt-2">{geoMsg}</div>}
+          {pin && located && (
+            <div className={`small mt-2 ${located.barangay_id ? "text-success" : "text-warning-emphasis"}`}>
+              <i className={`bi bi-${located.barangay_id ? "geo-alt-fill" : "exclamation-triangle"} me-1`} aria-hidden />
+              {located.barangay_id
+                ? <>Nasa <strong>{located.barangay}</strong>{located.purok && <>, <strong>{located.purok}</strong></>} ang pin.</>
+                : "Wala sa loob ng mga barangay ng lungsod ang pin. Pakisuri ang lokasyon."}
+            </div>
+          )}
           <FieldError msg={errors.latitude} />
           {showMap && (
             <div className="mt-2">
@@ -549,3 +603,24 @@ export function ConcernForm({ mode, submitting, submitLabel, onSubmit: submitPay
   );
 }
 
+
+
+/** "Mukhang tungkol ito sa…": the AI's reading of the description, one tap to accept. Shown only when it adds something. */
+function AiHint({ suggestion: s, chosen, chosenSub, onUse }: {
+  suggestion: Suggestion | null; chosen: string; chosenSub: string; onUse: (cat: string, sub: string | null) => void;
+}) {
+  if (!s || s.confidence < 0.5) return null;
+  const same = s.category === chosen && (!s.subcategory || s.subcategory === chosenSub);
+  if (same) {
+    return <div className="small text-success mt-1"><i className="bi bi-stars me-1" aria-hidden />Tugma sa napili mo.</div>;
+  }
+  return (
+    <div className="small mt-2 p-2 rounded border bg-light-subtle">
+      <i className="bi bi-stars me-1 text-primary" aria-hidden />
+      Mukhang tungkol ito sa <strong>{s.category_name}</strong>{s.subcategory_name && <> › {s.subcategory_name}</>}
+      <span className="text-secondary"> ({Math.round(s.confidence * 100)}%)</span>
+      <Button size="sm" variant="link" className="py-0" onClick={() => onUse(s.category, s.subcategory)}>Gamitin ito</Button>
+      {chosen && <div className="text-secondary">Puwede mo ring panatilihin ang napili mo; susuriin ito ng LGU.</div>}
+    </div>
+  );
+}

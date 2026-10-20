@@ -32,7 +32,10 @@ from apps.cases.models import Case, CaseNote, Department, Endorsement, Endorseme
 from apps.cases.services import suggested_route
 from apps.concerns.models import Category, Concern, ConcernAttachment, StatusHistory, Subcategory
 from apps.concerns.synthetic import corpus as C
-from apps.geo.models import Barangay
+from apps.concerns.synthetic import textgen
+from apps.geo import geometry
+from apps.geo.locate import find_purok
+from apps.geo.models import Barangay, Purok
 from apps.priority.services import compute_priority
 
 S = Concern.Status
@@ -119,6 +122,9 @@ class Command(BaseCommand):
             Concern.objects.filter(is_synthetic=True).delete()
 
         self._load_reference()
+        if not self.puroks:
+            self.stdout.write(self.style.WARNING("  No purok polygons: run `python manage.py import_boundaries` first so pins land "
+                                                 "inside real barangay/purok outlines."))
         self._ensure_barangay_geo()
         self._placeholder_photos()
         used_refs = set(Concern.objects.values_list("reference_no", flat=True))
@@ -153,6 +159,10 @@ class Command(BaseCommand):
         for s in Subcategory.objects.filter(is_active=True).select_related("category", "default_department", "default_division"):
             self.subs.setdefault(s.category.code, []).append(s)
         self.brgys = list(Barangay.objects.all())
+        # real purok polygons (import_boundaries) → points land inside the right barangay and purok
+        self.puroks = {}
+        for pk in Purok.objects.filter(is_zone=False):
+            self.puroks.setdefault(pk.barangay_id, []).append(pk)
         self.levels = {p.code: p for p in PriorityLevel.objects.all()}
         self.ext = {d.code: d for d in Department.objects.filter(kind="external")}
         users = list(User.objects.filter(is_active=True).select_related("department", "division", "barangay"))
@@ -205,8 +215,8 @@ class Command(BaseCommand):
                 else:
                     cat = rng.choices([c for c, _ in cats], [w for _, w in cats])[0]
                     sub = rng.choice(self.subs[cat]).code
-                spots.append((float(b.center_lat) + rng.uniform(-.006, .006), float(b.center_lng) + rng.uniform(-.006, .006),
-                              f"{rng.choice(C.LANDMARKS)}, {rng.choice(C.STREETS)}", cat, sub))
+                lat, lng = self.point_in(b, rng)
+                spots.append((lat, lng, f"{rng.choice(C.LANDMARKS)}, {rng.choice(C.STREETS)}", cat, sub))
             self.hotspots[b.id] = spots
 
     def _placeholder_photos(self):
@@ -294,17 +304,30 @@ class Command(BaseCommand):
             return base
         return self.wchoice([(b, w(b)) for b in self.brgys])
 
+    def point_in(self, b, rng=None):
+        """A random point inside a residential purok of b (bigger puroks a bit more likely); old jitter if none."""
+        rng = rng or self.rng
+        pks = self.puroks.get(b.id)
+        if not pks:
+            return float(b.center_lat) + rng.uniform(-.007, .007), float(b.center_lng) + rng.uniform(-.007, .007)
+        pk = rng.choices(pks, [math.sqrt(max(x.area_ha, .5)) for x in pks])[0]
+        for _ in range(60):
+            lat, lng = rng.uniform(pk.min_lat, pk.max_lat), rng.uniform(pk.min_lng, pk.max_lng)
+            if geometry.contains(pk.boundary_geojson, lat, lng):
+                return lat, lng
+        return float(pk.center_lat), float(pk.center_lng)
+
     def location(self, b, cat, national=False):
         """Returns (lat, lng, landmark, hotspot_sub_or_None)."""
         if national:
-            return (float(b.center_lat) + self.rng.uniform(-.004, .004), float(b.center_lng) + self.rng.uniform(-.004, .004),
-                    f"{self.rng.choice(C.LANDMARKS)}, {self.rng.choice(C.NATIONAL_ROADS)}", None)
+            lat, lng = self.point_in(b)
+            return lat, lng, f"{self.rng.choice(C.LANDMARKS)}, {self.rng.choice(C.NATIONAL_ROADS)}", None
         spots = [h for h in self.hotspots[b.id] if h[3] == cat]
         if spots and self.rng.random() < .6:
             lat, lng, lm, _, sub = self.rng.choice(spots)
-            return lat + self.rng.uniform(-.0004, .0004), lng + self.rng.uniform(-.0004, .0004), lm, sub
-        return (float(b.center_lat) + self.rng.uniform(-.007, .007), float(b.center_lng) + self.rng.uniform(-.007, .007),
-                f"{self.rng.choice(C.LANDMARKS)}, {self.rng.choice(C.STREETS)}", None)
+            return lat + self.rng.uniform(-.00025, .00025), lng + self.rng.uniform(-.00025, .00025), lm, sub
+        lat, lng = self.point_in(b)
+        return lat, lng, f"{self.rng.choice(C.LANDMARKS)}, {self.rng.choice(C.STREETS)}", None
 
     def person(self):
         return f"{self.rng.choice(C.FIRST_NAMES)} {self.rng.choice(C.LAST_NAMES)}", \
@@ -324,7 +347,7 @@ class Command(BaseCommand):
         if spot_sub and rng.random() < .7:  # the hotspot's recurring problem
             sub = next((x for x in self.subs[cat_code] if x.code == spot_sub), sub)
         texts = C.DESCRIPTIONS.get(sub.code if sub else "_other", C.DESCRIPTIONS["_other"])
-        desc = rng.choice(texts).format(lm=lm)
+        desc = textgen.compose(sub.code if sub else "_other", cat_code, lm, rng, legacy=texts)
         channel = self.wchoice(CHANNELS)
         anon = rng.random() < .12
         name, phone = self.person()
@@ -359,6 +382,11 @@ class Command(BaseCommand):
             consent_given=True, consent_at=t0, is_synthetic=True,
             created_at=t0, updated_at=t0,
         )
+        if pinned:
+            pk, _ = find_purok(c.latitude, c.longitude, b.id)
+            c.purok, c.purok_source = (pk, "pin") if pk else (None, "")
+        elif self.puroks.get(b.id) and rng.random() < .4:  # reporter picked their purok from the list
+            c.purok, c.purok_source = rng.choice(self.puroks[b.id]), "reporter"
         c.save()
         if rng.random() < (.45 if channel == "web" else .2):
             ConcernAttachment.objects.create(concern=c, kind="report", file=rng.choice(self.photos["report"]),
@@ -700,11 +728,13 @@ class Command(BaseCommand):
             anon = rng.random() < .12 and not same_person
             d = Concern(
                 reference_no=self.ref(t), title=master.title,
-                description=rng.choice(C.DESCRIPTIONS.get(sub, C.DESCRIPTIONS["_other"])).format(lm=master.location_description),
+                description=textgen.compose(sub or "_other", master.category.code, master.location_description, rng,
+                                            legacy=C.DESCRIPTIONS.get(sub, C.DESCRIPTIONS["_other"])),
                 category=master.category, subcategory=master.subcategory, category_source=master.category_source,
                 channel=self.wchoice(CHANNELS[:5]), severity=master.severity, affected_count=master.affected_count,
                 danger_now=master.danger_now, barangay=master.barangay,
                 latitude=master.latitude, longitude=master.longitude, location_description=master.location_description,
+                purok=master.purok, purok_source=master.purok_source,
                 reporter_name="" if anon else name, reporter_contact="" if anon else phone, is_anonymous=anon,
                 consent_given=True, consent_at=t, duplicate_of=master, is_synthetic=True,
                 is_verified=master.is_verified, verified_at=master.verified_at, status=S.SUBMITTED,

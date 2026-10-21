@@ -14,6 +14,7 @@ urlpatterns = [
     path("api/v1/staff/analytics/", include("apps.analytics.urls")),
     path("api/v1/staff/ml/", include("apps.classifier.urls")),
     path("api/v1/public/classify/", PublicClassifyView.as_view(), name="public-classify"),
+    path("api/v1/staff/", include("apps.notifications.urls")),
     path("api/v1/staff/", include("apps.cases.urls_staff")),
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="docs"),

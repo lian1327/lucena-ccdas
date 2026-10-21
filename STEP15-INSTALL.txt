@@ -1,0 +1,82 @@
+CCADSS – Step 15: SMS / email notifications, staff alerts, automated tests
+=========================================================================
+
+WHAT'S NEW
+Citizens (Module 1 "notification updates")
+- SMS + email at each milestone: received, routed to office (with target date), work started, deadline
+  extended (with reason), resolved (link to before/after photos), "Naayos ba talaga?" reminder 3 days later,
+  reopened, closed, rejected (with reason). Every message fits ONE SMS (160 characters, GSM-7).
+- Each person who reported the same problem gets their own update on their own reference number.
+- Quiet hours: no SMS from 9 PM to 7 AM (queued, sent at 7:00).
+- Opt-in checkbox on the form + "Itigil ang SMS" on the tracking page (needs the last 4 digits of the number).
+- Short tracking link for SMS: /t/<reference no>.
+- Never texts: anonymous reports, opted-out reporters, synthetic data (generators are muted).
+Staff
+- Bell in the header: new case for your office, assigned to you, returned to PACD, danger report, work waiting
+  for validation (urgent if photo red flags), sent back by supervisor, escalated to you, citizen says not fixed.
+- "SMS / Abiso" page (PACD, City Admin, Mayor): full log with masked numbers, credits used, delivery rate,
+  failures with Retry, reporters that can be reached, opt-outs, remaining credits.
+- Case page: "Mga abiso sa nag-report" shows exactly what the citizen was told and whether it arrived.
+Tests
+- 122 automated tests (backend/tests), 72% statement coverage; tests/make_report.py writes
+  backend/reports/test_report.md + test_cases.csv for Chapter 4.
+
+TWO FIXES FOUND BY THE TESTS
+1. Photo file names contained the reference number, so the public landing page (recent fixes) could reveal it.
+   New uploads now get random file names. Old uploads keep their names: regenerate synthetic data before the defense.
+2. Classifier text cleanup removed digits before expanding texting short forms, so "d2" never became "dito".
+   Fixed in apps/classifier/text.py. Retrain once:  python manage.py train_classifier --challenge ml/challenge_set.csv --activate
+
+INSTALL (PowerShell)
+1. Unzip over the project (overwrite).
+2. backend/config/settings.py:
+     INSTALLED_APPS += ["apps.notifications"]          # after "apps.classifier"
+     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"   # SMTP in production
+     DEFAULT_FROM_EMAIL = "CCADSS Lucena <no-reply@your-domain>"
+   and add to SPECTACULAR_SETTINGS["ENUM_NAME_OVERRIDES"]:
+     "NotificationStatusEnum": "apps.notifications.models.Notification.Status",
+     "NotificationChannelEnum": "apps.notifications.models.Notification.Channel",
+3. backend/.env (all optional; defaults shown):
+     SMS_PROVIDER=console            # console = printed in the runserver window, nothing sent, no credits
+     SEMAPHORE_API_KEY=
+     SMS_SENDER_NAME=                # blank = Semaphore's default sender until yours is approved
+     SMS_SIGNATURE=LGU Lucena
+     PUBLIC_SITE_URL=http://localhost:5173
+     SMS_QUIET_HOURS=21-7
+     NOTIFY_SEND_INLINE=1            # 0 in production: let the worker send (requests stay fast)
+     NOTIFY_EMAIL=1
+     NOTIFY_REMINDER_DAYS=3
+   If your settings.py loads .env with django-environ/python-dotenv, these are picked up from os.environ.
+4. Migrate:
+     cd backend
+     python manage.py makemigrations concerns notifications
+     python manage.py migrate
+5. Worker (sends queued SMS after quiet hours, retries failures, reminders, delivery status):
+     python manage.py send_notifications --loop          # development, separate terminal
+   Production: Windows Task Scheduler / cron every 5 minutes:  python manage.py send_notifications
+   Yearly privacy clean-up (blanks numbers older than a year, keeps the log):
+     python manage.py send_notifications --purge-days 365
+6. Frontend:
+     cd frontend
+     npm run gen:api         # backend running
+     npm run dev
+7. Tests (Django creates a temporary test database; on PostgreSQL your DB user needs CREATEDB:
+   ALTER USER <your_db_user> CREATEDB;):
+     cd backend
+     python manage.py test tests            # all 122
+     pip install coverage
+     python tests/make_report.py            # → reports/test_report.md, test_cases.csv
+
+GOING LIVE WITH REAL SMS (Semaphore)
+1. Create an account at semaphore.co, buy credits, copy the API key (Account → API).
+2. Apply for a sender name (e.g. "LUCENACITY"); it needs approval before use. Until then leave SMS_SENDER_NAME blank.
+3. Set SMS_PROVIDER=semaphore and SEMAPHORE_API_KEY=... in .env, restart.
+4. Test with your own number:   python manage.py sms_check --to 09XXXXXXXXX
+   (Semaphore drops messages that start with the word "TEST"; the system never starts a message with it.)
+5. Set PUBLIC_SITE_URL to the real domain so links in SMS work.
+
+DATA PRIVACY (you are the DPO)
+- Purpose: updates about the citizen's own report only. No promotional or bulk messages.
+- Numbers are masked everywhere in the staff UI; the full number is kept only to send, then blanked by --purge-days.
+- Update the Data Privacy Notice to mention SMS/email updates, the SMS provider as a personal information
+  processor, quiet hours and how to stop SMS. Have a data processing agreement with the SMS provider.

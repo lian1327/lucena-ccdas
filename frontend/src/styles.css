@@ -1,19 +1,334 @@
+/* ==========================================================================
+   CCADSS theme — "Tayabas Bay"
+   Ink    #13293d  masthead, footer, headings
+   Bay    #0b6e79  primary actions and links
+   Mist   #e8f0f1  quiet section surface
+   Sun    #f5b82e  the one warm accent: service-standard strip, focus ring
+   Alert  #c8102e  emergencies only
+   Headings: Archivo (narrowed); body: Atkinson Hyperlegible (built for low-vision readers)
+   ========================================================================== */
 :root {
-  --bs-font-sans-serif: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --ink: #13293d;
+  --ink-2: #2b4257;
+  --bay: #0b6e79;
+  --bay-dark: #08545c;
+  --mist: #e8f0f1;
+  --sun: #f5b82e;
+  --alert: #c8102e;
+  --paper: #ffffff;
+  --rule: #cfdcdf;
+  --muted: #4e6170;
+
+  --font-head: "Archivo Variable", "Arial Narrow", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  --bs-font-sans-serif: var(--font-body);
+  --bs-body-color: var(--ink);
+  --bs-emphasis-color: var(--ink);
+  --bs-secondary-color: var(--muted);
+  --bs-primary: var(--bay);
+  --bs-primary-rgb: 11, 110, 121;
+  --bs-primary-bg-subtle: #d6ecee;
+  --bs-primary-border-subtle: #9fd0d5;
+  --bs-primary-text-emphasis: #064249;
+  --bs-link-color: var(--bay);
+  --bs-link-color-rgb: 11, 110, 121;
+  --bs-link-hover-color: var(--bay-dark);
+  --bs-link-hover-color-rgb: 8, 84, 92;
+  --bs-border-color: var(--rule);
+  --bs-focus-ring-color: rgba(245, 184, 46, 0.65);
 }
 
-.navbar .nav-link.active {
-  font-weight: 600;
+/* Reader-chosen text size (A− A A+) and high contrast, set on <html> by the a11y bar */
+html[data-text="lg"] { font-size: 112.5%; }
+html[data-text="xl"] { font-size: 125%; }
+html[data-contrast="high"] {
+  --ink: #000;
+  --muted: #1f1f1f;
+  --bay: #00474f;
+  --bay-dark: #00343a;
+  --mist: #fff;
+  --rule: #000;
+  --bs-primary-rgb: 0, 71, 79;
+  --bs-link-color-rgb: 0, 71, 79;
+}
+html[data-contrast="high"] a:not(.btn) { text-decoration: underline; }
+html[data-contrast="high"] .card,
+html[data-contrast="high"] .gov-receipt { border: 2px solid #000 !important; }
+
+body { font-family: var(--font-body); color: var(--ink); }
+
+h1, h2, h3, h4, h5, .h1, .h2, .h3, .h4, .h5, .gov-head {
+  font-family: var(--font-head);
+  font-stretch: 88%;
+  letter-spacing: -0.005em;
+  color: var(--ink);
 }
 
+.btn-primary {
+  --bs-btn-bg: var(--bay);
+  --bs-btn-border-color: var(--bay);
+  --bs-btn-hover-bg: var(--bay-dark);
+  --bs-btn-hover-border-color: var(--bay-dark);
+  --bs-btn-active-bg: var(--bay-dark);
+  --bs-btn-active-border-color: var(--bay-dark);
+  --bs-btn-disabled-bg: var(--bay);
+  --bs-btn-disabled-border-color: var(--bay);
+}
+.btn-outline-primary {
+  --bs-btn-color: var(--bay);
+  --bs-btn-border-color: var(--bay);
+  --bs-btn-hover-bg: var(--bay);
+  --bs-btn-hover-border-color: var(--bay);
+  --bs-btn-active-bg: var(--bay-dark);
+}
+.text-primary { color: var(--bay) !important; }
+.bg-primary { background-color: var(--bay) !important; }
+
+/* Visible keyboard focus everywhere */
+:focus-visible {
+  outline: 3px solid var(--sun) !important;
+  outline-offset: 2px;
+  box-shadow: none !important;
+}
+
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -100px;
+  z-index: 2000;
+  background: var(--sun);
+  color: var(--ink);
+  padding: 0.5rem 1rem;
+  font-weight: 700;
+  border-radius: 0 0 6px 6px;
+}
+.skip-link:focus { top: 0; }
+
+/* ---------- GOVPH top bar ---------- */
+.govph-bar {
+  background: #0b1c2b;
+  color: #d7e2ea;
+  font-size: 0.8125rem;
+}
+.govph-bar a { color: #fff; text-decoration: none; }
+.govph-bar a:hover { text-decoration: underline; }
+.govph-bar .govph-mark { font-family: var(--font-head); font-weight: 800; letter-spacing: 0.02em; }
+.a11y-tools .btn {
+  --bs-btn-padding-y: 0.05rem;
+  --bs-btn-padding-x: 0.45rem;
+  --bs-btn-font-size: 0.8125rem;
+  --bs-btn-color: #d7e2ea;
+  --bs-btn-border-color: transparent;
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: rgba(255, 255, 255, 0.1);
+  --bs-btn-active-bg: rgba(255, 255, 255, 0.18);
+  --bs-btn-active-color: #fff;
+}
+.a11y-tools .btn[aria-pressed="true"] { background: rgba(255, 255, 255, 0.18); color: #fff; }
+
+/* ---------- Masthead ---------- */
+.masthead { background: var(--ink); color: #fff; }
+.masthead a { color: inherit; text-decoration: none; }
+.masthead .lgu-line { font-size: 0.875rem; color: #b9cbd8; }
+.masthead .lgu-name {
+  font-family: var(--font-head);
+  font-stretch: 80%;
+  font-weight: 800;
+  font-size: clamp(1.35rem, 1rem + 1.4vw, 1.9rem);
+  line-height: 1.05;
+  color: #fff;
+}
+.masthead .portal-name { font-size: 0.95rem; color: var(--sun); font-weight: 700; }
+
+.seal {
+  width: 64px;
+  height: 64px;
+  flex: none;
+  border-radius: 50%;
+  object-fit: contain;
+}
+.seal-sm { width: 40px; height: 40px; }
+.seal-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed rgba(255, 255, 255, 0.45);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 1.4rem;
+}
+
+.site-nav { background: #fff; border-bottom: 1px solid var(--rule); }
+.site-nav .nav-link {
+  color: var(--ink);
+  font-weight: 700;
+  padding: 0.85rem 0.9rem !important;
+  border-bottom: 3px solid transparent;
+}
+.site-nav .nav-link:hover { color: var(--bay); }
+.site-nav .nav-link.active { color: var(--bay); border-bottom-color: var(--bay); }
+@media (max-width: 767.98px) {
+  .site-nav .nav-link { border-bottom: 0; border-left: 3px solid transparent; padding: 0.6rem 0.75rem !important; }
+  .site-nav .nav-link.active { border-left-color: var(--bay); }
+}
+
+/* ---------- Landing ---------- */
+.hero { background: var(--mist); border-bottom: 1px solid var(--rule); }
+.hero h1 {
+  font-stretch: 78%;
+  font-weight: 800;
+  font-size: clamp(2.1rem, 1.3rem + 3.2vw, 3.6rem);
+  line-height: 1.02;
+  max-width: 17ch;
+  hyphens: manual;
+}
+.hero .lede { font-size: 1.15rem; max-width: 46ch; color: var(--ink-2); }
+.track-inline {
+  max-width: 30rem;
+  border-top: 1px solid var(--rule);
+}
+
+/* The proof receipt: one real fix, its photos and its dated trail */
+.gov-receipt {
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  box-shadow: 0 1px 0 var(--rule), 0 18px 40px -24px rgba(19, 41, 61, 0.45);
+  max-width: 520px;
+  margin-left: auto;
+}
+.gov-receipt .receipt-head {
+  border-bottom: 1px solid var(--rule);
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+.gov-receipt .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; background: var(--rule); }
+.gov-receipt figure { margin: 0; position: relative; background: #dfe7ea; aspect-ratio: 4 / 3; }
+.gov-receipt figure img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.gov-receipt figcaption {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  background: rgba(19, 41, 61, 0.88);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.1rem 0.5rem;
+  border-radius: 3px;
+}
+.gov-receipt .tear { border-top: 2px dashed var(--rule); margin: 0 1rem; }
+.trail { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(4, 1fr); }
+.trail li { position: relative; padding-top: 1.1rem; padding-right: 0.25rem; min-width: 0; font-size: 0.8125rem; color: var(--muted); }
+.trail li::before {
+  content: "";
+  position: absolute;
+  top: 0.2rem;
+  left: 0;
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  background: var(--bay);
+}
+.trail li::after {
+  content: "";
+  position: absolute;
+  top: 0.5rem;
+  left: 0.7rem;
+  right: 0;
+  height: 2px;
+  background: var(--bay);
+  opacity: 0.35;
+}
+.trail li:last-child::after { display: none; }
+.trail li.missing::before { background: #b9c6cc; }
+.trail b { display: block; color: var(--ink); font-size: 0.875rem; }
+
+.transparency { font-size: 1.2rem; max-width: 62ch; }
+.transparency strong { font-family: var(--font-head); font-stretch: 85%; font-size: 1.35rem; }
+
+.section-title { font-weight: 800; font-stretch: 82%; font-size: clamp(1.5rem, 1.1rem + 1.2vw, 2.1rem); }
+
+.steps { counter-reset: step; list-style: none; padding: 0; margin: 0; }
+.steps > li { counter-increment: step; position: relative; padding-left: 3.25rem; }
+.steps > li::before {
+  content: counter(step);
+  position: absolute;
+  left: 0;
+  top: -0.1rem;
+  width: 2.3rem;
+  height: 2.3rem;
+  border-radius: 50%;
+  border: 2px solid var(--bay);
+  color: var(--bay);
+  font-family: var(--font-head);
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+}
+
+.cat-link {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.85rem 0.25rem;
+  border-bottom: 1px solid var(--rule);
+  color: var(--ink);
+  text-decoration: none;
+}
+.cat-link:hover { color: var(--bay); background: var(--mist); }
+.cat-link .bi { font-size: 1.5rem; color: var(--bay); width: 2rem; text-align: center; }
+.cat-link small { color: var(--muted); display: block; }
+
+.service-strip { background: var(--sun); color: var(--ink); }
+.service-strip .days { font-family: var(--font-head); font-weight: 800; font-stretch: 80%; font-size: 2.6rem; line-height: 1; }
+
+.emergency {
+  border-left: 6px solid var(--alert);
+  background: #fff;
+}
+.emergency .num { font-family: var(--font-head); font-weight: 800; font-size: 2rem; color: var(--alert); line-height: 1; }
+.hotline-num { font-family: var(--font-head); font-weight: 800; font-size: 1.5rem; color: var(--ink); text-decoration: none; }
+
+.faq details { border-bottom: 1px solid var(--rule); padding: 0.9rem 0; }
+.faq summary { font-weight: 700; cursor: pointer; list-style: none; display: flex; justify-content: space-between; gap: 1rem; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after { content: "+"; font-family: var(--font-head); font-size: 1.4rem; line-height: 1; color: var(--bay); }
+.faq details[open] summary::after { content: "−"; }
+.faq details p { margin: 0.6rem 0 0; max-width: 70ch; color: var(--ink-2); }
+
+.prose { max-width: 72ch; }
+.prose h2 { margin-top: 2rem; }
+
+/* ---------- Footer (GWT pattern) ---------- */
+.lgu-footer { background: var(--ink); color: #c9d6df; font-size: 0.9375rem; }
+.lgu-footer h2 { color: #fff; font-size: 1rem; font-stretch: 90%; font-weight: 800; }
+.lgu-footer a { color: #fff; }
+.lgu-footer ul { list-style: none; padding: 0; margin: 0; }
+.lgu-footer li { margin-bottom: 0.35rem; }
+.gwt-footer { background: #0b1c2b; color: #b8c7d2; font-size: 0.875rem; }
+.gwt-footer h2 { color: #fff; font-size: 0.95rem; font-weight: 800; text-transform: none; }
+.gwt-footer a { color: #e3ebf1; text-decoration: none; }
+.gwt-footer a:hover { text-decoration: underline; }
+.gwt-footer ul { list-style: none; padding: 0; margin: 0; }
+.gwt-footer li { margin-bottom: 0.3rem; }
+
+/* ---------- Staff portal ---------- */
+.navbar .nav-link.active { font-weight: 600; }
+.staff-bar { background: var(--ink) !important; border-bottom: 3px solid var(--sun); }
+aside .nav-link { color: var(--ink); }
 aside .nav-link.active {
   background: var(--bs-primary-bg-subtle);
   color: var(--bs-primary-text-emphasis);
+  font-weight: 700;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
 }
 
 /* Printable performance report: hide app chrome, keep the content */
 @media print {
-  .navbar, aside, .d-print-none, nav.d-md-none { display: none !important; }
+  .navbar, aside, .d-print-none, nav.d-md-none, .govph-bar, .site-nav, .lgu-footer, .gwt-footer { display: none !important; }
   main { padding: 0 !important; }
   .analytics-report .card { box-shadow: none !important; border: 1px solid #ddd !important; break-inside: avoid; }
   .analytics-report details { display: none; }

@@ -36,6 +36,8 @@ type FormState = {
   is_anonymous: boolean;
   reporter_name: string;
   reporter_contact: string;
+  reporter_email: string;
+  notify_sms: boolean;
   involves_barangay_officials: boolean;
   consent_given: boolean;
 };
@@ -53,6 +55,8 @@ const EMPTY: FormState = {
   is_anonymous: false,
   reporter_name: "",
   reporter_contact: "",
+  reporter_email: "",
+  notify_sms: true,
   involves_barangay_officials: false,
   consent_given: false,
 };
@@ -75,6 +79,8 @@ function validate(f: FormState, mode: Mode): Errors {
     const phoneRequired = mode === "public"; // walk-ins may have no phone; staff can leave it blank
     if ((phoneRequired || phone) && !/^(09|\+639|639)\d{9}$/.test(phone))
       e.reporter_contact = "11-digit na mobile number, hal. 09171234567.";
+    if (f.reporter_email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.reporter_email.trim()))
+      e.reporter_email = "Mukhang mali ang email address.";
   }
   if (!f.consent_given) e.consent_given = "Kailangan ang pahintulot para maipadala ang report.";
   return e;
@@ -107,13 +113,15 @@ type Props = {
   /** Throw (e.g. the axios error) to show field errors on the form. */
   onSubmit: (payload: SubmitConcernInput) => Promise<void>;
   intro?: ReactNode;
+  /** Pre-selects a category, e.g. from a landing-page link (/report?category=drainage). */
+  initialCategory?: string;
 };
 
-export function ConcernForm({ mode, submitting, submitLabel, onSubmit: submitPayload, intro }: Props) {
+export function ConcernForm({ mode, submitting, submitLabel, onSubmit: submitPayload, intro, initialCategory }: Props) {
   const categories = useCategories();
   const barangays = useBarangays();
 
-  const [form, setForm] = useState<FormState>(EMPTY);
+  const [form, setForm] = useState<FormState>(() => ({ ...EMPTY, category: initialCategory ?? "" }));
   const [photos, setPhotos] = useState<File[]>([]);
   const [compressing, setCompressing] = useState(false);
   const [pin, setPin] = useState<LatLng | null>(null);
@@ -211,6 +219,9 @@ export function ConcernForm({ mode, submitting, submitLabel, onSubmit: submitPay
         is_anonymous: form.is_anonymous,
         reporter_name: form.is_anonymous ? "" : form.reporter_name.trim(),
         reporter_contact: form.is_anonymous ? "" : form.reporter_contact.replace(/[\s-]/g, ""),
+        reporter_email: form.is_anonymous ? "" : form.reporter_email.trim(),
+        notify_sms: !form.is_anonymous && form.notify_sms,
+        notify_email: !form.is_anonymous,
         consent_given: form.consent_given,
         images: photos,
       });
@@ -532,8 +543,32 @@ export function ConcernForm({ mode, submitting, submitLabel, onSubmit: submitPay
                 />
                 <FieldError msg={errors.reporter_contact} />
               </Col>
+              <Col md={6} {...err("reporter_email")}>
+                <Form.Label className="fw-semibold small" htmlFor="reporter_email">
+                  Email <span className="text-secondary fw-normal">(opsyonal)</span>
+                </Form.Label>
+                <Form.Control
+                  id="reporter_email"
+                  type="email"
+                  autoComplete="email"
+                  value={form.reporter_email}
+                  onChange={(e) => set("reporter_email", e.target.value)}
+                  isInvalid={!!errors.reporter_email}
+                />
+                <FieldError msg={errors.reporter_email} />
+              </Col>
+              <Col md={6} className="d-flex align-items-end">
+                <Form.Check
+                  id="notify_sms"
+                  disabled={!form.reporter_contact.trim()}
+                  label={<span className="small">Padalhan ako ng SMS kapag may update (libre)</span>}
+                  checked={form.notify_sms && !!form.reporter_contact.trim()}
+                  onChange={(e) => set("notify_sms", e.target.checked)}
+                />
+              </Col>
               <Col xs={12} className="small text-secondary mt-1">
-                Gagamitin lang ito para ma-update ka tungkol sa report na ito.
+                Gagamitin lang ito para ma-update ka tungkol sa report na ito: kapag natanggap, naipasa sa opisina,
+                inaaksyunan, at naayos. Walang SMS mula 9 PM hanggang 7 AM. Puwede mo itong itigil anumang oras.
               </Col>
             </Row>
           )}

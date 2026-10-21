@@ -23,6 +23,7 @@ _PUNCT = re.compile(r"[^a-zñ\s]")
 def normalize(text):
     t = (text or "").lower()
     t = _URL.sub(" ", t)
+    t = " ".join(ABBREV.get(w, w) for w in t.split())  # before digits go, so "d2" → "dito" still works
     t = _NUM.sub(" ", t)
     t = _STRETCH.sub(r"\1", t)
     t = _PUNCT.sub(" ", t.replace("-", " "))

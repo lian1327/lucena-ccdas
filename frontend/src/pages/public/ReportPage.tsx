@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Alert, Button, Card, Container } from "react-bootstrap";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 
 import { useSubmitConcern } from "@/api/public";
 import type { ConcernCreateResponse } from "@/api/types";
@@ -10,6 +10,7 @@ export function ReportPage() {
   const submit = useSubmitConcern();
   const [result, setResult] = useState<ConcernCreateResponse | null>(null);
   const [formKey, setFormKey] = useState(0);
+  const [params] = useSearchParams();
 
   if (result)
     return (
@@ -28,6 +29,7 @@ export function ReportPage() {
       <ConcernForm
         key={formKey}
         mode="public"
+        initialCategory={params.get("category") ?? undefined}
         submitting={submit.isPending}
         submitLabel="Ipadala ang Report"
         onSubmit={async (payload) => {

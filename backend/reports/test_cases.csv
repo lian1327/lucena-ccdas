@@ -1,0 +1,123 @@
+id,area,group,test,detail,result
+TC-001,Modules 6–7 – Analytics & Decision Support,AnalyticsApiTests,Executive endpoints for executives only,,Pass
+TC-002,Modules 6–7 – Analytics & Decision Support,CohortTests,Accomplished and fair 30 day rate,,Pass
+TC-003,Modules 6–7 – Analytics & Decision Support,CohortTests,Open case not yet due is neither late nor on time,,Pass
+TC-004,Modules 6–7 – Analytics & Decision Support,CohortTests,Young cohort has no 30 day rate yet,,Pass
+TC-005,Modules 6–7 – Analytics & Decision Support,ForecastTests,Backtest is mean absolute percentage error,,Pass
+TC-006,Modules 6–7 – Analytics & Decision Support,ForecastTests,Holt follows a trend,,Pass
+TC-007,Modules 6–7 – Analytics & Decision Support,ForecastTests,Naive and mean3,,Pass
+TC-008,Modules 6–7 – Analytics & Decision Support,ForecastTests,Seasonal needs enough history,,Pass
+TC-009,Modules 6–7 – Analytics & Decision Support,ForecastTests,Seasonal wins on a yearly pattern,,Pass
+TC-010,Modules 6–7 – Analytics & Decision Support,ForecastTests,Selects the method with lowest error,,Pass
+TC-011,Modules 6–7 – Analytics & Decision Support,ForecastTests,Short series falls back to naive,,Pass
+TC-012,Modules 6–7 – Analytics & Decision Support,KpiIndexTests,Index matches hand calculation,,Pass
+TC-013,Modules 6–7 – Analytics & Decision Support,KpiIndexTests,Low on time needs attention,,Pass
+TC-014,Modules 6–7 – Analytics & Decision Support,KpiIndexTests,On time counts against the case deadline,,Pass
+TC-015,Modules 6–7 – Analytics & Decision Support,KpiIndexTests,Perfect office scores 100 and good,,Pass
+TC-016,Modules 6–7 – Analytics & Decision Support,KpiIndexTests,Tiny sample is not graded,,Pass
+TC-017,Modules 6–7 – Analytics & Decision Support,KpiIndexTests,Weights sum to one,,Pass
+TC-018,Module 3 – AI Classification,NormalizeTests,Links and numbers removed,,Pass
+TC-019,Module 3 – AI Classification,NormalizeTests,Texting style is normalised,,Pass
+TC-020,Module 3 – AI Classification,PipelineTests,Trained pipeline generalises to hand written reports,,Pass
+TC-021,Module 3 – AI Classification,PipelineTests,Without a model reports are still accepted,,Pass
+TC-022,Module 2 – ARTA deadlines,WorkingDayTests,Routed case gets acceptance and resolution deadlines,,Pass
+TC-023,Module 2 – ARTA deadlines,WorkingDayTests,Service classes match arta,,Pass
+TC-024,Module 2 – ARTA deadlines,WorkingDayTests,Seven working days spans a week and more,,Pass
+TC-025,Module 2 – ARTA deadlines,WorkingDayTests,Skips holiday,,Pass
+TC-026,Module 2 – ARTA deadlines,WorkingDayTests,Skips weekend,,Pass
+TC-027,Module 2 – ARTA deadlines,WorkingDayTests,Three working days from monday,,Pass
+TC-028,Module 4 – Duplicates & recurrence,DuplicateTests,Closed case is not a master,,Pass
+TC-029,Module 4 – Duplicates & recurrence,DuplicateTests,Duplicates follow the master status,,Pass
+TC-030,Module 4 – Duplicates & recurrence,DuplicateTests,Far away does not link,,Pass
+TC-031,Module 4 – Duplicates & recurrence,DuplicateTests,Link and unlink by staff,,Pass
+TC-032,Module 4 – Duplicates & recurrence,DuplicateTests,Older than 14 days does not link,,Pass
+TC-033,Module 4 – Duplicates & recurrence,DuplicateTests,Other category does not link,,Pass
+TC-034,Module 4 – Duplicates & recurrence,DuplicateTests,Same category within 100m links,,Pass
+TC-035,Module 4 – Duplicates & recurrence,RecurrenceTests,Fix older than 30 days is not a recurrence,,Pass
+TC-036,Module 4 – Duplicates & recurrence,RecurrenceTests,Problem back after fix is flagged,,Pass
+TC-037,Module 2 – Proof of work,AccomplishmentTests,Complete requires before and after photos,,Pass
+TC-038,Module 2 – Proof of work,AccomplishmentTests,Red flag needs a written reason,,Pass
+TC-039,Module 2 – Proof of work,AccomplishmentTests,Report records crew and is approved,,Pass
+TC-040,Module 2 – Proof of work,FlagTests,After identical to before is red,,Pass
+TC-041,Module 2 – Proof of work,FlagTests,After photo taken before routing is red,,Pass
+TC-042,Module 2 – Proof of work,FlagTests,No gps is amber not red,,Pass
+TC-043,Module 2 – Proof of work,FlagTests,Old photo is stale,,Pass
+TC-044,Module 2 – Proof of work,FlagTests,Photo at site is clean,,Pass
+TC-045,Module 2 – Proof of work,FlagTests,Photo far from site is red,,Pass
+TC-046,Module 2 – Proof of work,FlagTests,Photo reused from another case is red,,Pass
+TC-047,Module 2 – Proof of work,HashTests,Missing hash is maximally different,,Pass
+TC-048,Module 2 – Proof of work,HashTests,Same image same hash and different image differs,,Pass
+TC-049,Module 5 – GIS (purok tagging),GeometryTests,Contains,,Pass
+TC-050,Module 5 – GIS (purok tagging),GeometryTests,Distance outside is positive,,Pass
+TC-051,Module 5 – GIS (purok tagging),LocateTests,Chosen barangay wins on the boundary,,Pass
+TC-052,Module 5 – GIS (purok tagging),LocateTests,Far point has no purok,,Pass
+TC-053,Module 5 – GIS (purok tagging),LocateTests,Point inside,,Pass
+TC-054,Module 5 – GIS (purok tagging),LocateTests,Report is tagged from the pin,,Pass
+TC-055,Module 5 – GIS (purok tagging),LocateTests,Snaps within 30m,,Pass
+TC-056,Module 1 – Notifications (SMS/email/alerts),CitizenNotificationTests,Closing after citizen confirms sends nothing more,,Pass
+TC-057,Module 1 – Notifications (SMS/email/alerts),CitizenNotificationTests,Each duplicate reporter gets their own update,,Pass
+TC-058,Module 1 – Notifications (SMS/email/alerts),CitizenNotificationTests,Extension notifies with new date,,Pass
+TC-059,Module 1 – Notifications (SMS/email/alerts),CitizenNotificationTests,Muted sends nothing,,Pass
+TC-060,Module 1 – Notifications (SMS/email/alerts),CitizenNotificationTests,No sms for anonymous opted out or synthetic,,Pass
+TC-061,Module 1 – Notifications (SMS/email/alerts),CitizenNotificationTests,One message per milestone through the lifecycle,,Pass
+TC-062,Module 1 – Notifications (SMS/email/alerts),CitizenNotificationTests,Received sms and email on submit,,Pass
+TC-063,Module 1 – Notifications (SMS/email/alerts),CitizenNotificationTests,Rejection explains why,,Pass
+TC-064,Module 1 – Notifications (SMS/email/alerts),CitizenNotificationTests,Same update is never sent twice,,Pass
+TC-065,Module 1 – Notifications (SMS/email/alerts),LogApiTests,Log is masked and role limited,,Pass
+TC-066,Module 1 – Notifications (SMS/email/alerts),QuietHoursTests,Night report waits then worker sends,,Pass
+TC-067,Module 1 – Notifications (SMS/email/alerts),QuietHoursTests,Window,,Pass
+TC-068,Module 1 – Notifications (SMS/email/alerts),RetryAndReminderTests,Failed sms is retried with backoff and capped,,Pass
+TC-069,Module 1 – Notifications (SMS/email/alerts),RetryAndReminderTests,Purge blanks old recipients,,Pass
+TC-070,Module 1 – Notifications (SMS/email/alerts),RetryAndReminderTests,Reminder after three days once,,Pass
+TC-071,Module 1 – Notifications (SMS/email/alerts),SemaphoreTests,Missing key never calls out,,Pass
+TC-072,Module 1 – Notifications (SMS/email/alerts),SemaphoreTests,Network error is a failure,,Pass
+TC-073,Module 1 – Notifications (SMS/email/alerts),SemaphoreTests,Success reply is parsed,,Pass
+TC-074,Module 1 – Notifications (SMS/email/alerts),SemaphoreTests,Validation error is a failure,,Pass
+TC-075,Module 1 – Notifications (SMS/email/alerts),SmsTextTests,Every event fits one sms,,Pass
+TC-076,Module 1 – Notifications (SMS/email/alerts),SmsTextTests,Gsm conversion keeps filipino letters,,Pass
+TC-077,Module 1 – Notifications (SMS/email/alerts),SmsTextTests,Normalize ph numbers,,Pass
+TC-078,Module 1 – Notifications (SMS/email/alerts),SmsTextTests,Segments,,Pass
+TC-079,Module 1 – Notifications (SMS/email/alerts),StaffAlertTests,Assignment and validation alerts,,Pass
+TC-080,Module 1 – Notifications (SMS/email/alerts),StaffAlertTests,Bell api counts and marks read,,Pass
+TC-081,Module 1 – Notifications (SMS/email/alerts),StaffAlertTests,Citizen dispute alerts the crew,,Pass
+TC-082,Module 1 – Notifications (SMS/email/alerts),StaffAlertTests,Danger report alerts pacd urgently,,Pass
+TC-083,Module 1 – Notifications (SMS/email/alerts),StaffAlertTests,New case alerts the office not the router,,Pass
+TC-084,Module 1 – Notifications (SMS/email/alerts),StaffAlertTests,People only see their own alerts,,Pass
+TC-085,Module 4 – Priority Scoring,PriorityTests,Formula matches hand calculation,,Pass
+TC-086,Module 4 – Priority Scoring,PriorityTests,More people reporting raises priority,,Pass
+TC-087,Module 4 – Priority Scoring,PriorityTests,Same person reporting twice counts once,,Pass
+TC-088,Module 4 – Priority Scoring,PriorityTests,Score is bounded,,Pass
+TC-089,Module 1 – Citizen Reporting Portal,SubmitTests,Anonymous report drops identity,,Pass
+TC-090,Module 1 – Citizen Reporting Portal,SubmitTests,Consent is required,,Pass
+TC-091,Module 1 – Citizen Reporting Portal,SubmitTests,Invalid mobile is rejected,,Pass
+TC-092,Module 1 – Citizen Reporting Portal,SubmitTests,Pin outside service area is rejected,,Pass
+TC-093,Module 1 – Citizen Reporting Portal,SubmitTests,Submit returns reference,,Pass
+TC-094,Module 1 – Citizen Reporting Portal,TrackTests,Confirm needs last four digits,,Pass
+TC-095,Module 1 – Citizen Reporting Portal,TrackTests,Recent fixes show no reference numbers,,Pass
+TC-096,Module 1 – Citizen Reporting Portal,TrackTests,Sms opt out,,Pass
+TC-097,Module 1 – Citizen Reporting Portal,TrackTests,Tracking page never shows personal data,,Pass
+TC-098,Module 1 – Citizen Reporting Portal,TrackTests,Unknown reference is 404,,Pass
+TC-099,Security – Role-based access,ApiAccessTests,Anonymous cannot use staff api,,Pass
+TC-100,Security – Role-based access,ApiAccessTests,Citizen account is forbidden,,Pass
+TC-101,Security – Role-based access,ApiAccessTests,Login returns tokens,,Pass
+TC-102,Security – Role-based access,ApiAccessTests,Mayor cannot route through api,,Pass
+TC-103,Security – Role-based access,ApiAccessTests,Out of scope case is 404,,Pass
+TC-104,Security – Role-based access,ApiAccessTests,Pacd routes through api,,Pass
+TC-105,Security – Role-based access,ScopeTests,Field staff cannot route,,Pass
+TC-106,Security – Role-based access,ScopeTests,Field staff sees nothing until accepted,,Pass
+TC-107,Security – Role-based access,ScopeTests,Mayor is read only,,Pass
+TC-108,Security – Role-based access,ScopeTests,Office sees only its own categories,,Pass
+TC-109,Security – Role-based access,ScopeTests,Pacd and executives see everything,,Pass
+TC-110,Module 2 – Case Management,CitizenConfirmTests,Answer only once,,Pass
+TC-111,Module 2 – Case Management,CitizenConfirmTests,Duplicate reporter can reopen the shared case,,Pass
+TC-112,Module 2 – Case Management,CitizenConfirmTests,Not fixed reopens and clears validation,,Pass
+TC-113,Module 2 – Case Management,CitizenConfirmTests,Window closes after 30 days,,Pass
+TC-114,Module 2 – Case Management,EscalationTests,Overdue case escalates one level at a time,,Pass
+TC-115,Module 2 – Case Management,ExtensionTests,Extension after deadline lapsed is refused,,Pass
+TC-116,Module 2 – Case Management,ExtensionTests,One extension only and within limit,,Pass
+TC-117,Module 2 – Case Management,LifecycleTests,Changing priority needs a reason,,Pass
+TC-118,Module 2 – Case Management,LifecycleTests,Full path submitted to closed,,Pass
+TC-119,Module 2 – Case Management,LifecycleTests,Internal steps are hidden from the public timeline,,Pass
+TC-120,Module 2 – Case Management,LifecycleTests,Invalid transition is refused,,Pass
+TC-121,Module 2 – Case Management,LifecycleTests,Screening questions must be answered,,Pass
+TC-122,Module 2 – Case Management,LifecycleTests,Wrong office returns to pacd,,Pass

@@ -10,6 +10,7 @@ import type {
   ConcernCreateRequest,
   ConcernCreateResponse,
   PublicStats,
+  RecentFix,
   TrackResult,
 } from "./types";
 
@@ -43,6 +44,15 @@ export function usePublicStats() {
     queryKey: publicKeys.stats,
     queryFn: async () => (await api.get<PublicStats>("/public/stats/")).data,
     staleTime: 5 * 60 * 1000,
+  });
+}
+
+/** Recently fixed concerns with before/after photos — no reference numbers or reporter data. */
+export function useRecentFixes() {
+  return useQuery({
+    queryKey: ["public", "recent-fixes"] as const,
+    queryFn: async () => (await api.get<RecentFix[]>("/public/recent-fixes/")).data,
+    staleTime: 10 * 60 * 1000,
   });
 }
 
@@ -82,6 +92,16 @@ export function useConfirmFix(referenceNo: string) {
   return useMutation({
     mutationFn: async (v: { fixed: boolean; feedback?: string; mobile_last4?: string }) =>
       (await api.post<TrackResult>(`/public/concerns/track/${encodeURIComponent(referenceNo)}/confirm/`, v)).data,
+    onSuccess: (data) => qc.setQueryData(publicKeys.track(referenceNo), data),
+  });
+}
+
+/** Turn SMS updates off/on from the tracking page (needs the last 4 digits of the reporter's number). */
+export function useSmsPreference(referenceNo: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (v: { sms: boolean; mobile_last4: string }) =>
+      (await api.post<TrackResult>(`/public/concerns/track/${encodeURIComponent(referenceNo)}/notifications/`, v)).data,
     onSuccess: (data) => qc.setQueryData(publicKeys.track(referenceNo), data),
   });
 }

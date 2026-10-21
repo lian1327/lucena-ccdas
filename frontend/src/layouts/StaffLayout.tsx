@@ -1,8 +1,10 @@
 import { Container, Dropdown, Nav, Navbar } from "react-bootstrap";
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 
+import { Seal } from "@/components/gov/Seal";
+import { AlertBell } from "@/features/notifications/AlertBell";
 import { useAuth } from "@/auth/AuthContext";
-import { APP_NAME } from "@/config";
+import { APP_NAME, LGU_SEAL_SRC, LGU_SHORT } from "@/config";
 
 import type { Role } from "@/api/types";
 
@@ -19,6 +21,7 @@ const NAV: NavItem[] = [
     roles: ["city_admin", "mayor", "dept_head", "division_chief"] },
   { to: "/staff/people/me", icon: "person-check", label: "Aking mga aksyon", ready: true,
     roles: ["pacd", "barangay", "office_desk", "dept_head", "division_chief", "dept_staff", "city_admin"] },
+  { to: "/staff/notifications", icon: "chat-dots", label: "SMS / Abiso", ready: true, roles: ["city_admin", "mayor", "pacd"] },
   { to: "/staff/ml", icon: "stars", label: "AI Classifier", ready: true, roles: ["city_admin", "mayor", "pacd"] },
   { to: "/staff/executive", icon: "briefcase", label: "Executive", ready: true, executiveOnly: true },
 ];
@@ -36,12 +39,18 @@ export function StaffLayout() {
 
   return (
     <div className="d-flex flex-column min-vh-100 bg-body-tertiary">
-      <Navbar bg="dark" data-bs-theme="dark" className="px-2">
+      <a href="#staff-main" className="skip-link">Skip to content</a>
+      <Navbar data-bs-theme="dark" className="px-2 staff-bar">
         <Container fluid>
-          <Navbar.Brand as={Link} to="/staff" className="fw-semibold">
-            <i className="bi bi-megaphone-fill me-2" aria-hidden />
-            {APP_NAME} <span className="fw-normal text-secondary small">Staff</span>
+          <Navbar.Brand as={Link} to="/staff" className="d-flex align-items-center gap-2">
+            <Seal src={LGU_SEAL_SRC} alt={`${LGU_SHORT} seal`} size="sm" />
+            <span className="lh-sm">
+              <span className="d-block gov-head fw-bold text-white">{LGU_SHORT}</span>
+              <span className="d-block small" style={{ color: "var(--sun)" }}>{APP_NAME} · Staff Portal</span>
+            </span>
           </Navbar.Brand>
+          <div className="d-flex align-items-center">
+          <AlertBell />
           <Dropdown align="end">
             <Dropdown.Toggle variant="outline-light" size="sm">
               <i className="bi bi-person-circle me-1" aria-hidden />
@@ -54,6 +63,7 @@ export function StaffLayout() {
               <Dropdown.Item onClick={onLogout}>Log out</Dropdown.Item>
             </Dropdown.Menu>
           </Dropdown>
+          </div>
         </Container>
       </Navbar>
 
@@ -75,7 +85,7 @@ export function StaffLayout() {
             )}
           </Nav>
         </aside>
-        <main className="flex-grow-1 p-3 p-md-4" style={{ minWidth: 0 }}>
+        <main id="staff-main" tabIndex={-1} className="flex-grow-1 p-3 p-md-4" style={{ minWidth: 0 }}>
           <Nav className="d-md-none d-print-none mb-3 gap-1 flex-nowrap overflow-auto">
             {NAV.filter((n) => n.ready && visible(n)).map((n) => (
               <Nav.Link key={n.to} as={NavLink} to={n.to} end={n.to === "/staff"} className="btn btn-sm btn-light border text-nowrap">

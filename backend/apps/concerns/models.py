@@ -167,6 +167,8 @@ class Concern(models.Model):
     is_anonymous = models.BooleanField(default=False)
     consent_given = models.BooleanField(default=False)
     consent_at = models.DateTimeField(null=True, blank=True)
+    notify_sms = models.BooleanField(default=True, help_text="Reporter wants SMS updates (can stop from the tracking page).")
+    notify_email = models.BooleanField(default=True, help_text="Reporter wants email updates.")
 
     # Workflow
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.SUBMITTED, db_index=True)
@@ -259,8 +261,12 @@ class Concern(models.Model):
 
 
 def attachment_path(instance, filename):
+    """Random file name: a photo URL must not reveal the reference number or the original (possibly personal) name."""
+    import os
+
     now = timezone.now()
-    return f"concerns/{now:%Y/%m}/{instance.concern.reference_no}_{filename}"
+    ext = os.path.splitext(filename)[1].lower()[:5] or ".jpg"
+    return f"concerns/{now:%Y/%m}/{secrets.token_hex(12)}{ext}"
 
 
 class ConcernAttachment(models.Model):

@@ -92,6 +92,12 @@ class Command(BaseCommand):
         p.add_argument("--seed", type=int, default=2026)
 
     def handle(self, *a, **o):
+        from apps.notifications.services import muted
+
+        with muted():  # synthetic history must never text real numbers or fill the outbox
+            return self._handle(*a, **o)
+
+    def _handle(self, *a, **o):
         self.rng = random.Random(o["seed"] + 10)
         self.now = timezone.now()
         self._images()

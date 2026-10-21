@@ -124,6 +124,12 @@ def on_concern_submitted(concern, user=None):
     # classify_concern.delay(concern.pk)
 
     compute_priority(concern)
+    if concern.danger_now and not master:
+        from apps.notifications.models import StaffAlert
+        from apps.notifications.services import alert, pacd_staff
+
+        alert(pacd_staff(), StaffAlert.Kind.DANGER, concern, f"May panganib ngayon: {concern.reference_no}",
+              f"{concern.title} · Brgy. {concern.barangay.name}", urgent=True)
     return master
 
 

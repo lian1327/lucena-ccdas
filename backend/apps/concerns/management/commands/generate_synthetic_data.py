@@ -106,6 +106,12 @@ class Command(BaseCommand):
 
     # ------------------------------------------------------------------ setup
     def handle(self, *a, **o):
+        from apps.notifications.services import muted
+
+        with muted():  # synthetic history must never text real numbers or fill the outbox
+            return self._handle(*a, **o)
+
+    def _handle(self, *a, **o):
         if o["purge"]:
             n = Concern.objects.filter(is_synthetic=True).count()
             Concern.objects.filter(is_synthetic=True).delete()

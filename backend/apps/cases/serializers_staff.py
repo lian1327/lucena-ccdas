@@ -328,6 +328,18 @@ class PriorityBreakdownSerializer(serializers.Serializer):
     total = serializers.FloatField()
 
 
+class CitizenNotificationSerializer(serializers.ModelSerializer):
+    recipient = serializers.CharField(source="masked_recipient")
+    event_display = serializers.CharField(source="get_event_display")
+
+    class Meta:
+        from apps.notifications.models import Notification
+
+        model = Notification
+        fields = ["id", "channel", "event", "event_display", "recipient", "body", "status", "provider_status",
+                  "error", "created_at", "sent_at"]
+
+
 class LinkedReportSerializer(serializers.ModelSerializer):
     class Meta:
         model = Concern
@@ -391,12 +403,13 @@ class StaffConcernDetailSerializer(StaffConcernListSerializer):
     ai_subcategory_name = serializers.CharField(source="ai_subcategory.name", default=None)
     ai_model_version = serializers.IntegerField(source="ai_model.version", default=None)
     recurrences = LinkedReportSerializer(many=True, read_only=True)
+    notifications = serializers.SerializerMethodField()
 
     class Meta(StaffConcernListSerializer.Meta):
         fields = StaffConcernListSerializer.Meta.fields + [
             "description", "category_code", "subcategory_code", "severity", "severity_display",
             "affected_count", "latitude", "longitude",
-            "reporter_name", "reporter_contact", "reporter_email", "is_anonymous",
+            "reporter_name", "reporter_contact", "reporter_email", "is_anonymous", "notify_sms", "notify_email",
             "source_reference", "encoded_by", "external_feedback",
             "verified_by", "verified_at", "acknowledged_at", "resolved_at",
             "duplicate_of", "duplicates", "attachments", "history", "case", "notes",
@@ -404,7 +417,13 @@ class StaffConcernDetailSerializer(StaffConcernListSerializer):
             "purok", "purok_name", "purok_source", "category_source",
             "ai_category", "ai_category_name", "ai_subcategory", "ai_subcategory_name", "ai_confidence", "ai_model_version",
             "trail", "citizen_confirmation", "citizen_confirmed_at", "citizen_feedback", "recurrence_of", "recurrences",
+            "notifications",
         ]
+
+    @extend_schema_field(CitizenNotificationSerializer(many=True))
+    def get_notifications(self, obj):
+        """What the reporter was told and whether it arrived (recipient masked)."""
+        return CitizenNotificationSerializer(obj.notifications.all()[:30], many=True).data
 
     def get_encoded_by(self, obj) -> str | None:
         return _name(obj.encoded_by)

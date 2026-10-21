@@ -99,3 +99,10 @@ export type Boundaries = GeoJSON.FeatureCollection<GeoJSON.Geometry, BoundaryPro
 // ----- AI classifier (Module 3) -----
 export type MLOverview = S["MLOverview"];
 export type ModelVersionInfo = S["ModelVersion"];
+export type RecentFix = S["RecentFix"];
+export type StaffAlert = S["StaffAlert"];
+export type StaffAlertList = S["StaffAlertList"];
+export type CitizenNotification = S["Notification"];
+export type NotificationPage = S["NotificationPage"];
+export type NotificationStats = S["NotificationStats"];
+export type CaseNotification = S["CitizenNotification"];

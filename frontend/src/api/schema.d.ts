@@ -221,6 +221,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/public/concerns/track/{reference_no}/notifications/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Reporter turns SMS updates off (or back on) from the tracking page. Needs the last 4 digits of the number. */
+        post: operations["v1_public_concerns_track_notifications_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/locate/": {
         parameters: {
             query?: never;
@@ -230,6 +247,27 @@ export interface paths {
         };
         /** @description Pin → barangay + purok, so the form can fill them in for the citizen. */
         get: operations["v1_public_locate_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/recent-fixes/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description A few recent, verified fixes with before/after photos for the landing page ("proof it gets done").
+         *     Infrastructure problems only (roads, lights, drainage, garbage) and no reference numbers, landmarks or
+         *     reporter data, so no neighbour dispute or private complaint is ever shown publicly. Cached 10 minutes.
+         */
+        get: operations["v1_public_recent_fixes_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -249,6 +287,55 @@ export interface paths {
         get: operations["v1_public_stats_retrieve"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/alerts/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The signed-in staff member's bell: latest 30 alerts plus unread counts. */
+        get: operations["staff_alerts_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/alerts/{id}/read/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["staff_alerts_read"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/alerts/read-all/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["staff_alerts_read_all"];
         delete?: never;
         options?: never;
         head?: never;
@@ -989,6 +1076,55 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/staff/notifications/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Citizen SMS/email log (recipients masked). PACD, City Administrator and Mayor's Office. */
+        get: operations["staff_notifications_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/notifications/{id}/retry/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["staff_notifications_retry"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/notifications/stats/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["staff_notifications_stats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/staff/priority-levels/": {
         parameters: {
             query?: never;
@@ -1252,6 +1388,7 @@ export interface components {
             /** Format: date-time */
             returned_at?: string | null;
             return_reason?: string;
+            /** Format: int64 */
             return_count?: number;
             readonly priority_level: components["schemas"]["PriorityLevel"];
             priority_reason?: string;
@@ -1286,6 +1423,21 @@ export interface components {
          * @enum {string}
          */
         CitizenConfirmationEnum: "fixed" | "not_fixed";
+        CitizenNotification: {
+            readonly id: number;
+            channel: components["schemas"]["NotificationChannelEnum"];
+            event: components["schemas"]["EventEnum"];
+            event_display: string;
+            recipient: string;
+            body: string;
+            status?: components["schemas"]["NotificationStatusEnum"];
+            provider_status?: string;
+            error?: string;
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            sent_at?: string | null;
+        };
         ClassifyRequestRequest: {
             text: string;
         };
@@ -1458,6 +1610,7 @@ export interface components {
             /** Format: date-time */
             next_follow_up_at?: string | null;
             readonly follow_up_due: boolean;
+            /** Format: int64 */
             follow_up_count?: number;
             readonly follow_ups: components["schemas"]["FollowUp"][];
         };
@@ -1488,6 +1641,19 @@ export interface components {
          * @enum {integer}
          */
         EscalationLevelEnum: 0 | 1 | 2 | 3;
+        /**
+         * @description * `received` - Report received
+         *     * `assigned` - Routed to office
+         *     * `in_progress` - Work started
+         *     * `extended` - Deadline extended
+         *     * `resolved` - Resolved
+         *     * `reminder` - Confirm-fix reminder
+         *     * `reopened` - Reopened
+         *     * `closed` - Closed
+         *     * `rejected` - Rejected
+         * @enum {string}
+         */
+        EventEnum: "received" | "assigned" | "in_progress" | "extended" | "resolved" | "reminder" | "reopened" | "closed" | "rejected";
         EvidenceFlag: {
             code: string;
             level: components["schemas"]["LevelFa5Enum"];
@@ -1889,12 +2055,15 @@ export interface components {
         MethodEnum: "call" | "letter" | "email" | "visit" | "meeting";
         ModelVersion: {
             readonly id: number;
+            /** Format: int64 */
             version: number;
             /** Format: date-time */
             readonly created_at: string;
             trained_by?: string;
             algorithm: string;
+            /** Format: int64 */
             n_train?: number;
+            /** Format: int64 */
             n_test?: number;
             /** @description {"synthetic": 3200, "real": 0, "extra_csv": 0} */
             data_sources?: unknown;
@@ -1919,6 +2088,78 @@ export interface components {
         NoteCreateRequest: {
             body: string;
         };
+        Notification: {
+            readonly id: number;
+            reference_no: string;
+            concern_id: number;
+            channel: components["schemas"]["NotificationChannelEnum"];
+            event: components["schemas"]["EventEnum"];
+            event_display: string;
+            recipient: string;
+            subject?: string;
+            body: string;
+            /**
+             * Format: int64
+             * @description SMS parts billed (1 credit each).
+             */
+            segments?: number;
+            status?: components["schemas"]["NotificationStatusEnum"];
+            status_display: string;
+            provider?: string;
+            provider_status?: string;
+            network?: string;
+            /** Format: int64 */
+            attempts?: number;
+            error?: string;
+            /**
+             * Format: date-time
+             * @description Not sent before this (quiet hours).
+             */
+            scheduled_for: string;
+            /** Format: date-time */
+            sent_at?: string | null;
+            /** Format: date-time */
+            readonly created_at: string;
+            readonly can_retry: boolean;
+        };
+        /**
+         * @description * `sms` - SMS
+         *     * `email` - Email
+         * @enum {string}
+         */
+        NotificationChannelEnum: "sms" | "email";
+        NotificationPage: {
+            count: number;
+            results: components["schemas"]["Notification"][];
+        };
+        NotificationStats: {
+            provider: string;
+            sender_name: string;
+            /** Format: double */
+            credit_balance: number | null;
+            month_sms: number;
+            month_credits: number;
+            month_email: number;
+            /** Format: double */
+            delivered_rate: number | null;
+            failed: number;
+            queued: number;
+            opted_out: number;
+            /**
+             * Format: double
+             * @description Share of this month's reports that can receive updates.
+             */
+            reach_rate: number | null;
+        };
+        /**
+         * @description * `queued` - Queued
+         *     * `sent` - Sent to provider
+         *     * `delivered` - Delivered to network
+         *     * `failed` - Failed
+         *     * `skipped` - Skipped
+         * @enum {string}
+         */
+        NotificationStatusEnum: "queued" | "sent" | "delivered" | "failed" | "skipped";
         /** @enum {unknown} */
         NullEnum: null;
         OfficeDetail: {
@@ -2138,10 +2379,17 @@ export interface components {
             name: string;
             name_fil?: string;
             description?: string;
-            /** @description Calendar hours (emergencies don't wait for working days). */
+            /**
+             * Format: int64
+             * @description Calendar hours (emergencies don't wait for working days).
+             */
             response_hours?: number | null;
+            /** Format: int64 */
             response_working_days?: number | null;
-            /** @description Working days. Empty = use the ARTA class maximum. */
+            /**
+             * Format: int64
+             * @description Working days. Empty = use the ARTA class maximum.
+             */
             resolution_cap_days?: number | null;
             /** @description Bootstrap color: danger, warning, info, secondary */
             color?: string;
@@ -2209,12 +2457,20 @@ export interface components {
             reporter_email?: string;
             is_anonymous?: boolean;
             consent_given?: boolean;
+            /** @description Reporter wants SMS updates (can stop from the tracking page). */
+            notify_sms?: boolean;
+            /** @description Reporter wants email updates. */
+            notify_email?: boolean;
             images?: string[];
         };
         PublicConfirmRequest: {
             fixed: boolean;
             feedback?: string;
             mobile_last4?: string;
+        };
+        PublicNotifyPrefsRequest: {
+            sms: boolean;
+            mobile_last4: string;
         };
         PublicPurok: {
             readonly id: number;
@@ -2255,6 +2511,11 @@ export interface components {
             /** Format: double */
             resolution_rate: number;
             reports_received: number;
+            /** Format: double */
+            median_days_90d: number | null;
+            /** Format: double */
+            on_time_rate_90d: number | null;
+            resolved_90d: number;
         };
         PublicSubcategory: {
             code: string;
@@ -2298,6 +2559,8 @@ export interface components {
             readonly can_confirm: boolean;
             /** @description If the reporter left a mobile number, the last 4 digits are asked so a stranger can't answer for them. */
             readonly confirm_needs_mobile: boolean;
+            /** @description 'on' / 'off' when the reporter left a mobile number, 'none' otherwise. The number itself is never shown. */
+            readonly sms_updates: string;
         };
         /**
          * @description * `pin` - From the map pin
@@ -2346,6 +2609,27 @@ export interface components {
             name: string;
             total: number;
             top: components["schemas"]["RankItem"][];
+        };
+        RecentFix: {
+            problem: string;
+            category: string;
+            barangay: string;
+            purok: string | null;
+            office: string | null;
+            /** Format: date-time */
+            reported_at: string;
+            /** Format: date-time */
+            routed_at: string | null;
+            /** Format: date-time */
+            inspected_at: string | null;
+            /** Format: date-time */
+            resolved_at: string;
+            /** Format: double */
+            days: number;
+            on_time: boolean;
+            citizen_confirmed: boolean;
+            before_url: string | null;
+            after_url: string | null;
         };
         RemarksRequest: {
             remarks: string;
@@ -2451,6 +2735,37 @@ export interface components {
             reasons: string[];
             reporters: number;
         };
+        StaffAlert: {
+            readonly id: number;
+            kind: components["schemas"]["StaffAlertKindEnum"];
+            kind_display: string;
+            title: string;
+            body?: string;
+            is_urgent?: boolean;
+            reference_no?: string;
+            concern_id?: number;
+            /** Format: date-time */
+            read_at?: string | null;
+            /** Format: date-time */
+            readonly created_at: string;
+        };
+        /**
+         * @description * `new_case` - New case for your office
+         *     * `assigned` - Assigned to you
+         *     * `returned` - Returned to PACD
+         *     * `danger` - Report says there is danger now
+         *     * `for_validation` - Work done, needs validation
+         *     * `sent_back` - Work returned by supervisor
+         *     * `escalated` - Escalated to you
+         *     * `disputed` - Citizen says not fixed
+         * @enum {string}
+         */
+        StaffAlertKindEnum: "new_case" | "assigned" | "returned" | "danger" | "for_validation" | "sent_back" | "escalated" | "disputed";
+        StaffAlertList: {
+            unread: number;
+            urgent_unread: number;
+            results: components["schemas"]["StaffAlert"][];
+        };
         StaffConcernDetail: {
             readonly id: number;
             readonly reference_no: string;
@@ -2513,7 +2828,10 @@ export interface components {
             subcategory_code?: string;
             severity?: components["schemas"]["SeverityEnum"];
             severity_display: string;
-            /** @description Estimated number of affected citizens. */
+            /**
+             * Format: int64
+             * @description Estimated number of affected citizens.
+             */
             affected_count?: number;
             /** Format: decimal */
             latitude?: string | null;
@@ -2523,6 +2841,10 @@ export interface components {
             reporter_contact?: string;
             reporter_email?: string;
             is_anonymous?: boolean;
+            /** @description Reporter wants SMS updates (can stop from the tracking page). */
+            notify_sms?: boolean;
+            /** @description Reporter wants email updates. */
+            notify_email?: boolean;
             /** @description Where staff got it: FB post/comment link, logbook entry no., caller name, etc. */
             source_reference?: string;
             readonly encoded_by: string | null;
@@ -2562,6 +2884,7 @@ export interface components {
             citizen_feedback?: string;
             recurrence_of?: string;
             readonly recurrences: components["schemas"]["LinkedReport"][];
+            readonly notifications: components["schemas"]["CitizenNotification"][];
         };
         StaffConcernList: {
             readonly id: number;
@@ -2654,6 +2977,10 @@ export interface components {
             reporter_email?: string;
             is_anonymous?: boolean;
             consent_given?: boolean;
+            /** @description Reporter wants SMS updates (can stop from the tracking page). */
+            notify_sms?: boolean;
+            /** @description Reporter wants email updates. */
+            notify_email?: boolean;
             images?: string[];
         };
         StaffSummary: {
@@ -2926,12 +3253,7 @@ export interface operations {
     };
     v1_public_barangays_list: {
         parameters: {
-            query?: {
-                /** @description Which field to use when ordering the results. */
-                ordering?: string;
-                /** @description A search term. */
-                search?: string;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -2950,12 +3272,7 @@ export interface operations {
     };
     v1_public_barangays_puroks_list: {
         parameters: {
-            query?: {
-                /** @description Which field to use when ordering the results. */
-                ordering?: string;
-                /** @description A search term. */
-                search?: string;
-            };
+            query?: never;
             header?: never;
             path: {
                 id: number;
@@ -2976,12 +3293,7 @@ export interface operations {
     };
     v1_public_categories_list: {
         parameters: {
-            query?: {
-                /** @description Which field to use when ordering the results. */
-                ordering?: string;
-                /** @description A search term. */
-                search?: string;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -3096,6 +3408,33 @@ export interface operations {
             };
         };
     };
+    v1_public_concerns_track_notifications_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                reference_no: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublicNotifyPrefsRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["PublicNotifyPrefsRequest"];
+                "multipart/form-data": components["schemas"]["PublicNotifyPrefsRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicTrack"];
+                };
+            };
+        };
+    };
     v1_public_locate_retrieve: {
         parameters: {
             query?: {
@@ -3118,6 +3457,25 @@ export interface operations {
             };
         };
     };
+    v1_public_recent_fixes_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecentFix"][];
+                };
+            };
+        };
+    };
     v1_public_stats_retrieve: {
         parameters: {
             query?: never;
@@ -3134,6 +3492,66 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["PublicStats"];
                 };
+            };
+        };
+    };
+    staff_alerts_list: {
+        parameters: {
+            query?: {
+                unread?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffAlertList"];
+                };
+            };
+        };
+    };
+    staff_alerts_read: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffAlert"];
+                };
+            };
+        };
+    };
+    staff_alerts_read_all: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -3342,14 +3760,10 @@ export interface operations {
                 barangay?: number;
                 category?: string;
                 include_duplicates?: boolean;
-                /** @description Which field to use when ordering the results. */
-                ordering?: string;
                 /** @description A page number within the paginated result set. */
                 page?: number;
                 /** @description Search reference no., title, landmark, description */
                 q?: string;
-                /** @description A search term. */
-                search?: string;
                 /** @description Inbox view (default: open) */
                 tab?: "all" | "closed" | "endorsed" | "for_acceptance" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
             };
@@ -4115,14 +4529,10 @@ export interface operations {
                 barangay?: number;
                 category?: string;
                 include_duplicates?: boolean;
-                /** @description Which field to use when ordering the results. */
-                ordering?: string;
                 /** @description A page number within the paginated result set. */
                 page?: number;
                 /** @description Search reference no., title, landmark, description */
                 q?: string;
-                /** @description A search term. */
-                search?: string;
                 /** @description Inbox view (default: open) */
                 tab?: "all" | "closed" | "endorsed" | "for_acceptance" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
             };
@@ -4249,10 +4659,6 @@ export interface operations {
         parameters: {
             query?: {
                 kind?: "external" | "internal";
-                /** @description Which field to use when ordering the results. */
-                ordering?: string;
-                /** @description A search term. */
-                search?: string;
             };
             header?: never;
             path?: never;
@@ -4274,10 +4680,6 @@ export interface operations {
         parameters: {
             query: {
                 department: number;
-                /** @description Which field to use when ordering the results. */
-                ordering?: string;
-                /** @description A search term. */
-                search?: string;
             };
             header?: never;
             path?: never;
@@ -4534,14 +4936,74 @@ export interface operations {
             };
         };
     };
-    v1_staff_priority_levels_list: {
+    staff_notifications_list: {
         parameters: {
             query?: {
-                /** @description Which field to use when ordering the results. */
-                ordering?: string;
-                /** @description A search term. */
-                search?: string;
+                channel?: string;
+                event?: string;
+                page?: string;
+                q?: string;
+                status?: string;
             };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationPage"];
+                };
+            };
+        };
+    };
+    staff_notifications_retry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Notification"];
+                };
+            };
+        };
+    };
+    staff_notifications_stats: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationStats"];
+                };
+            };
+        };
+    };
+    v1_staff_priority_levels_list: {
+        parameters: {
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -4582,10 +5044,6 @@ export interface operations {
             query: {
                 department: number;
                 division?: number;
-                /** @description Which field to use when ordering the results. */
-                ordering?: string;
-                /** @description A search term. */
-                search?: string;
             };
             header?: never;
             path?: never;

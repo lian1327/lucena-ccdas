@@ -31,8 +31,9 @@ INSTALLED_APPS = [
     "apps.priority",
     "apps.analytics",
     "apps.reports",
-    "apps.notifications",
+    # "apps.notifications",
     "apps.classifier",
+    "apps.notifications",
 ]
 
 MIDDLEWARE = [
@@ -138,10 +139,13 @@ SPECTACULAR_SETTINGS = {
         "ConcernStatusEnum": "apps.concerns.models.Concern.Status",
         "ConcernChannelEnum": "apps.concerns.models.Concern.Channel",
         "EndorsementStatusEnum": "apps.cases.models.Endorsement.Status",
+        "NotificationStatusEnum": "apps.notifications.models.Notification.Status",
+        "NotificationChannelEnum": "apps.notifications.models.Notification.Channel",
     },
 }
 
 CORS_ALLOWED_ORIGINS = ["http://localhost:5173"]
-
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend" 
+DEFAULT_FROM_EMAIL = "CCADSS Lucena <itsolutions@dll.edu.ph>"
 CELERY_BROKER_URL = config("CELERY_BROKER_URL", default="redis://localhost:6379/0")
 CELERY_TIMEZONE = TIME_ZONE

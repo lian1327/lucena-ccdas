@@ -12,6 +12,8 @@ import { StaffLayout } from "@/layouts/StaffLayout";
 import { LoginPage } from "@/pages/auth/LoginPage";
 import { ForbiddenPage, NotFoundPage } from "@/pages/ErrorPages";
 import { HomePage } from "@/pages/public/HomePage";
+import { AboutPage } from "@/pages/public/AboutPage";
+import { AccessibilityPage } from "@/pages/public/AccessibilityPage";
 import { PrivacyPage } from "@/pages/public/PrivacyPage";
 import { ReportPage } from "@/pages/public/ReportPage";
 import { TrackPage } from "@/pages/public/TrackPage";
@@ -31,6 +33,7 @@ const LedgerPage = lazy(() => import("@/pages/staff/LedgerPage"));
 const ExecutivePage = lazy(() => import("@/pages/staff/ExecutivePage"));
 const ExecutiveReportPage = lazy(() => import("@/pages/staff/ExecutiveReportPage"));
 const ClassifierPage = lazy(() => import("@/pages/staff/ClassifierPage"));
+const NotificationsPage = lazy(() => import("@/pages/staff/NotificationsPage"));
 const AccomplishmentPrintPage = lazy(() => import("@/pages/staff/AccomplishmentPrintPage"));
 function AccountabilityHome() {
   const { user } = useAuth();
@@ -51,7 +54,10 @@ export const router = createBrowserRouter([
       { path: "/report", element: <ReportPage /> },
       { path: "/track", element: <TrackPage /> },
       { path: "/track/:ref", element: <TrackPage /> },
+      { path: "/t/:ref", element: <TrackPage /> }, // short link used in SMS
       { path: "/privacy", element: <PrivacyPage /> },
+      { path: "/about", element: <AboutPage /> },
+      { path: "/accessibility", element: <AccessibilityPage /> },
       { path: "/login", element: <LoginPage /> },
       { path: "/forbidden", element: <ForbiddenPage /> },
       { path: "*", element: <NotFoundPage /> },
@@ -71,6 +77,7 @@ export const router = createBrowserRouter([
           { path: "analytics", element: lazyEl(<AnalyticsHome />) },
           { path: "analytics/:id", element: lazyEl(<OfficePerformance />) },
           { path: "ml", element: lazyEl(<ClassifierPage />) },
+          { path: "notifications", element: lazyEl(<NotificationsPage />) },
           { path: "executive", element: lazyEl(<ExecOnly><ExecutivePage /></ExecOnly>) },
           { path: "executive/report", element: lazyEl(<ExecOnly><ExecutiveReportPage /></ExecOnly>) },
           { path: "accountability", element: lazyEl(<AccountabilityHome />) },

@@ -1,0 +1,45 @@
+CCADSS – Step 14: Government-standard public site redesign
+=========================================================
+
+WHAT CHANGED
+- GOVPH top bar (Philippine Standard Time clock) + reader tools: text size A− / A / A+ and high contrast
+  (remembered per browser).
+- Masthead with the city seal slot, new navigation (Home, Mag-report, Subaybayan, Citizen's Charter, Staff login).
+- New landing page: hero with a real "naayos kamakailan" before/after receipt, inline tracking,
+  90-day transparency sentence, emergency notice (911), how it works, category shortcuts
+  (open the form with the category pre-selected), ARTA service standards (3/7/20 working days),
+  hotlines, FAQ.
+- Citizen's Charter page (/about) in the ARTA format + full FAQ, Accessibility page (/accessibility).
+- Standard Government Website Template footer (Republic of the Philippines, About GOVPH, Government Links)
+  under an LGU footer (contact, policies, FOI, ARTA, NPC, hotlines).
+- Skip-to-content link, yellow keyboard-focus ring, reduced-motion support.
+- Staff portal header restyled to match (seal slot, city name).
+- Fonts: Archivo (headings) and Atkinson Hyperlegible (body, designed for low-vision readers). Both are bundled,
+  no Google Fonts calls.
+- Backend: new GET /api/v1/public/recent-fixes/ (up to 6 photo-documented fixes, no reference numbers or
+  reporter data, cached 10 min) and new 90-day stats (resolved_90d, median_days_90d, on_time_rate_90d).
+
+INSTALL (PowerShell, from the project root)
+1. Unzip over the project (overwrite).
+2. Backend (no new models, no migrations):
+     cd backend
+     python manage.py runserver
+3. Frontend (new font packages):
+     cd frontend
+     npm install
+     npm run gen:api        # backend must be running
+     npm run dev
+4. Optional: copy the new lines from frontend/.env.example into .env.local
+   (address, email, phone, website, Facebook, extra hotlines, map credit).
+
+SEALS — PLEASE READ
+- The site shows a dashed placeholder until you add the files:
+     frontend/public/seal.png        (City of Lucena seal)
+     frontend/public/govph-seal.png  (Republic of the Philippines seal, used in the GWT footer)
+- Use the official seals only with the City's written permission. Do not redraw or modify them.
+
+TO VERIFY BEFORE DEFENSE / GO-LIVE
+- Only 911 (Lucena Emergency 911) and 8888 are built in. Add office numbers only after confirming them.
+- Set VITE_MAP_CREDIT to name the source of the barangay/purok boundaries.
+- Citizen's Charter wording and responsible offices must be reviewed by the City's ARTA focal person.
+- Privacy notice must be reviewed by the City's Data Protection Officer.

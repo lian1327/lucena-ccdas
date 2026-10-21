@@ -7,6 +7,8 @@ from django.utils import timezone
 
 from apps.concerns.models import Concern, ConcernAttachment, StatusHistory
 from apps.concerns.services import change_status
+from apps.notifications import services as notify
+from apps.notifications.models import Notification, StaffAlert
 from apps.priority.services import compute_priority
 
 from . import deadlines, evidence
@@ -186,6 +188,16 @@ def route(concern, user, *, level, department=None, division=None, remarks=""):
     else:
         _move(concern, user, S.ASSIGNED, msg)
     compute_priority(concern)
+    if city:
+        notify.alert(notify.office_leads(case), StaffAlert.Kind.NEW_CASE, concern,
+                     f"Bagong kaso: {concern.reference_no}", f"{concern.title}. Tanggapin o ibalik sa loob ng 1 working day.",
+                     urgent=concern.danger_now, exclude=user)
+    else:
+        from apps.accounts.models import User
+
+        notify.alert(User.objects.filter(is_active=True, role=User.Role.BARANGAY, barangay_id=concern.barangay_id),
+                     StaffAlert.Kind.NEW_CASE, concern, f"Bagong kaso sa barangay: {concern.reference_no}",
+                     concern.title, urgent=concern.danger_now, exclude=user)
     return case
 
 
@@ -249,6 +261,8 @@ def return_to_pacd(concern, user, *, reason):
     _note(case, user, f"Ibinalik sa PACD ng {dept.name if dept else 'opisina'}: {reason}")
     change_status(concern, S.UNDER_REVIEW, user, f"Returned by {dept.code if dept else 'office'}: {reason}",
                   is_public=False, enforce=False)
+    notify.alert(notify.pacd_staff(), StaffAlert.Kind.RETURNED, concern, f"Ibinalik ng {dept.code if dept else 'opisina'}: {concern.reference_no}",
+                 reason, exclude=user)
     return case
 
 
@@ -295,6 +309,11 @@ def assign_division(concern, user, *, division, remarks=""):
         case.assigned_to = None
     case.save(update_fields=["division", "assigned_to"])
     _note(case, user, f"Ipinasa sa {division.name}. {remarks}".strip())
+    from apps.accounts.models import User
+
+    notify.alert(User.objects.filter(is_active=True, division=division, role=User.Role.DIVISION_CHIEF),
+                 StaffAlert.Kind.NEW_CASE, concern, f"Para sa {division.name}: {concern.reference_no}", concern.title,
+                 exclude=user)
     return case
 
 
@@ -309,6 +328,9 @@ def assign_person(concern, user, *, person, remarks=""):
         case.division_id = person.division_id
     case.save(update_fields=["assigned_to", "assigned_by", "division"])
     _note(case, user, f"Itinalaga kay {_name(person)}. {remarks}".strip())
+    due = f" Target: {timezone.localtime(case.due_at):%b %d}." if case.due_at else ""
+    notify.alert([person], StaffAlert.Kind.ASSIGNED, concern, f"Itinalaga sa iyo: {concern.reference_no}",
+                 f"{concern.title}.{due}", urgent=concern.danger_now, exclude=user)
     return case
 
 
@@ -371,6 +393,12 @@ def complete_work(concern, user, *, remarks, photos, photo_meta=(), before_photo
     reds = evidence.red_flags(after + list(concern.attachments.filter(kind=ConcernAttachment.Kind.BEFORE)))
     warn = f" ⚠ Photo checks: {', '.join(evidence.FLAGS[r][1] for r in reds)}." if reds else ""
     _note(case, user, f"Accomplishment report submitted: {remarks}{warn}")
+    from apps.accounts.models import User
+
+    validators = [u for u in notify.office_leads(case) if u.role != User.Role.OFFICE_DESK]
+    notify.alert(validators, StaffAlert.Kind.FOR_VALIDATION, concern, f"Beripikahin: {concern.reference_no}",
+                 "May accomplishment report na." + (" May red flag ang mga litrato." if reds else ""),
+                 urgent=bool(reds), exclude=user)
     return case
 
 
@@ -386,6 +414,9 @@ def validate(concern, user, *, approve, remarks="", photos=(), photo_meta=(), ov
     if not approve:
         if not remarks:
             raise WorkflowError("Explain what still needs to be done.")
+        notify.alert([case.work_completed_by, report.submitted_by if report else None, case.assigned_to],
+                     StaffAlert.Kind.SENT_BACK, concern, f"Ibinalik ng supervisor: {concern.reference_no}", remarks,
+                     exclude=user)
         case.work_completed_at = None
         case.work_completed_by = None
         case.save(update_fields=["work_completed_at", "work_completed_by"])
@@ -445,6 +476,8 @@ def extend_deadline(concern, user, *, new_due, reason):
     case.extension_reason = reason
     case.save(update_fields=["original_due_at", "due_at", "extended_at", "extension_reason"])
     _public_entry(concern, user, f"Na-extend ang target na petsa sa {timezone.localtime(new_due):%b %d, %Y}. Dahilan: {reason}")
+    notify.citizen_event(concern, Notification.Event.EXTENDED,
+                         extra={"due": f"{timezone.localtime(new_due):%b %d}", "reason": reason})
     return case
 
 
@@ -559,6 +592,9 @@ def citizen_confirm(concern, *, fixed, feedback=""):
         case.work_completed_by = case.validated_by = None
         case.save(update_fields=["work_completed_at", "validated_at", "resolved_at", "work_completed_by", "validated_by"])
         _note(case, None, f"Citizen disputed the fix ({concern.reference_no}). {msg}")
+        notify.alert([case.assigned_to, *notify.office_leads(case)], StaffAlert.Kind.DISPUTED, master,
+                     f"Hindi raw naayos: {master.reference_no}", concern.citizen_feedback or "Binuksan muli ng nag-report.",
+                     urgent=True)
     change_status(master, S.IN_PROGRESS, None, msg + " Binuksan muli ang kaso.", enforce=False)
     if concern is not master and concern.status != S.IN_PROGRESS:
         change_status(concern, S.IN_PROGRESS, None, msg + " Binuksan muli ang kaso.", enforce=False, cascade=False)
@@ -589,6 +625,9 @@ def escalate(concern, user, *, reason, auto=False):
     who = "System (lumampas sa target na petsa)" if auto else _name(user)
     _note(case, user, f"Escalated to {case.get_escalation_level_display()} by {who}: {reason}")
     compute_priority(concern)
+    notify.alert(notify.escalation_targets(case), StaffAlert.Kind.ESCALATED, concern,
+                 f"Escalated sa {case.get_escalation_level_display()}: {concern.reference_no}", reason,
+                 urgent=True, exclude=user)
     return case
 
 

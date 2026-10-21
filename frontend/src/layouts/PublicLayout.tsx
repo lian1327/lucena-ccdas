@@ -1,52 +1,72 @@
 import { Container, Nav, Navbar } from "react-bootstrap";
-import { Link, NavLink, Outlet } from "react-router-dom";
+import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
+import { useEffect } from "react";
 
 import { useAuth } from "@/auth/AuthContext";
-import { APP_NAME, LGU_NAME } from "@/config";
+import { GovphBar } from "@/components/gov/GovphBar";
+import { Seal } from "@/components/gov/Seal";
+import { SiteFooter } from "@/components/gov/SiteFooter";
+import { LGU_PROVINCE, LGU_SEAL_SRC, LGU_SHORT } from "@/config";
+
+function ScrollToHash() {
+  const { pathname, hash } = useLocation();
+  useEffect(() => {
+    if (hash) document.getElementById(hash.slice(1))?.scrollIntoView();
+    else window.scrollTo(0, 0);
+  }, [pathname, hash]);
+  return null;
+}
 
 export function PublicLayout() {
   const { status, isStaff } = useAuth();
 
   return (
     <div className="d-flex flex-column min-vh-100">
-      <Navbar expand="md" bg="white" className="border-bottom sticky-top" collapseOnSelect>
+      <a href="#main" className="skip-link">Lumaktaw sa nilalaman</a>
+      <ScrollToHash />
+      <GovphBar />
+
+      <header className="masthead">
+        <Container className="d-flex align-items-center gap-3 py-3">
+          <Link to="/" className="d-flex align-items-center gap-3">
+            <Seal src={LGU_SEAL_SRC} alt={`Opisyal na selyo ng ${LGU_SHORT}`} />
+            <span>
+              <span className="lgu-line d-block">Republika ng Pilipinas · {LGU_PROVINCE}</span>
+              <span className="lgu-name d-block">{LGU_SHORT}</span>
+              <span className="portal-name d-block">Citizen Concern Portal</span>
+            </span>
+          </Link>
+        </Container>
+      </header>
+
+      <Navbar expand="md" className="site-nav sticky-top p-0" collapseOnSelect>
         <Container>
-          <Navbar.Brand as={Link} to="/" className="d-flex align-items-center gap-2">
-            <i className="bi bi-megaphone-fill text-primary" aria-hidden />
-            <span className="fw-semibold">{APP_NAME}</span>
-            <span className="d-none d-lg-inline text-secondary small border-start ps-2">{LGU_NAME}</span>
-          </Navbar.Brand>
-          <Navbar.Toggle aria-controls="public-nav" />
+          <Navbar.Toggle aria-controls="public-nav" className="my-2">
+            <i className="bi bi-list me-1" aria-hidden />Menu
+          </Navbar.Toggle>
           <Navbar.Collapse id="public-nav">
-            <Nav className="ms-auto align-items-md-center gap-md-1">
+            <Nav className="me-auto">
               <Nav.Link as={NavLink} to="/" end eventKey="home">Home</Nav.Link>
-              <Nav.Link as={NavLink} to="/track" eventKey="track">Track a Concern</Nav.Link>
+              <Nav.Link as={NavLink} to="/report" eventKey="report">Mag-report</Nav.Link>
+              <Nav.Link as={NavLink} to="/track" eventKey="track">Subaybayan</Nav.Link>
+              <Nav.Link as={NavLink} to="/about" eventKey="about">Citizen's Charter</Nav.Link>
+            </Nav>
+            <Nav className="pb-2 pb-md-0">
               {status === "authenticated" && isStaff ? (
-                <Nav.Link as={NavLink} to="/staff" eventKey="staff">Staff Portal</Nav.Link>
+                <Nav.Link as={NavLink} to="/staff" eventKey="staff"><i className="bi bi-person-badge me-1" aria-hidden />Staff Portal</Nav.Link>
               ) : (
-                <Nav.Link as={NavLink} to="/login" eventKey="login">Staff Login</Nav.Link>
+                <Nav.Link as={NavLink} to="/login" eventKey="login"><i className="bi bi-box-arrow-in-right me-1" aria-hidden />Staff login</Nav.Link>
               )}
-              <Link to="/report" className="btn btn-primary ms-md-2 mt-2 mt-md-0">
-                <i className="bi bi-plus-circle me-1" aria-hidden />
-                Report a Concern
-              </Link>
             </Nav>
           </Navbar.Collapse>
         </Container>
       </Navbar>
 
-      <main className="flex-grow-1">
+      <main id="main" tabIndex={-1} className="flex-grow-1">
         <Outlet />
       </main>
 
-      <footer className="border-top bg-light py-4 mt-5">
-        <Container className="d-flex flex-column flex-md-row justify-content-between gap-2 small text-secondary">
-          <span>© {new Date().getFullYear()} {LGU_NAME}</span>
-          <span>
-            <Link to="/privacy" className="link-secondary">Data Privacy Notice</Link>
-          </span>
-        </Container>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

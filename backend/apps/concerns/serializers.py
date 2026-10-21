@@ -84,7 +84,7 @@ class PublicConcernCreateSerializer(serializers.ModelSerializer):
             "involves_barangay_officials",
             "barangay", "purok", "latitude", "longitude", "location_description",
             "reporter_name", "reporter_contact", "reporter_email", "is_anonymous", "consent_given",
-            "images",
+            "notify_sms", "notify_email", "images",
             "reference_no", "status", "created_at", "linked_to_existing",
         ]
         extra_kwargs = {
@@ -101,6 +101,8 @@ class PublicConcernCreateSerializer(serializers.ModelSerializer):
             "reporter_email": {"write_only": True},
             "is_anonymous": {"write_only": True},
             "consent_given": {"write_only": True},
+            "notify_sms": {"write_only": True},
+            "notify_email": {"write_only": True},
             "danger_now": {"write_only": True},
             "involves_barangay_officials": {"write_only": True},
         }
@@ -237,6 +239,7 @@ class PublicTrackSerializer(serializers.ModelSerializer):
     before_photos = serializers.SerializerMethodField()
     can_confirm = serializers.SerializerMethodField()
     confirm_needs_mobile = serializers.SerializerMethodField()
+    sms_updates = serializers.SerializerMethodField()
 
     class Meta:
         model = Concern
@@ -246,6 +249,7 @@ class PublicTrackSerializer(serializers.ModelSerializer):
             "assigned_office", "linked_to_reference", "created_at", "resolved_at", "timeline",
             "resolution_photos", "target_date", "deadline_extended", "endorsed_to", "priority_level",
             "before_photos", "citizen_confirmation", "can_confirm", "confirm_needs_mobile",
+            "sms_updates",
         ]
 
     def get_assigned_office(self, obj) -> str | None:
@@ -300,6 +304,12 @@ class PublicTrackSerializer(serializers.ModelSerializer):
         """If the reporter left a mobile number, the last 4 digits are asked so a stranger can't answer for them."""
         return bool(obj.reporter_contact)
 
+    def get_sms_updates(self, obj) -> str:
+        """'on' / 'off' when the reporter left a mobile number, 'none' otherwise. The number itself is never shown."""
+        if not obj.reporter_contact:
+            return "none"
+        return "on" if obj.notify_sms else "off"
+
     @extend_schema_field(PublicTimelineSerializer(many=True))
     def get_timeline(self, obj):
         return PublicTimelineSerializer(obj.history.filter(is_public=True), many=True).data
@@ -316,6 +326,9 @@ class PublicStatsTotalsSerializer(serializers.Serializer):
     avg_resolution_hours = serializers.FloatField(allow_null=True)
     resolution_rate = serializers.FloatField()
     reports_received = serializers.IntegerField()
+    median_days_90d = serializers.FloatField(allow_null=True)
+    on_time_rate_90d = serializers.FloatField(allow_null=True)
+    resolved_90d = serializers.IntegerField()
 
 
 class PublicStatsCategorySerializer(serializers.Serializer):
@@ -357,3 +370,20 @@ class LocateSerializer(serializers.Serializer):
     barangay = serializers.CharField(allow_null=True)
     purok_id = serializers.IntegerField(allow_null=True)
     purok = serializers.CharField(allow_null=True)
+
+
+class RecentFixSerializer(serializers.Serializer):
+    problem = serializers.CharField()
+    category = serializers.CharField()
+    barangay = serializers.CharField()
+    purok = serializers.CharField(allow_null=True)
+    office = serializers.CharField(allow_null=True)
+    reported_at = serializers.DateTimeField()
+    routed_at = serializers.DateTimeField(allow_null=True)
+    inspected_at = serializers.DateTimeField(allow_null=True)
+    resolved_at = serializers.DateTimeField()
+    days = serializers.FloatField()
+    on_time = serializers.BooleanField()
+    citizen_confirmed = serializers.BooleanField()
+    before_url = serializers.CharField(allow_null=True)
+    after_url = serializers.CharField(allow_null=True)

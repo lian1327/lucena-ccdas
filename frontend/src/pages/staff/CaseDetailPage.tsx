@@ -25,6 +25,7 @@ import { AcceptPanel, PriorityPanel, RespondPanel } from "@/features/cases/Scree
 import { ErrorText, Panel, Stepper } from "@/features/cases/ui";
 import { UrgencyBadge } from "@/components/UrgencyBadge";
 import { ProofOfWork } from "@/features/evidence/ProofOfWork";
+import { CaseNotifications } from "@/features/notifications/CaseNotifications";
 import { dueLabel, fmtDate, fmtDateTime, timeAgo } from "@/utils/format";
 
 function NotesPanel({ c }: { c: StaffConcernDetail }) {
@@ -284,6 +285,8 @@ export function CaseDetailPage() {
               </div>
             )}
           </Panel>
+
+          <CaseNotifications c={c} />
 
           <Panel title="Timeline" icon="clock-history">
             <ol className="list-unstyled mb-0">

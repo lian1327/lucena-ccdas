@@ -27,7 +27,9 @@ from .serializers import (
     PublicPurokSerializer,
     PublicStatsSerializer,
     PublicTrackSerializer,
+    RecentFixSerializer,
 )
+from apps.notifications.serializers import PublicNotifyPrefsSerializer
 
 
 class PublicMixin:
@@ -137,10 +139,54 @@ class PublicConfirmView(PublicMixin, APIView):
         return Response(PublicTrackSerializer(concern, context={"request": request}).data)
 
 
+class PublicRecentFixesView(PublicMixin, APIView):
+    """
+    A few recent, verified fixes with before/after photos for the landing page ("proof it gets done").
+    Infrastructure problems only (roads, lights, drainage, garbage) and no reference numbers, landmarks or
+    reporter data, so no neighbour dispute or private complaint is ever shown publicly. Cached 10 minutes.
+    """
+
+    PUBLIC_CATEGORIES = ["road_damage", "streetlight", "drainage", "solid_waste"]
+
+    @extend_schema(responses=RecentFixSerializer(many=True))
+    def get(self, request):
+        data = cache.get("public_recent_fixes_v1")
+        if data is None:
+            data = self._build()
+            cache.set("public_recent_fixes_v1", data, 600)
+        return Response(data)
+
+    def _build(self):
+        from apps.concerns.models import ConcernAttachment
+
+        qs = (Concern.objects.filter(duplicate_of__isnull=True, status__in=Concern.DONE_STATUSES,
+                                     category__code__in=self.PUBLIC_CATEGORIES, attachments__kind="before")
+              .filter(attachments__kind="resolution").exclude(citizen_confirmation="not_fixed")
+              .select_related("category", "subcategory", "barangay", "purok", "case__department")
+              .distinct().order_by("-resolved_at")[:6])
+        out = []
+        for c in qs:
+            atts = {a.kind: a for a in c.attachments.filter(kind__in=["before", "resolution"]).order_by("uploaded_at")}
+            case = getattr(c, "case", None)
+            out.append({
+                "problem": (c.subcategory.name_fil or c.subcategory.name) if c.subcategory else (c.category.name_fil or c.category.name),
+                "category": c.category.code, "barangay": c.barangay.name, "purok": c.purok.name if c.purok_id else None,
+                "office": case.department.name if case and case.department else None,
+                "reported_at": c.created_at, "routed_at": case.routed_at if case else None,
+                "inspected_at": case.inspected_at if case else None, "resolved_at": c.resolved_at,
+                "days": round((c.resolved_at - c.created_at).total_seconds() / 86400, 1),
+                "on_time": bool(case and case.due_at and case.validated_at and case.validated_at <= case.due_at),
+                "citizen_confirmed": c.citizen_confirmation == "fixed",
+                "before_url": atts["before"].file.url if "before" in atts else None,
+                "after_url": atts["resolution"].file.url if "resolution" in atts else None,
+            })
+        return out
+
+
 class PublicStatsView(PublicMixin, APIView):
     """Transparency stats for the landing page. Aggregates only — no individual records. Cached 5 min."""
 
-    CACHE_KEY = "public_stats_v1"
+    CACHE_KEY = "public_stats_v2"
     CACHE_SECONDS = 300
 
     @extend_schema(responses=PublicStatsSerializer)
@@ -171,6 +217,13 @@ class PublicStatsView(PublicMixin, APIView):
         agg["reports_received"] = Concern.objects.count()  # includes linked duplicates
 
         last_90 = now - timedelta(days=90)
+        done_90 = list(masters.filter(resolved_at__gte=last_90, status__in=Concern.DONE_STATUSES)
+                       .values_list("created_at", "resolved_at", "case__due_at"))
+        days = sorted((r - c).total_seconds() / 86400 for c, r, _ in done_90)
+        agg["median_days_90d"] = round(days[len(days) // 2], 1) if days else None
+        with_due = [(r, d) for _, r, d in done_90 if d]
+        agg["on_time_rate_90d"] = round(sum(1 for r, d in with_due if r <= d) / len(with_due) * 100, 1) if with_due else None
+        agg["resolved_90d"] = len(done_90)
         by_category = list(
             masters.filter(created_at__gte=last_90, category__isnull=False)
             .values(code=F("category__code"), name=F("category__name"))
@@ -200,3 +253,22 @@ class PublicStatsView(PublicMixin, APIView):
             "by_barangay": by_barangay,
             "generated_at": now.isoformat(),
         }
+
+
+class PublicNotifyPrefsView(PublicMixin, APIView):
+    """Reporter turns SMS updates off (or back on) from the tracking page. Needs the last 4 digits of the number."""
+
+    throttle_scope = "public_submit"
+
+    @extend_schema(request=PublicNotifyPrefsSerializer, responses=PublicTrackSerializer)
+    def post(self, request, reference_no):
+        concern = get_object_or_404(Concern, reference_no=reference_no.strip().upper())
+        ser = PublicNotifyPrefsSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        digits = "".join(ch for ch in concern.reporter_contact if ch.isdigit())
+        if not digits or ser.validated_data["mobile_last4"] != digits[-4:]:
+            return Response({"detail": "Hindi tugma ang huling 4 na numero ng mobile na ginamit sa report."},
+                            status=status.HTTP_400_BAD_REQUEST)
+        concern.notify_sms = ser.validated_data["sms"]
+        concern.save(update_fields=["notify_sms", "updated_at"])
+        return Response(PublicTrackSerializer(concern, context={"request": request}).data)

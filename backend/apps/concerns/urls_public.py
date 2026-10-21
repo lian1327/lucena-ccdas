@@ -12,5 +12,7 @@ urlpatterns = [
     path("concerns/", v.PublicConcernCreateView.as_view(), name="concern-create"),
     path("concerns/track/<str:reference_no>/", v.PublicTrackView.as_view(), name="concern-track"),
     path("concerns/track/<str:reference_no>/confirm/", v.PublicConfirmView.as_view(), name="concern-confirm"),
+    path("concerns/track/<str:reference_no>/notifications/", v.PublicNotifyPrefsView.as_view(), name="concern-notify-prefs"),
     path("stats/", v.PublicStatsView.as_view(), name="stats"),
+    path("recent-fixes/", v.PublicRecentFixesView.as_view(), name="recent-fixes"),
 ]

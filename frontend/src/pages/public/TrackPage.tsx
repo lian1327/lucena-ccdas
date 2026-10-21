@@ -8,6 +8,7 @@ import { apiErrorMessage } from "@/api/client";
 import { FullPageSpinner } from "@/components/FullPageSpinner";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ConfirmFix } from "@/features/report/ConfirmFix";
+import { SmsPreference } from "@/features/report/SmsPreference";
 
 const fmt = (iso?: string | null) =>
   iso ? new Date(iso).toLocaleString("en-PH", { dateStyle: "medium", timeStyle: "short" }) : "—";
@@ -132,6 +133,7 @@ export function TrackPage() {
             )}
 
             <ConfirmFix c={c} />
+            <SmsPreference c={c} />
 
             <h3 className="h6">Timeline</h3>
             <ol className="list-unstyled border-start ps-3 mb-0">

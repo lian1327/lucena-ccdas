@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 
 import { Seal } from "@/components/gov/Seal";
 import { AlertBell } from "@/features/notifications/AlertBell";
+import { useSite } from "@/site/useSite";
 import { useAuth } from "@/auth/AuthContext";
 import { APP_NAME, LGU_SEAL_SRC, LGU_SHORT } from "@/config";
 
@@ -28,6 +29,7 @@ const NAV: NavItem[] = [
 
 export function StaffLayout() {
   const { user, logout, hasRole } = useAuth();
+  const site = useSite();
   const navigate = useNavigate();
   const isExec = hasRole("city_admin", "mayor");
   const visible = (n: NavItem) => (!n.executiveOnly || isExec) && (!n.roles || hasRole(...n.roles));
@@ -46,7 +48,9 @@ export function StaffLayout() {
             <Seal src={LGU_SEAL_SRC} alt={`${LGU_SHORT} seal`} size="sm" />
             <span className="lh-sm">
               <span className="d-block gov-head fw-bold text-white">{LGU_SHORT}</span>
-              <span className="d-block small" style={{ color: "var(--sun)" }}>{APP_NAME} · Staff Portal</span>
+              <span className="d-block small" style={{ color: "var(--sun)" }}>
+                {APP_NAME} · Staff Portal{site.isPrototype && <span className="badge text-bg-warning ms-2">PROTOTYPE</span>}
+              </span>
             </span>
           </Navbar.Brand>
           <div className="d-flex align-items-center">

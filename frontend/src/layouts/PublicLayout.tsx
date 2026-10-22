@@ -4,9 +4,11 @@ import { useEffect } from "react";
 
 import { useAuth } from "@/auth/AuthContext";
 import { GovphBar } from "@/components/gov/GovphBar";
+import { PrototypeBanner } from "@/components/gov/PrototypeBanner";
 import { Seal } from "@/components/gov/Seal";
 import { SiteFooter } from "@/components/gov/SiteFooter";
 import { LGU_PROVINCE, LGU_SEAL_SRC, LGU_SHORT } from "@/config";
+import { useSite } from "@/site/useSite";
 
 function ScrollToHash() {
   const { pathname, hash } = useLocation();
@@ -19,23 +21,35 @@ function ScrollToHash() {
 
 export function PublicLayout() {
   const { status, isStaff } = useAuth();
+  const site = useSite();
 
   return (
     <div className="d-flex flex-column min-vh-100">
       <a href="#main" className="skip-link">Lumaktaw sa nilalaman</a>
       <ScrollToHash />
-      <GovphBar />
+      <GovphBar official={!site.isPrototype} />
 
       <header className="masthead">
         <Container className="d-flex align-items-center gap-3 py-3">
-          <Link to="/" className="d-flex align-items-center gap-3">
-            <Seal src={LGU_SEAL_SRC} alt={`Opisyal na selyo ng ${LGU_SHORT}`} />
-            <span>
-              <span className="lgu-line d-block">Republika ng Pilipinas · {LGU_PROVINCE}</span>
-              <span className="lgu-name d-block">{LGU_SHORT}</span>
-              <span className="portal-name d-block">Citizen Concern Portal</span>
-            </span>
-          </Link>
+          {site.isPrototype ? (
+            <Link to="/" className="d-flex align-items-center gap-3">
+              <span className="seal seal-fallback" aria-hidden><i className="bi bi-chat-square-text" /></span>
+              <span>
+                <span className="lgu-line d-block">Proyektong pananaliksik · {site.org_name}</span>
+                <span className="lgu-name d-block">CCADSS</span>
+                <span className="portal-name d-block">Citizen Concern Portal · Prototype</span>
+              </span>
+            </Link>
+          ) : (
+            <Link to="/" className="d-flex align-items-center gap-3">
+              <Seal src={LGU_SEAL_SRC} alt={`Opisyal na selyo ng ${LGU_SHORT}`} />
+              <span>
+                <span className="lgu-line d-block">Republika ng Pilipinas · {LGU_PROVINCE}</span>
+                <span className="lgu-name d-block">{LGU_SHORT}</span>
+                <span className="portal-name d-block">Citizen Concern Portal</span>
+              </span>
+            </Link>
+          )}
         </Container>
       </header>
 
@@ -61,6 +75,8 @@ export function PublicLayout() {
           </Navbar.Collapse>
         </Container>
       </Navbar>
+
+      <PrototypeBanner />
 
       <main id="main" tabIndex={-1} className="flex-grow-1">
         <Outlet />

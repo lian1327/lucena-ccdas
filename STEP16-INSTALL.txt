@@ -1,0 +1,48 @@
+CCADSS – Step 16: Deployment kit (free tier, research-prototype mode)
+=====================================================================
+Read DEPLOY.md (project root) for the full walkthrough: Neon → Backblaze B2 → Render → Cloudflare Pages → GitHub Actions.
+
+WHAT'S IN THE KIT
+Root:      render.yaml (Render blueprint) · .github/workflows/cron.yml (free scheduler) · .gitignore · .gitattributes · DEPLOY.md
+Backend:   config/settings.py (dev + production in one file, all via .env), config/system.py + config/urls.py
+           (/api/v1/health/, /api/v1/public/site/, /api/v1/internal/cron/), build.sh, requirements-deploy.txt, .env.example
+           Commands: demo_users (--list/--rotate/--delete), upload_media, sync_models (--push/--pull)
+           Photos + trained models in a private S3-compatible bucket (signed links, 1 h); model auto-downloads after restarts
+           Sample data: labelled on the public site, never rings a staff bell, can be hidden (PUBLIC_SAMPLE_DATA=False)
+           Tests: +8 (130 total)
+Frontend:  Prototype mode: no GOVPH bar/seal, "Prototype para sa pananaliksik" banner on every public page, college as
+           data controller in a rewritten Data Privacy Notice, "proposed" label on the Citizen's Charter, warning on the
+           report confirmation, PROTOTYPE badge in the staff header. One build serves both modes (read from the API).
+           Cloudflare Pages files: public/_redirects (deep links), public/_headers (security headers + CSP)
+           API timeout raised to 90 s (a free server needs ~1 min to wake)
+
+INSTALL (PowerShell, project root)
+1. Unzip over the project.
+   - backend/config/settings.py is REPLACED. It is your file plus the deployment settings (your apps.classification,
+     apps.reports, Celery and engine settings are kept). Compare with Git if you changed it since you sent it to me.
+   - .gitignore / backend/.env.example: if you already have them, merge the lines instead of overwriting.
+2. Backend:
+     cd backend
+     (add backend/requirements-deploy.txt lines to requirements.txt)
+     pip install -r requirements.txt
+   Add to backend/.env (local):
+     SITE_MODE=prototype
+     ORG_NAME=Dalubhasaan ng Lungsod ng Lucena
+     CONTACT_EMAIL=
+     PUBLIC_SAMPLE_DATA=True
+     CORS_ALLOWED_ORIGINS=http://localhost:5173
+     CSRF_TRUSTED_ORIGINS=http://localhost:5173
+   No new models, no migrations needed.
+     python manage.py check
+     python manage.py test tests            # 130 tests
+     python manage.py demo_users --list
+3. Frontend: nothing to install.
+     cd frontend
+     npm run dev
+   Local dev shows prototype mode because SITE_MODE=prototype. Set SITE_MODE=official in .env to see the City version.
+4. Deploy: follow DEPLOY.md.
+
+FOUND WHILE BUILDING THIS
+- import_boundaries deletes and re-creates every purok, which untags existing reports. It is NOT run on deploy;
+  puroks travel with your database dump. Only run it on purpose, then with --assign to re-tag reports.
+- seed_reference_data overwrites admin edits to offices/categories, so it is not run on deploy either.

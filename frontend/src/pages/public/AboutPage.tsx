@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 
 import { HOTLINES, LGU_NAME } from "@/config";
 import { FAQ } from "@/pages/public/HomePage";
+import { useSite } from "@/site/useSite";
 
 /**
  * Citizen's Charter entry for this service, in the ARTA (RA 11032) format, plus the full FAQ.
@@ -25,11 +26,18 @@ const STEPS: { client: string; agency: string; fee: string; time: string; who: s
 
 export function AboutPage() {
   const h8888 = HOTLINES.find((h) => h.number === "8888");
+  const site = useSite();
   return (
     <div className="container py-5">
       <div className="prose mb-4">
         <h1 className="section-title">Citizen's Charter</h1>
         <p className="lead">Pagtanggap at pag-aksyon sa mga concern ng mamamayan tungkol sa komunidad.</p>
+        {site.isPrototype && (
+          <div className="alert alert-warning small">
+            Panukalang Citizen's Charter ito para sa pananaliksik: ganito ang magiging serbisyo kapag ginamit ng lungsod
+            ang sistema. Hindi pa ito opisyal na charter ng Pamahalaang Lungsod ng Lucena.
+          </div>
+        )}
         <p className="text-secondary">
           Ang serbisyong ito ay walang bayad. Ang takdang oras ay binibilang sa working days mula nang maipasa ang
           concern sa opisina, ayon sa RA 11032. Puwedeng i-extend nang isang beses lamang, at aabisuhan ka.

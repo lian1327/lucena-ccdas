@@ -5,6 +5,8 @@ import {
   LGU_SEAL_SRC, LGU_SHORT, LGU_WEBSITE,
 } from "@/config";
 
+import { useSite } from "@/site/useSite";
+
 import { Seal } from "./Seal";
 
 /** Set VITE_MAP_CREDIT to name the barangay/purok boundary source alongside OpenStreetMap. */
@@ -29,6 +31,8 @@ const ext = { target: "_blank", rel: "noreferrer" } as const;
 
 /** LGU contact block on top, then the standard Government Website Template footer. */
 export function SiteFooter() {
+  const site = useSite();
+  const proto = site.isPrototype;
   return (
     <footer>
       <div className="lgu-footer py-5">
@@ -36,16 +40,20 @@ export function SiteFooter() {
           <div className="row g-4">
             <div className="col-lg-5">
               <div className="d-flex align-items-center gap-3 mb-3">
-                <Seal src={LGU_SEAL_SRC} alt={`Opisyal na selyo ng ${LGU_SHORT}`} size="sm" />
+                {!proto && <Seal src={LGU_SEAL_SRC} alt={`Opisyal na selyo ng ${LGU_SHORT}`} size="sm" />}
                 <div>
-                  <div className="fw-bold text-white">{LGU_NAME}</div>
-                  <div className="small">{LGU_PROVINCE}</div>
+                  <div className="fw-bold text-white">{proto ? "CCADSS · Research prototype" : LGU_NAME}</div>
+                  <div className="small">{proto ? site.org_name : LGU_PROVINCE}</div>
                 </div>
               </div>
               <p className="mb-2">
-                Citizen Concern Portal: iulat ang mga problema sa komunidad at subaybayan ang aksyon ng
-                lungsod hanggang maayos.
+                {proto
+                  ? "Prototype ng isang citizen concern portal para sa pananaliksik. Hindi ito opisyal na serbisyo ng Pamahalaang Lungsod ng Lucena."
+                  : "Citizen Concern Portal: iulat ang mga problema sa komunidad at subaybayan ang aksyon ng lungsod hanggang maayos."}
               </p>
+              {proto && site.contact_email && (
+                <p className="small"><i className="bi bi-envelope me-2" aria-hidden /><a href={`mailto:${site.contact_email}`}>{site.contact_email}</a></p>
+              )}
               <ul className="small">
                 {LGU_ADDRESS && <li><i className="bi bi-geo-alt me-2" aria-hidden />{LGU_ADDRESS}</li>}
                 {LGU_PHONE && <li><i className="bi bi-telephone me-2" aria-hidden /><a href={`tel:${LGU_PHONE.replace(/[^\d+]/g, "")}`}>{LGU_PHONE}</a></li>}
@@ -89,7 +97,7 @@ export function SiteFooter() {
         </div>
       </div>
 
-      <div className="gwt-footer py-4">
+      {!proto && <div className="gwt-footer py-4">
         <div className="container">
           <div className="row g-4">
             <div className="col-md-4 d-flex gap-3">
@@ -114,7 +122,15 @@ export function SiteFooter() {
             <span>{MAP_CREDIT}</span>
           </div>
         </div>
-      </div>
+      </div>}
+      {proto && (
+        <div className="gwt-footer py-3">
+          <div className="container small d-flex flex-column flex-md-row justify-content-between gap-1">
+            <span>© {new Date().getFullYear()} {site.org_name} · Capstone research</span>
+            <span>{MAP_CREDIT}</span>
+          </div>
+        </div>
+      )}
     </footer>
   );
 }

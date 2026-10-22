@@ -3,7 +3,7 @@ import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
 import { tokenStore } from "@/auth/tokens";
 import { API_BASE } from "@/config";
 
-export const api = axios.create({ baseURL: API_BASE, timeout: 30_000 });
+export const api = axios.create({ baseURL: API_BASE, timeout: 90_000 /* a free server can take ~1 min to wake up */ });
 
 api.interceptors.request.use((config) => {
   const token = tokenStore.access;

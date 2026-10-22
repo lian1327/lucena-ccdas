@@ -45,6 +45,38 @@ AUTO_THRESHOLD = getattr(settings, "ML_AUTO_ASSIGN_THRESHOLD", 0.70)
 OTHER_SUB = "_other"
 
 
+def _remote_storage():
+    """The default file storage when it isn't the local disk (e.g. Cloudflare R2 on a free host)."""
+    from django.core.files.storage import FileSystemStorage, default_storage
+
+    return None if isinstance(default_storage, FileSystemStorage) else default_storage
+
+
+def _push_model(fname):
+    """Copy a trained model to remote storage so it survives restarts of a host with an ephemeral disk."""
+    store = _remote_storage()
+    if store is None:
+        return
+    from django.core.files import File
+
+    key = f"ml/models/{fname}"
+    if store.exists(key):
+        store.delete(key)
+    with open(model_dir() / fname, "rb") as fh:
+        store.save(key, File(fh))
+
+
+def _pull_model(fname):
+    """Fetch a model file from remote storage after a restart. Returns True if it is now on disk."""
+    store = _remote_storage()
+    key = f"ml/models/{fname}"
+    if store is None or not store.exists(key):
+        return False
+    with store.open(key, "rb") as src, open(model_dir() / fname, "wb") as dst:
+        dst.write(src.read())
+    return True
+
+
 def model_dir():
     d = Path(getattr(settings, "ML_MODEL_DIR", Path(settings.BASE_DIR) / "ml" / "models"))
     d.mkdir(parents=True, exist_ok=True)
@@ -255,7 +287,7 @@ def active_artifact():
         return None, None
     if _cache.get("version") != mv.version:
         path = model_dir() / mv.file
-        if not path.exists():
+        if not path.exists() and not _pull_model(mv.file):
             return mv, None
         _cache.clear()
         _cache.update(version=mv.version, artifact=joblib.load(path))
@@ -297,6 +329,7 @@ def save_version(result, user=None, activate=False, notes=""):
     v = (ModelVersion.objects.order_by("-version").values_list("version", flat=True).first() or 0) + 1
     fname = f"classifier_v{v}.joblib"
     joblib.dump(result["artifact"], model_dir() / fname, compress=3)
+    _push_model(fname)
     with transaction.atomic():
         current = ModelVersion.objects.filter(is_active=True).first()
         better = current is None or result["metrics"]["category"]["macro_f1"] >= (current.metrics.get("category", {}).get("macro_f1") or 0)

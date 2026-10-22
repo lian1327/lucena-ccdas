@@ -52,15 +52,21 @@ function Clock() {
 }
 
 /** The thin GOVPH bar that tops Philippine government sites (GWT), plus reader tools. */
-export function GovphBar() {
+export function GovphBar({ official = true }: { official?: boolean }) {
   const { size, setSize, contrast, setContrast } = useReaderSettings();
   const idx = SIZES.indexOf(size);
   return (
     <div className="govph-bar">
       <div className="container d-flex align-items-center justify-content-between gap-3 py-1">
         <div className="d-flex align-items-center gap-3">
-          <a href="https://www.gov.ph" className="govph-mark" target="_blank" rel="noreferrer">GOVPH</a>
-          <Clock />
+          {official ? (
+            <>
+              <a href="https://www.gov.ph" className="govph-mark" target="_blank" rel="noreferrer">GOVPH</a>
+              <Clock />
+            </>
+          ) : (
+            <span className="govph-mark">CCADSS</span>
+          )}
         </div>
         <div className="a11y-tools d-flex align-items-center gap-1" role="group" aria-label="Reader settings">
           <span className="d-none d-sm-inline me-1">Laki ng teksto</span>

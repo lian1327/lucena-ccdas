@@ -276,7 +276,7 @@ def _staff(**filters):
 
 
 def alert(users, kind, concern, title, body="", urgent=False, exclude=None):
-    if is_muted():
+    if is_muted() or (concern is not None and concern.is_synthetic):  # sample data never rings anyone's bell
         return 0
     rows, seen = [], set()
     for u in users:

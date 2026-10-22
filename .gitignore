@@ -3,25 +3,17 @@ venv/
 .venv/
 __pycache__/
 *.pyc
-*.sqlite3
-
-# Secrets
-.env
-.env.local
-*.env
-
-# Django runtime
-backend/media/
 backend/staticfiles/
-
-# Frontend
-node_modules/
+backend/media/
+backend/ml/models/
+backend/reports/test_run.log
+backend/.coverage
+*.sqlite3
+# secrets — never commit
+.env
+.env.*
+!.env.example
+CCADSS-demo-accounts.txt
+# Node
+frontend/node_modules/
 frontend/dist/
-
-# Editors / OS
-.vscode/
-.idea/
-Thumbs.db
-.DS_Store
-
-.geojson

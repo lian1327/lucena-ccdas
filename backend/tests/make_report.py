@@ -27,6 +27,7 @@ MODULES = {
     "test_geo": "Module 5 – GIS (purok tagging)",
     "test_analytics": "Modules 6–7 – Analytics & Decision Support",
     "test_notifications": "Module 1 – Notifications (SMS/email/alerts)",
+    "test_system": "Deployment – health, site mode, scheduler",
 }
 LINE = re.compile(r"^(test_\w+) \((tests\.(test_\w+)\.(\w+)\.test_\w+)\)(?:\n.*?)? \.\.\. (ok|FAIL|ERROR|skipped.*)$", re.M)
 

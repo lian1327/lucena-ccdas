@@ -132,16 +132,18 @@ class Command(BaseCommand):
     def _images(self):
         from PIL import Image, ImageDraw
 
-        folder = Path(settings.MEDIA_ROOT) / "synthetic" / "proof"
-        folder.mkdir(parents=True, exist_ok=True)
+        import io
+
+        from django.core.files.base import ContentFile
+        from django.core.files.storage import default_storage
+
         self.img = {}
         for fam in ("road", "drain", "waste", "light", "other"):
             for phase in ("before", "after"):
                 names = []
                 for v in range(3):
                     name = f"synthetic/proof/{fam}_{phase}_{v}.jpg"
-                    path = Path(settings.MEDIA_ROOT) / name
-                    if not path.exists():
+                    if not default_storage.exists(name):  # local media/ or Cloudflare R2 in production
                         im = Image.new("RGB", (640, 480), (120 + 20 * v, 150, 185) if fam == "light" and phase == "after" else (170 - 10 * v, 175, 180))
                         d = ImageDraw.Draw(im)
                         d.rectangle([0, 300, 640, 480], fill=(95 + 8 * v, 95, 100))  # ground/road
@@ -166,7 +168,9 @@ class Command(BaseCommand):
                         else:
                             d.rectangle([250, 220, 390, 300], fill=(200, 60, 40) if phase == "before" else (80, 150, 90))
                         d.text((16, 16), f"SYNTHETIC {phase.upper()} · {fam}", fill=(255, 255, 255))
-                        im.save(path, quality=70)
+                        buf = io.BytesIO()
+                        im.save(buf, "JPEG", quality=70)
+                        default_storage.save(name, ContentFile(buf.getvalue()))
                     names.append(name)
                 self.img[(fam, phase)] = names
 

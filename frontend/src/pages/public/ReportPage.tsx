@@ -5,6 +5,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { useSubmitConcern } from "@/api/public";
 import type { ConcernCreateResponse } from "@/api/types";
 import { ConcernForm } from "@/features/report/ConcernForm";
+import { useSite } from "@/site/useSite";
 
 export function ReportPage() {
   const submit = useSubmitConcern();
@@ -51,6 +52,7 @@ export function ReportPage() {
 
 function SuccessView({ result, onAgain }: { result: ConcernCreateResponse; onAgain: () => void }) {
   const [copied, setCopied] = useState(false);
+  const site = useSite();
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(result.reference_no);
@@ -76,6 +78,12 @@ function SuccessView({ result, onAgain }: { result: ConcernCreateResponse; onAga
           <p className="small text-secondary mt-2">
             I-screenshot o isulat ito. Gamitin ito para i-track ang report mo anumang oras.
           </p>
+          {site.isPrototype && (
+            <Alert variant="warning" className="small text-start">
+              <strong>Prototype ito.</strong> Hindi naipadala ang report mo sa City Hall. Kung totoong problema ito,
+              tumawag sa <a href="tel:8888">8888</a> o lumapit sa PACD ng City Hall.
+            </Alert>
+          )}
           {result.linked_to_existing && (
             <Alert variant="info" className="small text-start">
               May nauna nang nag-report nito. Pinagsama namin ang mga report para mas mabilis itong maaksyunan.

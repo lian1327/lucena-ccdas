@@ -6,8 +6,13 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 from apps.classifier.views import PublicClassifyView
 
+from .system import CronView, HealthView, SiteInfoView
+
 urlpatterns = [
-    path("admin/", admin.site.urls),
+    path(getattr(settings, "ADMIN_URL", "admin/"), admin.site.urls),
+    path("api/v1/health/", HealthView.as_view(), name="health"),
+    path("api/v1/public/site/", SiteInfoView.as_view(), name="public-site"),
+    path("api/v1/internal/cron/", CronView.as_view(), name="internal-cron"),
     path("api/v1/auth/", include("apps.accounts.urls")),
     path("api/v1/public/", include("apps.concerns.urls_public")),
     path("api/v1/staff/map/", include("apps.geo.urls_staff")),

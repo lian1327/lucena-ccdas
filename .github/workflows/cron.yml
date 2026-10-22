@@ -1,0 +1,21 @@
+# Free scheduler for CCADSS: SMS queue, retries, "Naayos ba talaga?" reminders, escalation, priority refresh.
+# Repo → Settings → Secrets and variables → Actions:  API_URL = https://ccadss-api.onrender.com   CRON_TOKEN = (same as Render)
+name: ccadss-cron
+on:
+  schedule:
+    - cron: "*/30 * * * *"   # every 30 min (UTC; GitHub may run a few minutes late)
+  workflow_dispatch: {}      # "Run workflow" button for testing
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Call the CCADSS job endpoint (wakes the free server if asleep)
+        run: |
+          for i in 1 2 3; do
+            code=$(curl -s -o out.json -w "%{http_code}" -X POST \
+              -H "X-Cron-Token: ${{ secrets.CRON_TOKEN }}" --max-time 120 \
+              "${{ secrets.API_URL }}/api/v1/internal/cron/") && [ "$code" = "200" ] && cat out.json && exit 0
+            echo "attempt $i → HTTP $code, retrying in 30s"; sleep 30
+          done
+          exit 1

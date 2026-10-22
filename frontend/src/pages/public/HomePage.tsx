@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useCategories, usePublicStats, useRecentFixes } from "@/api/public";
 import type { RecentFix } from "@/api/types";
 import { HOTLINES } from "@/config";
+import { useSite } from "@/site/useSite";
 
 const DAY = new Intl.DateTimeFormat("fil-PH", { day: "numeric", month: "short", timeZone: "Asia/Manila" });
 const fmt = (iso: string | null) => (iso ? DAY.format(new Date(iso)) : "—");
@@ -33,6 +34,7 @@ function TrackInline() {
 
 function Receipt({ fixes }: { fixes: RecentFix[] }) {
   const [i, setI] = useState(0);
+  const site = useSite();
   const f = fixes[i % fixes.length];
   const steps: [string, string | null][] = [
     ["Natanggap", f.reported_at],
@@ -43,7 +45,7 @@ function Receipt({ fixes }: { fixes: RecentFix[] }) {
   return (
     <section className="gov-receipt" aria-label="Halimbawa ng naayos na report">
       <div className="receipt-head d-flex justify-content-between align-items-center px-3 py-2">
-        <span>Naayos kamakailan</span>
+        <span>{site.sample_data ? "Halimbawa ng naayos (sample data)" : "Naayos kamakailan"}</span>
         {fixes.length > 1 && (
           <span className="d-flex align-items-center gap-1">
             <button type="button" className="btn btn-sm btn-link p-0 px-1" aria-label="Nakaraang halimbawa"
@@ -143,6 +145,7 @@ function HowProofWorks() {
 
 function Transparency() {
   const stats = usePublicStats();
+  const site = useSite();
   const t = stats.data?.totals;
   if (!t || !t.resolved_90d) return null;
   const onTime = Math.round(t.on_time_rate_90d ?? 0);
@@ -155,7 +158,9 @@ function Transparency() {
           at <strong>{onTime}%</strong> ang nasa takdang oras ng ARTA.
         </p>
         <p className="small text-secondary mb-0">
-          Awtomatikong binibilang mula sa mga report sa portal na ito. Ipinapakita namin ang buong numero, kahit hindi pa ito 100%.
+          {site.sample_data
+            ? "Halimbawang datos (synthetic) para ipakita kung paano gagana ang ulat na ito. Hindi ito totoong datos ng lungsod."
+            : "Awtomatikong binibilang mula sa mga report sa portal na ito. Ipinapakita namin ang buong numero, kahit hindi pa ito 100%."}
         </p>
       </div>
     </section>

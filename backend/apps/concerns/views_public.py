@@ -4,6 +4,7 @@ Authentication is disabled here so a stale/expired JWT in the browser never bloc
 """
 from datetime import timedelta
 
+from django.conf import settings
 from django.core.cache import cache
 from django.db.models import Avg, Count, DurationField, ExpressionWrapper, F, Q
 from django.shortcuts import get_object_or_404
@@ -30,6 +31,14 @@ from .serializers import (
     RecentFixSerializer,
 )
 from apps.notifications.serializers import PublicNotifyPrefsSerializer
+
+
+def public_concerns():
+    """What public numbers are built from. Generated sample data only if PUBLIC_SAMPLE_DATA is on (then labelled)."""
+    qs = Concern.objects.all()
+    if not getattr(settings, "CCADSS_PUBLIC_SAMPLE_DATA", True):
+        qs = qs.filter(is_synthetic=False)
+    return qs
 
 
 class PublicMixin:
@@ -159,7 +168,7 @@ class PublicRecentFixesView(PublicMixin, APIView):
     def _build(self):
         from apps.concerns.models import ConcernAttachment
 
-        qs = (Concern.objects.filter(duplicate_of__isnull=True, status__in=Concern.DONE_STATUSES,
+        qs = (public_concerns().filter(duplicate_of__isnull=True, status__in=Concern.DONE_STATUSES,
                                      category__code__in=self.PUBLIC_CATEGORIES, attachments__kind="before")
               .filter(attachments__kind="resolution").exclude(citizen_confirmation="not_fixed")
               .select_related("category", "subcategory", "barangay", "purok", "case__department")
@@ -200,7 +209,7 @@ class PublicStatsView(PublicMixin, APIView):
     def _build(self):
         now = timezone.now()
         month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-        masters = Concern.objects.filter(duplicate_of__isnull=True).exclude(status=Concern.Status.REJECTED)
+        masters = public_concerns().filter(duplicate_of__isnull=True).exclude(status=Concern.Status.REJECTED)
 
         agg = masters.aggregate(
             total=Count("id"),
@@ -214,7 +223,7 @@ class PublicStatsView(PublicMixin, APIView):
         )["v"]
         agg["avg_resolution_hours"] = round(avg.total_seconds() / 3600, 1) if avg else None
         agg["resolution_rate"] = round(agg["resolved"] / agg["total"] * 100, 1) if agg["total"] else 0.0
-        agg["reports_received"] = Concern.objects.count()  # includes linked duplicates
+        agg["reports_received"] = public_concerns().count()  # includes linked duplicates
 
         last_90 = now - timedelta(days=90)
         done_90 = list(masters.filter(resolved_at__gte=last_90, status__in=Concern.DONE_STATUSES)

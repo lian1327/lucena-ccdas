@@ -22,6 +22,7 @@ import {
   useInspect,
   useOfficeUsers,
   useReject,
+  useUnfounded,
   useReopen,
   useRoute,
   useValidate,
@@ -36,6 +37,7 @@ import { evidenceFields, type EvidencePhoto } from "@/features/evidence/capture"
 import { FlagChip } from "@/features/evidence/ui";
 
 import { ErrorText, Panel, SubmitButton } from "./ui";
+import { ReviewFlagNote } from "@/features/cases/ReviewFlags";
 
 type P = { c: StaffConcernDetail };
 
@@ -59,6 +61,7 @@ export function VerifyPanel({ c }: P) {
     <Panel title="Suriin ang report (Verify)" icon="clipboard-check" tone="primary"
       hint={<>Kumpirmahin ang uri at tunay na kalubhaan. Ang verified lang ang binibilang sa analytics.
         {c.danger_now && <strong className="text-danger d-block mt-1">Sinabi ng nag-report: may panganib ngayon.</strong>}</>}>
+      <ReviewFlagNote flags={c.review_flags} />
       <Form onSubmit={(e) => { e.preventDefault(); verify.mutate({ category, subcategory: sub || null, severity }); }}>
         {c.ai_category && (
           <div className={`small mb-2 p-2 rounded border ${c.ai_category === c.category_code || !c.category_code ? "bg-light" : "border-warning bg-warning-subtle"}`}>
@@ -564,20 +567,22 @@ export function OutcomePanel({ c }: P) {
   const close = useClose(c.id);
   const reopen = useReopen(c.id);
   const reject = useReject(c.id);
+  const unfounded = useUnfounded(c.id);
   const escalate = useEscalate(c.id);
-  const [modal, setModal] = useState<null | "reopen" | "reject" | "escalate">(null);
+  const [modal, setModal] = useState<null | "reopen" | "reject" | "escalate" | "unfounded">(null);
   const [text, setText] = useState("");
   const p = c.permissions;
-  if (!p.close && !p.reopen && !p.reject && !p.escalate) return null;
+  if (!p.close && !p.reopen && !p.reject && !p.escalate && !p.unfounded) return null;
 
   const run = () => {
     const done = { onSuccess: () => { setModal(null); setText(""); } };
     if (modal === "reopen") reopen.mutate({ remarks: text }, done);
     if (modal === "reject") reject.mutate({ remarks: text }, done);
+    if (modal === "unfounded") unfounded.mutate({ remarks: text }, done);
     if (modal === "escalate") escalate.mutate({ reason: text }, done);
   };
-  const pending = reopen.isPending || reject.isPending || escalate.isPending;
-  const err = reopen.error ?? reject.error ?? escalate.error;
+  const pending = reopen.isPending || reject.isPending || escalate.isPending || unfounded.isPending;
+  const err = reopen.error ?? reject.error ?? escalate.error ?? unfounded.error;
 
   return (
     <Panel title="Iba pang aksyon" icon="three-dots">
@@ -593,17 +598,30 @@ export function OutcomePanel({ c }: P) {
             Escalate{c.case && c.case.escalation_level > 0 ? ` (kasalukuyan: ${c.case.escalation_level_display})` : ""}
           </Button>
         )}
+        {p.unfounded && (
+          <Button variant="outline-danger" onClick={() => setModal("unfounded")}>
+            <i className="bi bi-search me-1" aria-hidden />Hindi natagpuan sa lugar (Unfounded)
+          </Button>
+        )}
         {p.reject && <Button variant="outline-danger" onClick={() => setModal("reject")}>Hindi maaaksyunan (Reject)</Button>}
       </div>
       <ErrorText err={close.error} />
       <Modal show={!!modal} onHide={() => setModal(null)} centered>
         <Modal.Header closeButton>
           <Modal.Title className="h5">
-            {modal === "reopen" ? "Buksan muli" : modal === "reject" ? "Reject" : "Escalate sa susunod na antas"}
+            {modal === "reopen" ? "Buksan muli" : modal === "reject" ? "Reject"
+              : modal === "unfounded" ? "Hindi natagpuan sa lugar" : "Escalate sa susunod na antas"}
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
           {modal === "reject" && <Alert variant="warning" className="small">Makikita ng nag-report ang dahilan.</Alert>}
+          {modal === "unfounded" && (
+            <Alert variant="warning" className="small">
+              Gamitin lang kapag pinuntahan ang lugar at walang nakitang problema. Isulat kung ano ang nakita (petsa,
+              oras, palatandaan). Makakatanggap ang nag-report ng abiso. Binibilang ito sa mga report ng numerong
+              ito na walang batayan; hindi kasama ang ibang nag-report ng parehong problema.
+            </Alert>
+          )}
           <Form.Control as="textarea" rows={3} value={text} onChange={(e) => setText(e.target.value)} placeholder="Dahilan" />
           <ErrorText err={err} />
         </Modal.Body>

@@ -14,11 +14,13 @@ export type PhotoMeta = {
   device_lat?: number | null;
   device_lng?: number | null;
   device_accuracy?: number | null;
+  /** Taken with "Kunan ngayon" (camera opened from the form), not picked from the gallery. */
+  live?: boolean;
 };
 
 export type EvidencePhoto = { file: File; preview: string; meta: PhotoMeta };
 
-async function readExif(file: File): Promise<Pick<PhotoMeta, "exif_lat" | "exif_lng" | "exif_time">> {
+export async function readExif(file: File): Promise<Pick<PhotoMeta, "exif_lat" | "exif_lng" | "exif_time">> {
   try {
     const exifr = (await import("exifr")).default;
     const data = await exifr.parse(file, { gps: true, pick: ["DateTimeOriginal", "CreateDate", "latitude", "longitude"] });

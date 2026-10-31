@@ -59,7 +59,13 @@ def distinct_duplicate_reporters(concern):
     own = identity(concern)
     ids = {identity(d) for d in concern.duplicates.only("pk", "reporter_id", "reporter_contact", "reporter_email")}
     ids.discard(own)
-    return len(ids)
+    # Reports without a name/number can't be told apart, so together they count as at most ANON_CAP people.
+    # Anyone may still report anonymously; one person just can't push a case up the queue that way.
+    anon = sum(1 for i in ids if i.startswith("anon:"))
+    return len(ids) - anon + min(anon, ANON_CAP)
+
+
+ANON_CAP = 2
 
 
 def compute_priority(concern, save=True):

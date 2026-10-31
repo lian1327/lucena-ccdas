@@ -27,6 +27,7 @@ import { UrgencyBadge } from "@/components/UrgencyBadge";
 import { ProofOfWork } from "@/features/evidence/ProofOfWork";
 import { CaseNotifications } from "@/features/notifications/CaseNotifications";
 import { dueLabel, fmtDate, fmtDateTime, timeAgo } from "@/utils/format";
+import { FlagChip } from "@/features/evidence/ui";
 
 function NotesPanel({ c }: { c: StaffConcernDetail }) {
   const add = useAddNote(c.id);
@@ -257,9 +258,12 @@ export function CaseDetailPage() {
                       <div className="small fw-semibold mb-1">{label}</div>
                       <div className="d-flex flex-wrap gap-2">
                         {list.map((a) => (
-                          <a key={a.id} href={a.url} target="_blank" rel="noopener">
-                            <img src={a.url} alt="" width={120} height={120} className="rounded border object-fit-cover" />
-                          </a>
+                          <div key={a.id} style={{ width: 120 }}>
+                            <a href={a.url} target="_blank" rel="noopener">
+                              <img src={a.url} alt="" width={120} height={120} className="rounded border object-fit-cover" />
+                            </a>
+                            <div className="mt-1">{a.flags.map((f) => <FlagChip key={f.code} f={f} />)}</div>
+                          </div>
                         ))}
                       </div>
                     </div>

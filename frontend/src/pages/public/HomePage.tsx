@@ -188,7 +188,7 @@ function EmergencyNotice() {
 }
 
 const STEPS = [
-  ["Mag-report", "Ilarawan ang problema, kumuha ng larawan, at i-pin ang lokasyon. Bibigyan ka ng reference number."],
+  ["Mag-report", "Ilarawan ang problema, kumuha ng larawan (pinakamainam ang kinunan ngayon sa mismong lugar), at i-pin ang lokasyon. Bibigyan ka ng reference number."],
   ["Sinusuri at ipinapasa", "Tinitingnan ng PACD kung kumpleto ang report, saka ipinapasa sa tamang opisina. Kung may parehong report na, pinagsasama ang mga ito para isang aksyon lang."],
   ["Inaaksyunan", "Ininspeksyon at inaayos ng opisina. Nag-a-upload sila ng larawan bago at pagkatapos, kasama ang petsa at lokasyon ng pagkuha."],
   ["Ikaw ang magkukumpirma", "Makikita mo ang patunay sa pahina ng iyong report. Kung hindi talaga naayos, sabihin mo at bubuksan itong muli."],
@@ -293,6 +293,7 @@ function Hotlines() {
 
 export const FAQ: [string, string][] = [
   ["Kailangan ko bang gumawa ng account?", "Hindi. Ilagay lang ang iyong mobile number kung gusto mong makatanggap ng update. Puwede ring mag-report nang hindi nagpapakilala."],
+  ["Paano kung may magpadala ng pekeng report?", "Sinusuri ng PACD ang bawat report at pinupuntahan ng opisina ang lugar bago gumawa ng anumang trabaho, kaya hindi nasasayang ang aksyon sa pekeng report. Hindi rin kailanman ipinapakita sa publiko ang mga litrato ng nag-report; ang larawan lang ng opisina, bago at pagkatapos ayusin, ang makikita. Ang paulit-ulit na report na mapapatunayang walang batayan ay susuriing mabuti."],
   ["Na-report na ito ng kapitbahay ko. Dapat pa ba akong mag-report?", "Oo. Pinagsasama ng sistema ang magkakaparehong report sa iisang lugar, kaya isang aksyon lang ang gagawin, pero mas tumataas ang priority kapag mas marami ang apektado."],
   ["Gaano katagal bago maayos?", "Depende sa uri: 3, 7 o 20 working days ayon sa ARTA. Makikita mo ang takdang petsa sa pahina ng iyong report."],
   ["Paano kung sinabing tapos na pero hindi naman?", "Sa loob ng 30 araw, pindutin ang \"Hindi pa naayos\" sa pahina ng report. Bubuksan ito ulit at makikita ng mga namamahala."],

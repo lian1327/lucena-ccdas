@@ -151,6 +151,9 @@ def permissions_for(u, c):
         and (admin or pacd or head or desk or chief or (brgy and brgy_level)),
         "escalate": not readonly and open_ and bool(case) and case.escalation_level < 3 and not is_dup,
         "reject": not readonly and open_ and not is_dup and (admin or pacd or head),
+        # after a site visit found nothing: closes the report as unfounded (counts toward repeat-unfounded checks)
+        "unfounded": not readonly and open_ and not is_dup
+        and (admin or pacd or head or desk or chief or _is_worker(u, c)),
         "close": not readonly and c.status == S.RESOLVED and (admin or pacd or (brgy and brgy_level)),
         "reopen": not readonly and c.status == S.RESOLVED and (admin or pacd),
         "notes": not readonly and bool(case),

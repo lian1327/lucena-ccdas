@@ -157,6 +157,7 @@ export const useFollowUp = (id: number) =>
   }>(id, "follow-up");
 export const useFeedback8888 = (id: number) => useCaseAction<{ feedback: string }>(id, "feedback-8888");
 export const useReject = (id: number) => useCaseAction<{ remarks: string }>(id, "reject");
+export const useUnfounded = (id: number) => useCaseAction<{ remarks: string }>(id, "unfounded");
 export const useClose = (id: number) => useCaseAction<{ remarks?: string }>(id, "close");
 export const useReopen = (id: number) => useCaseAction<{ remarks: string }>(id, "reopen");
 export const useEscalate = (id: number) => useCaseAction<{ reason: string }>(id, "escalate");

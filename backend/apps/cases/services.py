@@ -558,6 +558,24 @@ def reject(concern, user, *, remarks):
 
 
 @transaction.atomic
+def mark_unfounded(concern, user, *, remarks):
+    """
+    Site visit (or clear evidence) found no such problem. Closes the report as REJECTED / unfounded and tells
+    the reporter why. Only the original report counts toward the reporter's unfounded history; people who
+    reported the same thing in good faith (linked duplicates) are informed but not counted against.
+    """
+    remarks = (remarks or "").strip()
+    if len(remarks) < 10:
+        raise WorkflowError("Isulat kung ano ang nakita sa lugar (hindi bababa sa 10 letra).")
+    concern.rejection_kind = Concern.RejectionKind.UNFOUNDED
+    concern.save(update_fields=["rejection_kind", "updated_at"])
+    case = getattr(concern, "case", None)
+    _note(case, user, f"Unfounded: {remarks}")
+    change_status(concern, S.REJECTED, user,
+                  f"Sinuri sa lugar at hindi natagpuan ang iniulat na problema. {remarks}", enforce=False)
+
+
+@transaction.atomic
 def close(concern, user, *, remarks=""):
     change_status(concern, S.CLOSED, user, remarks or "Isinara na ang report. Salamat sa pakikipagtulungan!")
 

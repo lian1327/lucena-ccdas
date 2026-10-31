@@ -11,6 +11,7 @@ import type { LatLng } from "./LocationPicker";
 import { locatePin, usePuroks } from "@/api/public";
 import type { Locate } from "@/api/types";
 import { compressImage } from "@/utils/compressImage";
+import { currentPosition, readExif, type PhotoMeta } from "@/features/evidence/capture";
 
 const LocationPicker = lazy(() => import("./LocationPicker"));
 
@@ -122,7 +123,7 @@ export function ConcernForm({ mode, submitting, submitLabel, onSubmit: submitPay
   const barangays = useBarangays();
 
   const [form, setForm] = useState<FormState>(() => ({ ...EMPTY, category: initialCategory ?? "" }));
-  const [photos, setPhotos] = useState<File[]>([]);
+  const [photos, setPhotos] = useState<{ file: File; meta: PhotoMeta }[]>([]);
   const [compressing, setCompressing] = useState(false);
   const [pin, setPin] = useState<LatLng | null>(null);
   const [showMap, setShowMap] = useState(false);
@@ -163,17 +164,34 @@ export function ConcernForm({ mode, submitting, submitLabel, onSubmit: submitPay
     [selectedBarangay],
   );
 
-  const previews = useMemo(() => photos.map((p) => URL.createObjectURL(p)), [photos]);
+  const previews = useMemo(() => photos.map((p) => URL.createObjectURL(p.file)), [photos]);
   useEffect(() => () => previews.forEach((u) => URL.revokeObjectURL(u)), [previews]);
 
-  const onPickPhotos = async (files: FileList | null) => {
+  /**
+   * Gallery pick: the photo's own date/GPS is read before compression (compression strips it).
+   * "Kunan ngayon" (live): the phone's location at the moment of capture is added and the photo is marked live.
+   * These are only screening signals for staff; a photo with no camera data is perfectly normal.
+   */
+  const onPickPhotos = async (files: FileList | null, live = false) => {
     if (!files?.length) return;
     const room = MAX_PHOTOS - photos.length;
     const picked = Array.from(files).slice(0, room);
     setCompressing(true);
+    const [pos, ...exifs] = await Promise.all([live ? currentPosition() : Promise.resolve(null), ...picked.map(readExif)]);
     const compressed = await Promise.all(picked.map((f) => compressImage(f)));
     setCompressing(false);
-    setPhotos((p) => [...p, ...compressed]);
+    setPhotos((p) => [...p, ...compressed.map((file, i) => ({
+      file,
+      meta: {
+        ...exifs[i],
+        ...(live ? {
+          live: true,
+          device_lat: pos?.coords.latitude ?? null,
+          device_lng: pos?.coords.longitude ?? null,
+          device_accuracy: pos ? Math.round(pos.coords.accuracy) : null,
+        } : {}),
+      },
+    }))]);
     setErrors((e) => ({ ...e, images: undefined }));
   };
 
@@ -223,7 +241,8 @@ export function ConcernForm({ mode, submitting, submitLabel, onSubmit: submitPay
         notify_sms: !form.is_anonymous && form.notify_sms,
         notify_email: !form.is_anonymous,
         consent_given: form.consent_given,
-        images: photos,
+        images: photos.map((p) => p.file),
+        photo_meta: JSON.stringify(photos.map((p) => p.meta)),
       });
     } catch (err) {
       const fields = apiFieldErrors(err);
@@ -328,6 +347,11 @@ export function ConcernForm({ mode, submitting, submitLabel, onSubmit: submitPay
               {previews.map((src, i) => (
                 <div key={src} className="position-relative">
                   <img src={src} alt={`Litrato ${i + 1}`} className="rounded border object-fit-cover" width={88} height={88} />
+                  {photos[i]?.meta.live && (
+                    <span className="badge text-bg-success position-absolute bottom-0 start-0 m-1" style={{ fontSize: 10 }}>
+                      <i className="bi bi-camera-fill me-1" aria-hidden />Live
+                    </span>
+                  )}
                   <button
                     type="button"
                     className="btn btn-sm btn-dark position-absolute top-0 end-0 py-0 px-1"
@@ -340,11 +364,31 @@ export function ConcernForm({ mode, submitting, submitLabel, onSubmit: submitPay
               ))}
               {photos.length < MAX_PHOTOS && (
                 <label
+                  className="d-flex flex-column align-items-center justify-content-center border border-primary rounded text-primary bg-primary-subtle"
+                  style={{ width: 88, height: 88, cursor: "pointer" }}
+                  title="Bubuksan ang camera. Mas madaling mapatunayan ang litratong kinunan ngayon sa mismong lugar."
+                >
+                  {compressing ? <Spinner size="sm" /> : <i className="bi bi-camera-fill fs-4" aria-hidden />}
+                  <span className="small text-center lh-sm">Kunan ngayon</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    hidden
+                    onChange={(e) => {
+                      onPickPhotos(e.target.files, true);
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
+              )}
+              {photos.length < MAX_PHOTOS && (
+                <label
                   className="d-flex flex-column align-items-center justify-content-center border rounded text-secondary bg-light"
                   style={{ width: 88, height: 88, cursor: "pointer", borderStyle: "dashed" }}
                 >
-                  {compressing ? <Spinner size="sm" /> : <i className="bi bi-camera fs-4" aria-hidden />}
-                  <span className="small">Dagdag</span>
+                  <i className="bi bi-images fs-4" aria-hidden />
+                  <span className="small">Mula gallery</span>
                   <input
                     type="file"
                     accept="image/*"
@@ -617,6 +661,19 @@ export function ConcernForm({ mode, submitting, submitLabel, onSubmit: submitPay
             <FieldError msg={errors.consent_given} />
           </div>
         </Section>
+
+        {mode === "public" && (
+          <div className="attest p-3 mb-2" role="note">
+            <strong className="d-block">
+              <i className="bi bi-patch-check-fill me-1" aria-hidden />
+              Sa pagpapadala, pinapatunayan mong totoo ang report na ito ayon sa iyong nalalaman.
+            </strong>
+            <span className="small">
+              Sinusuri ang bawat report at pinupuntahan ang lugar bago aksyunan. Ang paulit-ulit na report na
+              mapapatunayang walang batayan ay susuriing mabuti.
+            </span>
+          </div>
+        )}
 
         <div className="position-sticky bottom-0 bg-body py-2">
           <Button type="submit" size="lg" className="w-100" disabled={submitting || compressing}>

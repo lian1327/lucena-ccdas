@@ -7,6 +7,7 @@ const LEVEL = {
   red: { bg: "danger", icon: "x-octagon-fill" },
   amber: { bg: "warning", icon: "exclamation-triangle-fill" },
   info: { bg: "secondary", icon: "info-circle" },
+  good: { bg: "success", icon: "check-circle-fill" },
 } as const;
 
 export function FlagChip({ f }: { f: Pick<EvidenceFlag, "code" | "label"> & { level: string } }) {

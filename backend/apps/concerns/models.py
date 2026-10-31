@@ -206,6 +206,19 @@ class Concern(models.Model):
     ai_top = models.JSONField(default=list, blank=True)
     ai_model = models.ForeignKey("classifier.ModelVersion", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
 
+    # Report screening (Step 17): signals for the PACD, never an automatic rejection
+    class RejectionKind(models.TextChoices):
+        NONE = "", "—"
+        UNFOUNDED = "unfounded", "Unfounded: not found at the site"
+        OTHER = "other", "Other reason"
+
+    rejection_kind = models.CharField(max_length=12, choices=RejectionKind.choices, blank=True, default="", db_index=True)
+    reporter_key = models.CharField(max_length=40, blank=True, db_index=True,
+                                    help_text="Keyed hash of the reporter's mobile/email/account (abuse checks only).")
+    submit_ip_hash = models.CharField(max_length=40, blank=True, db_index=True,
+                                      help_text="Keyed hash of the submitting network address (burst checks only).")
+    review_flags = models.JSONField(default=list, blank=True, help_text="Screening signals, see apps.concerns.trust.FLAGS.")
+
     is_synthetic = models.BooleanField(
         default=False, db_index=True, help_text="Generated demo/test data. Purge with generate_synthetic_data --purge.",
     )

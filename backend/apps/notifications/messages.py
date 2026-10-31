@@ -84,6 +84,8 @@ def _sms_variants(concern, event, history, extra):
             yield f"{ref}: Binuksan muli ang kaso at babalikan ng {office}. {link}"
         elif event == E.CLOSED:
             yield f"{ref}: Isinara na ang report. Salamat sa pag-report! {link}"
+        elif event == E.REJECTED and concern.rejection_kind == "unfounded":
+            yield f"{ref}: Pinuntahan ang lugar at hindi natagpuan ang iniulat na problema. May tanong? Lumapit sa PACD. {link}"
         elif event == E.REJECTED:
             yield f"{ref}: Hindi maaaksyunan: {reason}. May tanong? Lumapit sa PACD ng City Hall. {link}"
 

@@ -123,6 +123,9 @@ def on_concern_submitted(concern, user=None):
     # Hook for Module 3 (AI classification) — will be replaced by a Celery task:
     # classify_concern.delay(concern.pk)
 
+    from . import trust
+
+    trust.assess(concern)  # screening signals for the PACD (Step 17); never rejects anything
     compute_priority(concern)
     if concern.danger_now and not master:
         from apps.notifications.models import StaffAlert

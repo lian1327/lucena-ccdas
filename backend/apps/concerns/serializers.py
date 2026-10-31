@@ -66,6 +66,11 @@ class PublicConcernCreateSerializer(serializers.ModelSerializer):
     affected_scale = serializers.ChoiceField(
         choices=list(AFFECTED_BUCKETS), write_only=True, required=False, default="street"
     )
+    photo_meta = serializers.CharField(
+        write_only=True, required=False, allow_blank=True,
+        help_text="JSON list aligned with images: what the browser read before compressing each photo "
+                  "(exif_lat, exif_lng, exif_time; for 'Kunan ngayon': device_lat, device_lng, device_accuracy, live).",
+    )
     images = serializers.ListField(
         child=serializers.ImageField(), write_only=True, required=False, max_length=MAX_IMAGES,
         error_messages={"max_length": f"Hanggang {MAX_IMAGES} litrato lang. (Up to {MAX_IMAGES} photos.)"},
@@ -84,7 +89,7 @@ class PublicConcernCreateSerializer(serializers.ModelSerializer):
             "involves_barangay_officials",
             "barangay", "purok", "latitude", "longitude", "location_description",
             "reporter_name", "reporter_contact", "reporter_email", "is_anonymous", "consent_given",
-            "notify_sms", "notify_email", "images",
+            "notify_sms", "notify_email", "images", "photo_meta",
             "reference_no", "status", "created_at", "linked_to_existing",
         ]
         extra_kwargs = {
@@ -184,7 +189,11 @@ class PublicConcernCreateSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def create(self, validated):
+        from apps.cases.evidence import parse_meta
+        from . import trust
+
         images = validated.pop("images", [])
+        metas = parse_meta(validated.pop("photo_meta", ""))
         scale = validated.pop("affected_scale", "street")
         request = self.context.get("request")
         user = request.user if (request and request.user.is_authenticated) else None
@@ -201,9 +210,11 @@ class PublicConcernCreateSerializer(serializers.ModelSerializer):
             category_source=Concern.CategorySource.CITIZEN,
             reporter=None if validated.get("is_anonymous") else user,
             consent_at=timezone.now(),
+            submit_ip_hash=trust.ip_hash(request),
         )
-        for img in images:
-            ConcernAttachment.objects.create(concern=concern, file=img, uploaded_by=user)
+        concern.reporter_key = trust.reporter_key(concern)
+        concern.save(update_fields=["reporter_key"])
+        trust.save_citizen_photos(concern, images, metas, user)
 
         on_concern_submitted(concern, user=user)
         concern.refresh_from_db()

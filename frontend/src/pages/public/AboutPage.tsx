@@ -56,7 +56,8 @@ export function AboutPage() {
       <h2 className="h5 fw-bold">Mga kailangan</h2>
       <ul className="mb-4">
         <li>Paglalarawan ng problema at lokasyon (barangay, at kung maaari, pin sa mapa)</li>
-        <li>Larawan, kung mayroon (hindi sapilitan)</li>
+        <li>Larawan, kung mayroon (hindi sapilitan); pinakamainam ang kinunan ngayon sa mismong lugar</li>
+        <li>Pagpapatunay na totoo ang report ayon sa iyong nalalaman (awtomatiko sa pagpapadala)</li>
         <li>Mobile number, kung gusto mong makatanggap ng update (hindi sapilitan)</li>
       </ul>
 

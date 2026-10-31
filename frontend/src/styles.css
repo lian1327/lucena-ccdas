@@ -343,3 +343,6 @@ aside .nav-link.active {
 /* Research-prototype notice (SITE_MODE=prototype) */
 .prototype-banner { background: #fff4d6; color: var(--ink); border-bottom: 2px solid var(--sun); }
 .prototype-banner a { color: var(--ink); font-weight: 700; }
+
+/* Truthfulness statement above the report button (Step 17) */
+.attest { background: var(--mist); border-left: 4px solid var(--bay); border-radius: 4px; color: var(--ink); }

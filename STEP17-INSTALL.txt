@@ -1,0 +1,47 @@
+CCADSS – Step 17: Guardrails against false reports
+==================================================
+
+WHAT'S NEW
+Citizens
+- "Kunan ngayon" button opens the phone camera; the photo is marked live and the phone's location is attached.
+  "Mula gallery" still works as before. Both read the photo's own date/GPS BEFORE compressing it.
+- Truthfulness statement above the submit button (automatic, no checkbox), plus the same message on the
+  home page (steps + new FAQ "Paano kung may magpadala ng pekeng report?"), the Citizen's Charter and the
+  Data Privacy Notice (anti-abuse use of hashed identifiers).
+Staff (signals only — nothing is ever rejected automatically)
+- Photo signals:  red  = same photo used in a report about a different place/problem
+                  amber = photo's own GPS > 1 km from the pin · photo's own date > 30 days before the report
+                  green = "Kunan ngayon" with phone location within 300 m of the pin
+                  info  = same photo as a nearby report of the same problem (a shared group-chat photo is normal)
+  A photo with NO camera data is never flagged (Facebook/Messenger/phone privacy settings strip it).
+- Reporter signals: 3+ reports from the same mobile/email closed as unfounded in 90 days ("suriin");
+  4+ reports from one network in one barangay within an hour ("burst"). Mobile/email/IP are stored only as
+  keyed hashes for this purpose.
+- Badges on the case list, an explanation box in the Verify panel, flags under each citizen photo.
+- New outcome "Hindi natagpuan sa lugar (Unfounded)" for PACD, office desk/head, division chief and the
+  assigned field staff. Requires a note; the reporter gets a specific SMS; only the original report counts
+  against the reporter (people who reported the same thing in good faith are not counted).
+- Priority: reports without a name/number now count as at most 2 reporters in total toward priority.
+For the study
+- python manage.py trust_report [--since YYYY-MM-DD]
+  → unfounded rate, and for each flag how often flagged reports turned out unfounded (real accuracy of the
+  signals). The proposal's data-analysis and risks tables were updated to match.
+Tests: +18 (148 total).
+
+INSTALL (PowerShell)
+1. Unzip over the project.
+2. Backend:
+     cd backend
+     python manage.py makemigrations concerns
+     python manage.py migrate
+     python manage.py test tests
+3. Frontend:
+     cd frontend
+     npm run gen:api          # backend running
+     npm run dev
+
+NOTES
+- "Kunan ngayon" opens the camera on phones; on a desktop it opens a file picker, and the green "live"
+  signal appears only when the device location is within 300 m of the pin.
+- Phone location needs HTTPS (or localhost), same as the staff evidence capture.
+- Existing reports have no reporter hash; the repeat-unfounded check counts from now on.

@@ -28,6 +28,7 @@ MODULES = {
     "test_analytics": "Modules 6–7 – Analytics & Decision Support",
     "test_notifications": "Module 1 – Notifications (SMS/email/alerts)",
     "test_system": "Deployment – health, site mode, scheduler",
+    "test_trust": "Module 1 – Report screening (false reports)",
 }
 LINE = re.compile(r"^(test_\w+) \((tests\.(test_\w+)\.(\w+)\.test_\w+)\)(?:\n.*?)? \.\.\. (ok|FAIL|ERROR|skipped.*)$", re.M)
 

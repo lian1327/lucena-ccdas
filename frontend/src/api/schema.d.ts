@@ -102,6 +102,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/health/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["health"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/internal/cron/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["internal_cron"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/barangays/": {
         parameters: {
             query?: never;
@@ -268,6 +300,22 @@ export interface paths {
          *     reporter data, so no neighbour dispute or private complaint is ever shown publicly. Cached 10 minutes.
          */
         get: operations["v1_public_recent_fixes_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/site/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["public_site"];
         put?: never;
         post?: never;
         delete?: never;
@@ -844,6 +892,23 @@ export interface paths {
         get: operations["v1_staff_concerns_similar_list"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/concerns/{id}/unfounded/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Staff case inbox and workflow. Visibility and every action are decided in scoping.py. */
+        post: operations["v1_staff_concerns_unfounded_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1656,7 +1721,7 @@ export interface components {
         EventEnum: "received" | "assigned" | "in_progress" | "extended" | "resolved" | "reminder" | "reopened" | "closed" | "rejected";
         EvidenceFlag: {
             code: string;
-            level: components["schemas"]["LevelFa5Enum"];
+            level: components["schemas"]["LevelDddEnum"];
             label: string;
         };
         EvidenceSummary: {
@@ -1796,6 +1861,9 @@ export interface components {
          * @enum {string}
          */
         GradeEnum: "good" | "watch" | "attention" | "insufficient";
+        Health: {
+            ok: boolean;
+        };
         History: {
             readonly id: number;
             from_status?: components["schemas"]["ConcernStatusEnum"] | components["schemas"]["BlankEnum"];
@@ -1842,7 +1910,7 @@ export interface components {
         };
         Insight: {
             kind: string;
-            level: components["schemas"]["LevelFa5Enum"];
+            level: components["schemas"]["InsightLevelEnum"];
             text: string;
             text_en: string;
             /** Format: double */
@@ -1850,6 +1918,13 @@ export interface components {
             barangay_id: number | null;
             category: string | null;
         };
+        /**
+         * @description * `red` - red
+         *     * `amber` - amber
+         *     * `info` - info
+         * @enum {string}
+         */
+        InsightLevelEnum: "red" | "amber" | "info";
         InspectRequest: {
             findings: string;
             action_plan?: string;
@@ -1940,9 +2015,10 @@ export interface components {
          * @description * `red` - red
          *     * `amber` - amber
          *     * `info` - info
+         *     * `good` - good
          * @enum {string}
          */
-        LevelFa5Enum: "red" | "amber" | "info";
+        LevelDddEnum: "red" | "amber" | "info" | "good";
         LinkDuplicateRequest: {
             master_reference: string;
         };
@@ -2053,6 +2129,12 @@ export interface components {
          * @enum {string}
          */
         MethodEnum: "call" | "letter" | "email" | "visit" | "meeting";
+        /**
+         * @description * `official` - official
+         *     * `prototype` - prototype
+         * @enum {string}
+         */
+        ModeEnum: "official" | "prototype";
         ModelVersion: {
             readonly id: number;
             /** Format: int64 */
@@ -2316,6 +2398,7 @@ export interface components {
             extend: boolean;
             escalate: boolean;
             reject: boolean;
+            unfounded: boolean;
             close: boolean;
             reopen: boolean;
             notes: boolean;
@@ -2462,6 +2545,8 @@ export interface components {
             /** @description Reporter wants email updates. */
             notify_email?: boolean;
             images?: string[];
+            /** @description JSON list aligned with images: what the browser read before compressing each photo (exif_lat, exif_lng, exif_time; for 'Kunan ngayon': device_lat, device_lng, device_accuracy, live). */
+            photo_meta?: string;
         };
         PublicConfirmRequest: {
             fixed: boolean;
@@ -2631,6 +2716,13 @@ export interface components {
             before_url: string | null;
             after_url: string | null;
         };
+        /**
+         * @description * `` - —
+         *     * `unfounded` - Unfounded: not found at the site
+         *     * `other` - Other reason
+         * @enum {string}
+         */
+        RejectionKindEnum: "unfounded" | "other";
         RemarksRequest: {
             remarks: string;
         };
@@ -2670,6 +2762,11 @@ export interface components {
         };
         ReturnRequest: {
             reason: string;
+        };
+        ReviewFlag: {
+            code: string;
+            level: components["schemas"]["LevelDddEnum"];
+            label: string;
         };
         /**
          * @description * `citizen` - Citizen
@@ -2734,6 +2831,13 @@ export interface components {
             score: number;
             reasons: string[];
             reporters: number;
+        };
+        SiteInfo: {
+            mode: components["schemas"]["ModeEnum"];
+            org_name: string;
+            contact_email: string;
+            /** @description Public numbers include generated sample data (label them). */
+            sample_data: boolean;
         };
         StaffAlert: {
             readonly id: number;
@@ -2823,6 +2927,9 @@ export interface components {
             /** Format: date-time */
             acceptance_due_at?: string;
             return_reason?: string;
+            /** @description Screening signals for the PACD (never a rejection). */
+            readonly review_flags: components["schemas"]["ReviewFlag"][];
+            rejection_kind?: components["schemas"]["RejectionKindEnum"] | components["schemas"]["BlankEnum"];
             description: string;
             category_code?: string;
             subcategory_code?: string;
@@ -2943,6 +3050,9 @@ export interface components {
             /** Format: date-time */
             acceptance_due_at?: string;
             return_reason?: string;
+            /** @description Screening signals for the PACD (never a rejection). */
+            readonly review_flags: components["schemas"]["ReviewFlag"][];
+            rejection_kind?: components["schemas"]["RejectionKindEnum"] | components["schemas"]["BlankEnum"];
         };
         StaffEncodeRequest: {
             channel: components["schemas"]["ConcernChannelEnum"];
@@ -2982,6 +3092,8 @@ export interface components {
             /** @description Reporter wants email updates. */
             notify_email?: boolean;
             images?: string[];
+            /** @description JSON list aligned with images: what the browser read before compressing each photo (exif_lat, exif_lng, exif_time; for 'Kunan ngayon': device_lat, device_lng, device_accuracy, live). */
+            photo_meta?: string;
         };
         StaffSummary: {
             triage: number;
@@ -3251,6 +3363,43 @@ export interface operations {
             };
         };
     };
+    health: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Health"];
+                };
+            };
+        };
+    };
+    internal_cron: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     v1_public_barangays_list: {
         parameters: {
             query?: never;
@@ -3472,6 +3621,25 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RecentFix"][];
+                };
+            };
+        };
+    };
+    public_site: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SiteInfo"];
                 };
             };
         };
@@ -4551,6 +4719,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PaginatedSimilarReportList"];
+                };
+            };
+        };
+    };
+    v1_staff_concerns_unfounded_create: {
+        parameters: {
+            query?: {
+                barangay?: number;
+                category?: string;
+                include_duplicates?: boolean;
+                /** @description Search reference no., title, landmark, description */
+                q?: string;
+                /** @description Inbox view (default: open) */
+                tab?: "all" | "closed" | "endorsed" | "for_acceptance" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
+            };
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this concern. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RemarksRequest"];
+                "multipart/form-data": components["schemas"]["RemarksRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["RemarksRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffConcernDetail"];
                 };
             };
         };

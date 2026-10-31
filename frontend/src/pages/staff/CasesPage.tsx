@@ -12,6 +12,7 @@ import { PriorityBadge } from "@/components/PriorityBadge";
 import { UrgencyBadge } from "@/components/UrgencyBadge";
 import { StatusBadge } from "@/components/StatusBadge";
 import { dueLabel, timeAgo } from "@/utils/format";
+import { ReviewFlagBadges } from "@/features/cases/ReviewFlags";
 
 function CaseRow({ c }: { c: StaffConcern }) {
   const due = dueLabel(c.due_at);
@@ -33,6 +34,7 @@ function CaseRow({ c }: { c: StaffConcern }) {
             </Badge>
           )}
           {!c.is_verified && <Badge bg="light" text="dark" className="border">Hindi pa verified</Badge>}
+          <ReviewFlagBadges flags={c.review_flags} />
           {c.is_overdue && <Badge bg="danger">Overdue</Badge>}
           {c.escalation_level > 0 && <Badge bg="dark">Escalated L{c.escalation_level}</Badge>}
           {c.channel === "8888" && !c.external_feedback_sent_at && <Badge bg="warning" text="dark">8888 feedback due</Badge>}

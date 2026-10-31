@@ -63,6 +63,12 @@ class StaffUserSerializer(serializers.ModelSerializer):
 
 # ---------- List ----------
 
+class ReviewFlagSerializer(serializers.Serializer):
+    code = serializers.CharField()
+    level = serializers.ChoiceField(choices=["red", "amber", "info", "good"])
+    label = serializers.CharField()
+
+
 class StaffConcernListSerializer(serializers.ModelSerializer):
     category = serializers.CharField(source="category.name", default=None)
     subcategory = serializers.CharField(source="subcategory.name", default=None)
@@ -79,6 +85,7 @@ class StaffConcernListSerializer(serializers.ModelSerializer):
     assigned_to = serializers.SerializerMethodField()
     due_at = serializers.DateTimeField(source="case.due_at", default=None)
     extended = serializers.SerializerMethodField()
+    review_flags = serializers.SerializerMethodField(help_text="Screening signals for the PACD (never a rejection).")
     escalation_level = serializers.IntegerField(source="case.escalation_level", default=0)
     duplicate_count = serializers.IntegerField(read_only=True, default=0)
     channel_display = serializers.CharField(source="get_channel_display")
@@ -100,8 +107,14 @@ class StaffConcernListSerializer(serializers.ModelSerializer):
             "due_at", "extended", "escalation_level", "duplicate_count",
             "external_ticket_no", "external_feedback_due_at", "external_feedback_sent_at",
             "priority_code", "priority_name", "priority_color", "response_due_at", "responded_at",
-            "acceptance_due_at", "return_reason",
+            "acceptance_due_at", "return_reason", "review_flags", "rejection_kind",
         ]
+
+    @extend_schema_field(ReviewFlagSerializer(many=True))
+    def get_review_flags(self, obj):
+        from apps.concerns import trust
+
+        return trust.flag_list(obj.review_flags or [])
 
     def get_assigned_to(self, obj) -> str | None:
         case = getattr(obj, "case", None)
@@ -116,7 +129,7 @@ class StaffConcernListSerializer(serializers.ModelSerializer):
 
 class EvidenceFlagSerializer(serializers.Serializer):
     code = serializers.CharField()
-    level = serializers.ChoiceField(choices=["red", "amber", "info"])
+    level = serializers.ChoiceField(choices=["red", "amber", "info", "good"])
     label = serializers.CharField()
 
 
@@ -138,7 +151,10 @@ class AttachmentSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(EvidenceFlagSerializer(many=True))
     def get_flags(self, obj):
-        return evidence.flag_list(obj.flags or [])
+        from apps.concerns import trust
+
+        codes = obj.flags or []
+        return evidence.flag_list(codes) + trust.flag_list(codes)
 
 
 class MaterialSerializer(serializers.Serializer):
@@ -364,6 +380,7 @@ class PermissionsSerializer(serializers.Serializer):
     extend = serializers.BooleanField()
     escalate = serializers.BooleanField()
     reject = serializers.BooleanField()
+    unfounded = serializers.BooleanField()
     close = serializers.BooleanField()
     reopen = serializers.BooleanField()
     notes = serializers.BooleanField()
@@ -753,6 +770,7 @@ class StaffEncodeSerializer(PublicConcernCreateSerializer):
     @transaction.atomic
     def create(self, validated):
         images = validated.pop("images", [])
+        metas = validated.pop("photo_meta", "")
         scale = validated.pop("affected_scale", "street")
         received = validated.pop("received_at", None) or timezone.now()
         user = self.context["request"].user
@@ -769,8 +787,12 @@ class StaffEncodeSerializer(PublicConcernCreateSerializer):
             encoded_by=user,
             consent_at=timezone.now(),
         )
-        for img in images:
-            ConcernAttachment.objects.create(concern=concern, file=img, uploaded_by=user)
+        from apps.cases.evidence import parse_meta
+        from apps.concerns import trust
+
+        concern.reporter_key = trust.reporter_key(concern)
+        concern.save(update_fields=["reporter_key"])
+        trust.save_citizen_photos(concern, images, parse_meta(metas), user)
         on_concern_submitted(concern, user=user)
         concern.refresh_from_db()
         return concern

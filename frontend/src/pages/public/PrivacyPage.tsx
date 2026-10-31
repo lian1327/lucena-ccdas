@@ -31,6 +31,7 @@ export function PrivacyPage() {
         <li>Ang paglalarawan ng problema, lokasyon (barangay, purok, pin sa mapa) at mga larawan na ini-upload mo</li>
         <li>Pangalan, mobile number at email, kung ilalagay mo. Puwede kang mag-report nang anonymous.</li>
         <li>Teknikal na datos para sa seguridad (hal. oras ng pagsumite), hindi para kilalanin ka</li>
+        <li>Ang petsa at lokasyon na nakatala sa litrato, at ang lokasyon ng cellphone kung gagamitin mo ang "Kunan ngayon"</li>
       </ul>
 
       <h2 className="h5 fw-bold">Para saan ito ginagamit</h2>
@@ -38,11 +39,19 @@ export function PrivacyPage() {
         <ul>
           <li>Para subukan at suriin ang sistema bilang bahagi ng isang capstone na pananaliksik</li>
           <li>Para sa mga pinagsama-samang istatistika na walang nakikilalang tao</li>
+          <li>
+            Para maiwasan ang pekeng report: itinatago ang mobile number, email at network address bilang naka-encrypt
+            na code (hash) na hindi mababasa ng tao, para lang malaman kung paulit-ulit ang report na walang batayan
+          </li>
           <li>Kung pumayag ka, para padalhan ka ng update tungkol sa report na ito lamang</li>
         </ul>
       ) : (
         <ul>
           <li>Para tanggapin, ipasa sa tamang opisina, aksyunan at i-update ka tungkol sa iyong concern</li>
+          <li>
+            Para maiwasan ang pekeng report: itinatago ang mobile number, email at network address bilang naka-encrypt
+            na code (hash) na hindi mababasa ng tao, para lang malaman kung paulit-ulit ang report na walang batayan
+          </li>
           <li>Para sa mga pinagsama-samang istatistika para sa pagpaplano ng lungsod, na walang nakikilalang tao</li>
         </ul>
       )}

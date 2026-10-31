@@ -315,6 +315,11 @@ class StaffConcernViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet
     def reject(self, request, pk=None):
         return self._run("reject", RemarksSerializer, services.reject)
 
+    @extend_schema(request=RemarksSerializer, responses=StaffConcernDetailSerializer)
+    @action(detail=True, methods=["post"])
+    def unfounded(self, request, pk=None):
+        return self._run("unfounded", RemarksSerializer, services.mark_unfounded)
+
     @extend_schema(request=OptionalRemarksSerializer, responses=StaffConcernDetailSerializer)
     @action(detail=True, methods=["post"])
     def close(self, request, pk=None):

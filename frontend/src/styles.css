@@ -346,3 +346,59 @@ aside .nav-link.active {
 
 /* Truthfulness statement above the report button (Step 17) */
 .attest { background: var(--mist); border-left: 4px solid var(--bay); border-radius: 4px; color: var(--ink); }
+
+/* ---------------------------------------------------------------- Field view (Step 18)
+   Phone-first: one column, 48px+ touch targets, readable in sunlight (dark text on white, no thin greys). */
+.field-app { min-height: 100vh; display: flex; flex-direction: column; background: var(--mist); }
+.field-bar {
+  position: sticky; top: 0; z-index: 1020; display: flex; align-items: center; justify-content: space-between;
+  padding: .5rem 1rem; padding-top: max(.5rem, env(safe-area-inset-top)); background: var(--ink); color: #fff;
+}
+.field-brand { color: #fff; text-decoration: none; font-family: var(--font-head); font-weight: 700; font-size: 1.15rem; }
+.field-net {
+  position: relative; border: 1px solid rgba(255,255,255,.4); background: transparent; color: #fff;
+  border-radius: 999px; min-width: 44px; height: 40px; padding: 0 .75rem;
+}
+.field-net.off { background: var(--sun); color: var(--ink); border-color: var(--sun); }
+.field-net-count {
+  position: absolute; top: -6px; right: -6px; min-width: 20px; height: 20px; border-radius: 10px; padding: 0 5px;
+  background: var(--alert); color: #fff; font-size: .75rem; line-height: 20px; font-weight: 700;
+}
+.field-offline { background: #fff4d6; color: var(--ink); padding: .5rem 1rem; font-size: .9rem; border-bottom: 1px solid var(--sun); }
+.field-main { flex: 1; width: 100%; max-width: 640px; margin: 0 auto; padding: 1rem; }
+.field-foot {
+  display: flex; justify-content: space-between; max-width: 640px; width: 100%; margin: 0 auto;
+  padding: .75rem 1rem calc(.75rem + env(safe-area-inset-bottom)); font-size: .85rem; color: var(--muted);
+}
+.field-card {
+  display: block; background: var(--paper); color: var(--ink); text-decoration: none;
+  border: 1px solid var(--rule); border-left: 6px solid var(--muted); border-radius: .5rem; padding: .75rem 1rem;
+}
+.field-card:active { background: #f3f7f8; }
+.field-panel { background: var(--paper); border: 1px solid var(--rule); border-radius: .5rem; padding: 1rem; }
+.field-steps { list-style: none; padding: 0; margin: 1rem 0 0; display: grid; gap: .5rem; }
+.field-step { background: var(--paper); border: 1px solid var(--rule); border-radius: .5rem; padding: .75rem 1rem; }
+.field-step.done { border-color: #9fd0b2; }
+.field-step.queued { border-color: var(--sun); }
+.field-step-head {
+  display: flex; align-items: center; gap: .75rem; width: 100%; min-height: 48px;
+  background: none; border: 0; color: inherit; padding: 0;
+}
+.field-step-n {
+  flex: 0 0 36px; height: 36px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--mist); color: var(--ink); font-weight: 700;
+}
+.field-step.done .field-step-n { background: #198754; color: #fff; }
+.field-step.queued .field-step-n { background: var(--sun); }
+.field-shot { width: 104px; height: 104px; font-size: .85rem; }
+.field-thumb { position: relative; width: 104px; height: 104px; border-radius: .375rem; overflow: hidden; display: block; }
+.field-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.field-thumb-x {
+  position: absolute; top: 4px; right: 4px; width: 32px; height: 32px; border-radius: 50%;
+  border: 0; background: rgba(19,41,61,.8); color: #fff;
+}
+.field-app .btn-lg { min-height: 52px; }
+.field-sheet.offcanvas-bottom { height: auto; max-height: 70vh; }
+.spin { display: inline-block; animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spin { animation: none; } }

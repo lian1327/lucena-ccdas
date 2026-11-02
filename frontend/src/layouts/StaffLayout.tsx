@@ -16,6 +16,8 @@ const NAV: NavItem[] = [
   { to: "/staff/cases", icon: "inboxes", label: "Mga Kaso", ready: true },
   { to: "/staff/encode", icon: "pencil-square", label: "I-encode", ready: true },
   { to: "/staff/map", icon: "geo-alt", label: "GIS Map", ready: true },
+  { to: "/field", icon: "cone-striped", label: "Field app", ready: true,
+    roles: ["dept_staff", "division_chief", "dept_head", "barangay", "city_admin"] },
   { to: "/staff/analytics", icon: "bar-chart", label: "Performance", ready: true,
     roles: ["city_admin", "mayor", "dept_head", "office_desk"] },
   { to: "/staff/accountability", icon: "shield-check", label: "Accountability", ready: true,

@@ -4,28 +4,6 @@
  */
 
 export interface paths {
-    "/api/schema/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * @description OpenApi3 schema for this API. Format can be selected via content negotiation.
-         *
-         *     - YAML: application/vnd.oai.openapi
-         *     - JSON: application/vnd.oai.openapi+json
-         */
-        get: operations["schema_retrieve"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/auth/logout/": {
         parameters: {
             query?: never;
@@ -575,6 +553,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/staff/concerns/{id}/arrive/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Staff case inbox and workflow. Visibility and every action are decided in scoping.py. */
+        post: operations["v1_staff_concerns_arrive_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/staff/concerns/{id}/assign-division/": {
         parameters: {
             query?: never;
@@ -603,6 +598,23 @@ export interface paths {
         put?: never;
         /** @description Staff case inbox and workflow. Visibility and every action are decided in scoping.py. */
         post: operations["v1_staff_concerns_assign_person_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/concerns/{id}/blocker/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Staff case inbox and workflow. Visibility and every action are decided in scoping.py. */
+        post: operations["v1_staff_concerns_blocker_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -998,6 +1010,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/staff/field/jobs/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Field view (Step 18): the jobs this person can work on now. Assigned-to-me first, then by urgency and deadline.
+         *     Actions (arrive, inspect, complete, blocker) go through the staff concern endpoints, which re-check permissions.
+         */
+        get: operations["v1_staff_field_jobs_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/field/jobs/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Field view (Step 18): the jobs this person can work on now. Assigned-to-me first, then by urgency and deadline.
+         *     Actions (arrive, inspect, complete, blocker) go through the staff concern endpoints, which re-check permissions.
+         */
+        get: operations["v1_staff_field_jobs_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/staff/map/barangays/": {
         parameters: {
             query?: never;
@@ -1315,6 +1367,19 @@ export interface components {
             bucket: string;
             count: number;
         };
+        ArriveRequest: {
+            /** Format: double */
+            latitude?: number | null;
+            /** Format: double */
+            longitude?: number | null;
+            /** Format: double */
+            accuracy?: number | null;
+            /**
+             * Format: date-time
+             * @description Phone time of the check-in, when it was saved offline and sent later.
+             */
+            at?: string | null;
+        };
         AssignDivisionRequest: {
             division: number;
             remarks?: string;
@@ -1388,6 +1453,22 @@ export interface components {
         };
         /** @enum {unknown} */
         BlankEnum: "";
+        /**
+         * @description * `materials` - Kulang ang materyales
+         *     * `equipment` - Kailangan ng equipment o mas maraming tauhan
+         *     * `weather` - Masama ang panahon / baha
+         *     * `access` - Hindi mapasok ang lugar / pribadong lupa
+         *     * `wrong_office` - Hindi sakop ng aming opisina
+         *     * `national` - National road o ibang ahensya
+         *     * `not_found` - Hindi makita ang problema sa lugar
+         *     * `other` - Iba pa
+         * @enum {string}
+         */
+        BlockedReasonEnum: "materials" | "equipment" | "weather" | "access" | "wrong_office" | "national" | "not_found" | "other";
+        BlockerRequest: {
+            reason: components["schemas"]["ReasonEnum"];
+            remarks?: string;
+        };
         /** @description Adds role/scope claims so the frontend can route without an extra request. */
         CCADSSTokenObtainPairRequest: {
             username: string;
@@ -1453,7 +1534,6 @@ export interface components {
             /** Format: date-time */
             returned_at?: string | null;
             return_reason?: string;
-            /** Format: int64 */
             return_count?: number;
             readonly priority_level: components["schemas"]["PriorityLevel"];
             priority_reason?: string;
@@ -1466,6 +1546,13 @@ export interface components {
             readonly breaches: string[];
             readonly reports: components["schemas"]["AccomplishmentReport"][];
             readonly evidence: components["schemas"]["EvidenceSummary"] | null;
+            blocked_reason?: components["schemas"]["BlockedReasonEnum"] | components["schemas"]["BlankEnum"];
+            blocked_reason_display: string;
+            blocked_note?: string;
+            /** Format: date-time */
+            blocked_at?: string | null;
+            readonly blocked_by: string | null;
+            readonly visits: components["schemas"]["SiteVisit"][];
         };
         /**
          * @description * `city` - City office
@@ -1675,7 +1762,6 @@ export interface components {
             /** Format: date-time */
             next_follow_up_at?: string | null;
             readonly follow_up_due: boolean;
-            /** Format: int64 */
             follow_up_count?: number;
             readonly follow_ups: components["schemas"]["FollowUp"][];
         };
@@ -1800,6 +1886,59 @@ export interface components {
         };
         Feedback8888Request: {
             feedback: string;
+        };
+        /** @description Everything the field view needs for one job, in one small payload (works on slow mobile data). */
+        FieldJob: {
+            readonly id: number;
+            readonly reference_no: string;
+            title: string;
+            description: string;
+            category?: string;
+            subcategory?: string;
+            barangay: string;
+            readonly purok: string | null;
+            /** @description Landmark / street */
+            location_description?: string;
+            /** Format: decimal */
+            latitude?: string | null;
+            /** Format: decimal */
+            longitude?: string | null;
+            /** @description Citizen answered: is anyone in danger right now? (severity hint, not a score) */
+            danger_now?: boolean;
+            status?: components["schemas"]["ConcernStatusEnum"];
+            priority_code?: string;
+            priority_name?: string;
+            priority_color?: string;
+            /** Format: decimal */
+            priority_score?: string;
+            /** Format: date-time */
+            due_at?: string;
+            is_overdue: boolean;
+            division?: string;
+            readonly assigned_to: string | null;
+            readonly assigned_to_me: boolean;
+            /** Format: date */
+            scheduled_for?: string;
+            /** @default  */
+            action_plan: string;
+            /**
+             * Format: date-time
+             * @description My latest check-in at this site.
+             */
+            readonly arrived_at: string | null;
+            readonly before_count: number;
+            /** @default  */
+            blocked_reason: string;
+            /** @default  */
+            blocked_reason_display: string;
+            /** @default  */
+            blocked_note: string;
+            /** @description The citizen's report photos. */
+            readonly photos: components["schemas"]["FieldPhoto"][];
+        };
+        FieldPhoto: {
+            url: string;
+            kind: string;
         };
         Flag: {
             code: string;
@@ -2137,15 +2276,12 @@ export interface components {
         ModeEnum: "official" | "prototype";
         ModelVersion: {
             readonly id: number;
-            /** Format: int64 */
             version: number;
             /** Format: date-time */
             readonly created_at: string;
             trained_by?: string;
             algorithm: string;
-            /** Format: int64 */
             n_train?: number;
-            /** Format: int64 */
             n_test?: number;
             /** @description {"synthetic": 3200, "real": 0, "extra_csv": 0} */
             data_sources?: unknown;
@@ -2180,17 +2316,13 @@ export interface components {
             recipient: string;
             subject?: string;
             body: string;
-            /**
-             * Format: int64
-             * @description SMS parts billed (1 credit each).
-             */
+            /** @description SMS parts billed (1 credit each). */
             segments?: number;
             status?: components["schemas"]["NotificationStatusEnum"];
             status_display: string;
             provider?: string;
             provider_status?: string;
             network?: string;
-            /** Format: int64 */
             attempts?: number;
             error?: string;
             /**
@@ -2405,6 +2537,8 @@ export interface components {
             link: boolean;
             feedback_8888: boolean;
             follow_up: boolean;
+            arrive: boolean;
+            blocker: boolean;
         };
         PersonActions: {
             accepted: number;
@@ -2462,17 +2596,10 @@ export interface components {
             name: string;
             name_fil?: string;
             description?: string;
-            /**
-             * Format: int64
-             * @description Calendar hours (emergencies don't wait for working days).
-             */
+            /** @description Calendar hours (emergencies don't wait for working days). */
             response_hours?: number | null;
-            /** Format: int64 */
             response_working_days?: number | null;
-            /**
-             * Format: int64
-             * @description Working days. Empty = use the ARTA class maximum.
-             */
+            /** @description Working days. Empty = use the ARTA class maximum. */
             resolution_cap_days?: number | null;
             /** @description Bootstrap color: danger, warning, info, secondary */
             color?: string;
@@ -2695,6 +2822,18 @@ export interface components {
             total: number;
             top: components["schemas"]["RankItem"][];
         };
+        /**
+         * @description * `materials` - Kulang ang materyales
+         *     * `equipment` - Kailangan ng equipment o mas maraming tauhan
+         *     * `weather` - Masama ang panahon / baha
+         *     * `access` - Hindi mapasok ang lugar / pribadong lupa
+         *     * `wrong_office` - Hindi sakop ng aming opisina
+         *     * `national` - National road o ibang ahensya
+         *     * `not_found` - Hindi makita ang problema sa lugar
+         *     * `other` - Iba pa
+         * @enum {string}
+         */
+        ReasonEnum: "materials" | "equipment" | "weather" | "access" | "wrong_office" | "national" | "not_found" | "other";
         RecentFix: {
             problem: string;
             category: string;
@@ -2839,6 +2978,24 @@ export interface components {
             /** @description Public numbers include generated sample data (label them). */
             sample_data: boolean;
         };
+        SiteVisit: {
+            readonly id: number;
+            readonly user: string | null;
+            /** Format: date-time */
+            arrived_at: string;
+            /** Format: date-time */
+            readonly recorded_at: string;
+            /**
+             * Format: double
+             * @description Distance from the reported pin.
+             */
+            distance_m?: number | null;
+            /** Format: double */
+            accuracy_m?: number | null;
+            is_far?: boolean;
+            /** @description Saved on the phone without signal, sent later. */
+            sent_offline?: boolean;
+        };
         StaffAlert: {
             readonly id: number;
             kind: components["schemas"]["StaffAlertKindEnum"];
@@ -2862,9 +3019,10 @@ export interface components {
          *     * `sent_back` - Work returned by supervisor
          *     * `escalated` - Escalated to you
          *     * `disputed` - Citizen says not fixed
+         *     * `blocked` - Field crew can't finish yet
          * @enum {string}
          */
-        StaffAlertKindEnum: "new_case" | "assigned" | "returned" | "danger" | "for_validation" | "sent_back" | "escalated" | "disputed";
+        StaffAlertKindEnum: "new_case" | "assigned" | "returned" | "danger" | "for_validation" | "sent_back" | "escalated" | "disputed" | "blocked";
         StaffAlertList: {
             unread: number;
             urgent_unread: number;
@@ -2935,10 +3093,7 @@ export interface components {
             subcategory_code?: string;
             severity?: components["schemas"]["SeverityEnum"];
             severity_display: string;
-            /**
-             * Format: int64
-             * @description Estimated number of affected citizens.
-             */
+            /** @description Estimated number of affected citizens. */
             affected_count?: number;
             /** Format: decimal */
             latitude?: string | null;
@@ -3238,39 +3393,6 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    schema_retrieve: {
-        parameters: {
-            query?: {
-                format?: "json" | "yaml";
-                lang?: "af" | "ar" | "ar-dz" | "ast" | "az" | "be" | "bg" | "bn" | "br" | "bs" | "ca" | "ckb" | "cs" | "cy" | "da" | "de" | "dsb" | "el" | "en" | "en-au" | "en-gb" | "eo" | "es" | "es-ar" | "es-co" | "es-mx" | "es-ni" | "es-ve" | "et" | "eu" | "fa" | "fi" | "fr" | "fy" | "ga" | "gd" | "gl" | "he" | "hi" | "hr" | "hsb" | "ht" | "hu" | "hy" | "ia" | "id" | "ig" | "io" | "is" | "it" | "ja" | "ka" | "kab" | "kk" | "km" | "kn" | "ko" | "ky" | "lb" | "lt" | "lv" | "mk" | "ml" | "mn" | "mr" | "ms" | "my" | "nb" | "ne" | "nl" | "nn" | "os" | "pa" | "pl" | "pt" | "pt-br" | "ro" | "ru" | "sk" | "sl" | "sq" | "sr" | "sr-latn" | "sv" | "sw" | "ta" | "te" | "tg" | "th" | "tk" | "tr" | "tt" | "udm" | "ug" | "uk" | "ur" | "uz" | "vi" | "zh-hans" | "zh-hant";
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/vnd.oai.openapi": {
-                        [key: string]: unknown;
-                    };
-                    "application/yaml": {
-                        [key: string]: unknown;
-                    };
-                    "application/vnd.oai.openapi+json": {
-                        [key: string]: unknown;
-                    };
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-        };
-    };
     v1_auth_logout_create: {
         parameters: {
             query?: never;
@@ -3402,7 +3524,12 @@ export interface operations {
     };
     v1_public_barangays_list: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A search term. */
+                search?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -3421,7 +3548,12 @@ export interface operations {
     };
     v1_public_barangays_puroks_list: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A search term. */
+                search?: string;
+            };
             header?: never;
             path: {
                 id: number;
@@ -3442,7 +3574,12 @@ export interface operations {
     };
     v1_public_categories_list: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A search term. */
+                search?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -3928,10 +4065,14 @@ export interface operations {
                 barangay?: number;
                 category?: string;
                 include_duplicates?: boolean;
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
                 /** @description A page number within the paginated result set. */
                 page?: number;
                 /** @description Search reference no., title, landmark, description */
                 q?: string;
+                /** @description A search term. */
+                search?: string;
                 /** @description Inbox view (default: open) */
                 tab?: "all" | "closed" | "endorsed" | "for_acceptance" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
             };
@@ -4048,6 +4189,42 @@ export interface operations {
             };
         };
     };
+    v1_staff_concerns_arrive_create: {
+        parameters: {
+            query?: {
+                barangay?: number;
+                category?: string;
+                include_duplicates?: boolean;
+                /** @description Search reference no., title, landmark, description */
+                q?: string;
+                /** @description Inbox view (default: open) */
+                tab?: "all" | "closed" | "endorsed" | "for_acceptance" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
+            };
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this concern. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ArriveRequest"];
+                "multipart/form-data": components["schemas"]["ArriveRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["ArriveRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffConcernDetail"];
+                };
+            };
+        };
+    };
     v1_staff_concerns_assign_division_create: {
         parameters: {
             query?: {
@@ -4107,6 +4284,42 @@ export interface operations {
                 "application/json": components["schemas"]["AssignPersonRequest"];
                 "multipart/form-data": components["schemas"]["AssignPersonRequest"];
                 "application/x-www-form-urlencoded": components["schemas"]["AssignPersonRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffConcernDetail"];
+                };
+            };
+        };
+    };
+    v1_staff_concerns_blocker_create: {
+        parameters: {
+            query?: {
+                barangay?: number;
+                category?: string;
+                include_duplicates?: boolean;
+                /** @description Search reference no., title, landmark, description */
+                q?: string;
+                /** @description Inbox view (default: open) */
+                tab?: "all" | "closed" | "endorsed" | "for_acceptance" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
+            };
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this concern. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BlockerRequest"];
+                "multipart/form-data": components["schemas"]["BlockerRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["BlockerRequest"];
             };
         };
         responses: {
@@ -4697,10 +4910,14 @@ export interface operations {
                 barangay?: number;
                 category?: string;
                 include_duplicates?: boolean;
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
                 /** @description A page number within the paginated result set. */
                 page?: number;
                 /** @description Search reference no., title, landmark, description */
                 q?: string;
+                /** @description A search term. */
+                search?: string;
                 /** @description Inbox view (default: open) */
                 tab?: "all" | "closed" | "endorsed" | "for_acceptance" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
             };
@@ -4863,6 +5080,10 @@ export interface operations {
         parameters: {
             query?: {
                 kind?: "external" | "internal";
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A search term. */
+                search?: string;
             };
             header?: never;
             path?: never;
@@ -4884,6 +5105,10 @@ export interface operations {
         parameters: {
             query: {
                 department: number;
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A search term. */
+                search?: string;
             };
             header?: never;
             path?: never;
@@ -4897,6 +5122,52 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Division"][];
+                };
+            };
+        };
+    };
+    v1_staff_field_jobs_list: {
+        parameters: {
+            query?: {
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A search term. */
+                search?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FieldJob"][];
+                };
+            };
+        };
+    };
+    v1_staff_field_jobs_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this concern. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FieldJob"];
                 };
             };
         };
@@ -5207,7 +5478,12 @@ export interface operations {
     };
     v1_staff_priority_levels_list: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A search term. */
+                search?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -5248,6 +5524,10 @@ export interface operations {
             query: {
                 department: number;
                 division?: number;
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A search term. */
+                search?: string;
             };
             header?: never;
             path?: never;

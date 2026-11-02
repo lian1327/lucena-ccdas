@@ -1,4 +1,4 @@
-from django.db.models import Count, F, Q
+from django.db.models import Case as Case_, Count, F, IntegerField, Q, When
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from drf_spectacular.utils import OpenApiParameter, extend_schema
@@ -18,6 +18,7 @@ from . import services
 from .models import Case, CaseNote, Department, Division, PriorityLevel
 from .scoping import is_admin, permissions_for, scoped_concerns
 from .serializers_staff import (
+    ArriveSerializer, BlockerSerializer, FieldJobSerializer,
     AcceptSerializer,
     AssignDivisionSerializer,
     AssignPersonSerializer,
@@ -287,6 +288,17 @@ class StaffConcernViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet
         return self._run("complete", CompleteSerializer, services.complete_work, files=["photos", "before_photos"],
                          map_kwargs=lambda kw: {**kw, "photos": kw.get("photos", []), "before_photos": kw.get("before_photos", [])})
 
+    # ----- field view (Step 18) -----
+    @extend_schema(request=ArriveSerializer, responses=StaffConcernDetailSerializer)
+    @action(detail=True, methods=["post"])
+    def arrive(self, request, pk=None):
+        return self._run("arrive", ArriveSerializer, services.arrive)
+
+    @extend_schema(request=BlockerSerializer, responses=StaffConcernDetailSerializer)
+    @action(detail=True, methods=["post"])
+    def blocker(self, request, pk=None):
+        return self._run("blocker", BlockerSerializer, services.report_blocker)
+
     @extend_schema(request={"multipart/form-data": ValidateSerializer}, responses=StaffConcernDetailSerializer)
     @action(detail=True, methods=["post"])
     def validate(self, request, pk=None):
@@ -457,3 +469,30 @@ class PriorityLevelListView(generics.ListAPIView):
     serializer_class = PriorityLevelSerializer
     pagination_class = None
     queryset = PriorityLevel.objects.all()
+
+
+
+class FieldJobViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Field view (Step 18): the jobs this person can work on now. Assigned-to-me first, then by urgency and deadline.
+    Actions (arrive, inspect, complete, blocker) go through the staff concern endpoints, which re-check permissions.
+    """
+    permission_classes = [IsStaff]
+    serializer_class = FieldJobSerializer
+    pagination_class = None
+    queryset = Concern.objects.none()  # schema typing only
+
+    def get_queryset(self):
+        from .scoping import field_jobs_q
+
+        user = self.request.user
+        return (scoped_concerns(user).filter(field_jobs_q(user))
+                .select_related("purok", "case__priority_level", "case__assigned_to", "case__division")
+                .prefetch_related("attachments", "case__visits")
+                .annotate(mine=Case_(When(case__assigned_to=user, then=0), default=1, output_field=IntegerField()))
+                .order_by("mine", F("case__priority_level__sort_order").asc(nulls_last=True),
+                          F("case__due_at").asc(nulls_last=True), "-priority_score"))
+
+    def list(self, request, *args, **kwargs):
+        jobs = self.get_queryset()[:100]
+        return Response(self.get_serializer(jobs, many=True).data)

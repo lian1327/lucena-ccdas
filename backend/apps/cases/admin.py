@@ -1,6 +1,8 @@
 from django.contrib import admin
 
-from .models import Case, CaseNote, Department, Division, Endorsement, EndorsementFollowUp, Holiday, PriorityLevel
+from .models import (
+    Case, CaseNote, Department, Division, Endorsement, EndorsementFollowUp, Holiday, PriorityLevel, SiteVisit,
+)
 
 
 class DivisionInline(admin.TabularInline):
@@ -51,3 +53,12 @@ class CaseAdmin(admin.ModelAdmin):
     list_filter = ("level", "department", "priority_level", "escalation_level")
     raw_id_fields = ("concern", "assigned_to", "assigned_by")
     inlines = [NoteInline]
+
+
+@admin.register(SiteVisit)
+class SiteVisitAdmin(admin.ModelAdmin):
+    list_display = ("case", "user", "arrived_at", "distance_m", "is_far", "sent_offline")
+    list_filter = ("is_far", "sent_offline")
+    search_fields = ("case__concern__reference_no", "user__username")
+    raw_id_fields = ("case", "user")
+    readonly_fields = ("recorded_at",)

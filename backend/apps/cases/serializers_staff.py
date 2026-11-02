@@ -13,6 +13,7 @@ from apps.concerns.services import on_concern_submitted
 from . import deadlines, evidence
 from .models import (
     AccomplishmentReport, Case, CaseNote, Department, Division, Endorsement, EndorsementFollowUp, PriorityLevel,
+    SiteVisit,
 )
 from .scoping import permissions_for
 from .services import breaches, suggest_priority, suggested_route
@@ -263,6 +264,17 @@ class EndorsementSerializer(serializers.ModelSerializer):
         return bool(obj.next_follow_up_at and obj.next_follow_up_at <= timezone.now())
 
 
+class SiteVisitSerializer(serializers.ModelSerializer):
+    user = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SiteVisit
+        fields = ["id", "user", "arrived_at", "recorded_at", "distance_m", "accuracy_m", "is_far", "sent_offline"]
+
+    def get_user(self, obj) -> str | None:
+        return _name(obj.user)
+
+
 class CaseInfoSerializer(serializers.ModelSerializer):
     level_display = serializers.CharField(source="get_level_display")
     department = serializers.CharField(source="department.name", default=None)
@@ -282,6 +294,9 @@ class CaseInfoSerializer(serializers.ModelSerializer):
     breaches = serializers.SerializerMethodField()
     reports = AccomplishmentReportSerializer(many=True, read_only=True)
     evidence = serializers.SerializerMethodField()
+    blocked_reason_display = serializers.CharField(source="get_blocked_reason_display")
+    blocked_by = serializers.SerializerMethodField()
+    visits = serializers.SerializerMethodField()
 
     class Meta:
         model = Case
@@ -298,6 +313,7 @@ class CaseInfoSerializer(serializers.ModelSerializer):
             "returned_at", "return_reason", "return_count",
             "priority_level", "priority_reason", "response_due_at", "responded_at", "responded_by", "response_remarks",
             "breaches", "reports", "evidence",
+            "blocked_reason", "blocked_reason_display", "blocked_note", "blocked_at", "blocked_by", "visits",
         ]
 
     def get_assigned_to(self, obj) -> str | None:
@@ -327,6 +343,13 @@ class CaseInfoSerializer(serializers.ModelSerializer):
     @extend_schema_field(EvidenceSummarySerializer(allow_null=True))
     def get_evidence(self, obj):
         return evidence.summary(obj)
+
+    def get_blocked_by(self, obj) -> str | None:
+        return _name(obj.blocked_by)
+
+    @extend_schema_field(SiteVisitSerializer(many=True))
+    def get_visits(self, obj):
+        return SiteVisitSerializer(obj.visits.select_related("user")[:20], many=True).data
 
     def get_max_extension_due(self, obj) -> str | None:
         if not obj.due_at or obj.extended_at:
@@ -387,6 +410,8 @@ class PermissionsSerializer(serializers.Serializer):
     link = serializers.BooleanField()
     feedback_8888 = serializers.BooleanField()
     follow_up = serializers.BooleanField()
+    arrive = serializers.BooleanField()
+    blocker = serializers.BooleanField()
 
 
 class SuggestedRouteSerializer(serializers.Serializer):
@@ -531,6 +556,8 @@ class PhotoMetaSerializer(serializers.Serializer):
     device_lat = serializers.FloatField(required=False, allow_null=True)
     device_lng = serializers.FloatField(required=False, allow_null=True)
     device_accuracy = serializers.FloatField(required=False, allow_null=True)
+    live = serializers.BooleanField(required=False, default=False,
+                                    help_text="Taken with the in-app camera (field view), not picked from the gallery.")
 
 
 class JSONListField(serializers.JSONField):
@@ -847,3 +874,93 @@ def accountability_trail(concern):
                      "detail": ("Naayos na" if fixed else "HINDI pa naayos") + (f": {concern.citizen_feedback}" if concern.citizen_feedback else ""),
                      "ok": fixed})
     return rows
+
+
+
+# ---------------- Field view (Step 18) ----------------
+
+class ArriveSerializer(serializers.Serializer):
+    latitude = serializers.FloatField(required=False, allow_null=True, min_value=-90, max_value=90)
+    longitude = serializers.FloatField(required=False, allow_null=True, min_value=-180, max_value=180)
+    accuracy = serializers.FloatField(required=False, allow_null=True, min_value=0)
+    at = serializers.DateTimeField(required=False, allow_null=True,
+                                   help_text="Phone time of the check-in, when it was saved offline and sent later.")
+
+    def validate(self, attrs):
+        if (attrs.get("latitude") is None) != (attrs.get("longitude") is None):
+            raise serializers.ValidationError("Latitude and longitude go together.")
+        return attrs
+
+
+class BlockerSerializer(serializers.Serializer):
+    reason = serializers.ChoiceField(choices=Case.BlockReason.choices)
+    remarks = serializers.CharField(required=False, allow_blank=True, max_length=500)
+
+    def validate(self, attrs):
+        if attrs["reason"] == Case.BlockReason.OTHER and not attrs.get("remarks", "").strip():
+            raise serializers.ValidationError({"remarks": "Isulat ang dahilan."})
+        return attrs
+
+
+class FieldPhotoSerializer(serializers.Serializer):
+    url = serializers.CharField()
+    kind = serializers.CharField()
+
+
+class FieldJobSerializer(serializers.ModelSerializer):
+    """Everything the field view needs for one job, in one small payload (works on slow mobile data)."""
+    category = serializers.CharField(source="category.name", default=None)
+    subcategory = serializers.CharField(source="subcategory.name", default=None)
+    barangay = serializers.CharField(source="barangay.name")
+    purok = serializers.SerializerMethodField()
+    priority_code = serializers.CharField(source="case.priority_level.code", default=None)
+    priority_name = serializers.CharField(source="case.priority_level.name", default=None)
+    priority_color = serializers.CharField(source="case.priority_level.color", default=None)
+    due_at = serializers.DateTimeField(source="case.due_at", default=None)
+    is_overdue = serializers.BooleanField()
+    division = serializers.CharField(source="case.division.name", default=None)
+    assigned_to = serializers.SerializerMethodField()
+    assigned_to_me = serializers.SerializerMethodField()
+    scheduled_for = serializers.DateField(source="case.scheduled_for", default=None)
+    action_plan = serializers.CharField(source="case.action_plan", default="")
+    arrived_at = serializers.SerializerMethodField(help_text="My latest check-in at this site.")
+    before_count = serializers.SerializerMethodField()
+    blocked_reason = serializers.CharField(source="case.blocked_reason", default="")
+    blocked_reason_display = serializers.CharField(source="case.get_blocked_reason_display", default="")
+    blocked_note = serializers.CharField(source="case.blocked_note", default="")
+    photos = serializers.SerializerMethodField(help_text="The citizen's report photos.")
+
+    class Meta:
+        model = Concern
+        fields = [
+            "id", "reference_no", "title", "description", "category", "subcategory", "barangay", "purok",
+            "location_description", "latitude", "longitude", "danger_now", "status",
+            "priority_code", "priority_name", "priority_color", "priority_score", "due_at", "is_overdue",
+            "division", "assigned_to", "assigned_to_me", "scheduled_for", "action_plan",
+            "arrived_at", "before_count", "blocked_reason", "blocked_reason_display", "blocked_note", "photos",
+        ]
+
+    def _me(self):
+        return self.context["request"].user
+
+    def get_purok(self, obj) -> str | None:
+        p = getattr(obj, "purok", None)
+        return getattr(p, "name", None) if p else None
+
+    def get_assigned_to(self, obj) -> str | None:
+        return _name(obj.case.assigned_to)
+
+    def get_assigned_to_me(self, obj) -> bool:
+        return obj.case.assigned_to_id == self._me().id
+
+    def get_arrived_at(self, obj) -> datetime | None:
+        visits = [v for v in obj.case.visits.all() if v.user_id == self._me().id]
+        return max((v.arrived_at for v in visits), default=None)
+
+    def get_before_count(self, obj) -> int:
+        return sum(1 for a in obj.attachments.all() if a.kind == ConcernAttachment.Kind.BEFORE)
+
+    @extend_schema_field(FieldPhotoSerializer(many=True))
+    def get_photos(self, obj):
+        return [{"url": a.file.url, "kind": a.kind} for a in obj.attachments.all()
+                if a.kind == ConcernAttachment.Kind.REPORT][:3]

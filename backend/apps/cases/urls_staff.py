@@ -5,6 +5,7 @@ from . import views_staff as v
 
 router = DefaultRouter()
 router.register("concerns", v.StaffConcernViewSet, basename="staff-concern")
+router.register("field/jobs", v.FieldJobViewSet, basename="staff-field-job")
 
 urlpatterns = [
     path("summary/", v.StaffSummaryView.as_view(), name="staff-summary"),

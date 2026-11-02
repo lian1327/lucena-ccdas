@@ -28,6 +28,8 @@ export const STAFF_ROLES: Role[] = [
   "pacd", "barangay", "office_desk", "dept_head", "division_chief", "dept_staff", "city_admin", "mayor",
 ];
 export const EXECUTIVE_ROLES: Role[] = ["city_admin", "mayor"];
+/** Roles that can do (or supervise) work on site and use the field view. */
+export const FIELD_ROLES: Role[] = ["dept_staff", "division_chief", "dept_head", "barangay", "city_admin"];
 
 export type Subcategory = S["PublicSubcategory"];
 export type AffectedScale = S["AffectedScaleEnum"];

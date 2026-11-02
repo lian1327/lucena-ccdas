@@ -1,8 +1,9 @@
 import { useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
-import { api, refreshAccessToken } from "@/api/client";
+import { api, OfflineError, refreshAccessToken } from "@/api/client";
 import type { JwtClaims, Me, Role } from "@/api/types";
 import { STAFF_ROLES } from "@/api/types";
 
@@ -12,6 +13,8 @@ type Status = "loading" | "authenticated" | "anonymous";
 
 type AuthContextValue = {
   status: Status;
+  /** Session restore is waiting for a connection (the refresh token is kept). */
+  waitingForNetwork: boolean;
   user: Me | null;
   login: (username: string, password: string) => Promise<Me>;
   logout: () => Promise<void>;
@@ -29,6 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const [status, setStatus] = useState<Status>("loading");
   const [user, setUser] = useState<Me | null>(null);
+  const [waitingForNetwork, setWaiting] = useState(false);
 
   const reset = useCallback(() => {
     tokenStore.clear();
@@ -37,27 +41,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     queryClient.removeQueries({ predicate: (q) => q.queryKey[0] !== "public" });
   }, [queryClient]);
 
-  // Restore session from the refresh token on first load.
+  // Restore session from the refresh token on first load. Without signal, keep the token and retry.
   useEffect(() => {
     let cancelled = false;
-    (async () => {
-      const access = await refreshAccessToken();
-      if (!access) {
-        if (!cancelled) setStatus("anonymous");
-        return;
-      }
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const attempt = async () => {
       try {
-        const me = await fetchMe();
-        if (!cancelled) {
-          setUser(me);
-          setStatus("authenticated");
+        const access = await refreshAccessToken();
+        if (cancelled) return;
+        if (!access) {
+          setStatus("anonymous");
+          return;
         }
-      } catch {
-        if (!cancelled) reset();
+        const me = await fetchMe();
+        if (cancelled) return;
+        setUser(me);
+        setWaiting(false);
+        setStatus("authenticated");
+      } catch (err) {
+        if (cancelled) return;
+        const offline = err instanceof OfflineError || (axios.isAxiosError(err) && !err.response);
+        if (offline) {
+          setWaiting(true);
+          timer = setTimeout(attempt, 15000);
+        } else {
+          reset();
+        }
       }
-    })();
+    };
+    const onOnline = () => {
+      clearTimeout(timer);
+      void attempt();
+    };
+    window.addEventListener("online", onOnline);
+    void attempt();
     return () => {
       cancelled = true;
+      clearTimeout(timer);
+      window.removeEventListener("online", onOnline);
     };
   }, [reset]);
 
@@ -84,8 +105,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<AuthContextValue>(() => {
     const hasRole = (...roles: Role[]) => !!user && roles.includes(user.role as Role);
-    return { status, user, login, logout, hasRole, isStaff: hasRole(...STAFF_ROLES) };
-  }, [status, user, login, logout]);
+    return { status, waitingForNetwork, user, login, logout, hasRole, isStaff: hasRole(...STAFF_ROLES) };
+  }, [status, waitingForNetwork, user, login, logout]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
@@ -98,5 +119,8 @@ export function useAuth() {
 
 /** Where to send a user right after login. */
 export function homeFor(user: Me): string {
+  // Field crews on a phone land on their job list; everyone else on the staff dashboard.
+  const phone = typeof window !== "undefined" && window.matchMedia?.("(max-width: 768px)").matches;
+  if (user.role === "dept_staff" && phone) return "/field";
   return STAFF_ROLES.includes(user.role as Role) ? "/staff" : "/";
 }

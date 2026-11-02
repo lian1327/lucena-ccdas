@@ -13,7 +13,19 @@ api.interceptors.request.use((config) => {
 
 let refreshing: Promise<string | null> | null = null;
 
-/** Exchanges the refresh token for a new access token. Concurrent callers share one request. */
+/** No connection (or the server is unreachable). Unlike a rejected token, this must NOT log the user out. */
+export class OfflineError extends Error {
+  constructor() {
+    super("Cannot reach the server. Check your connection.");
+    this.name = "OfflineError";
+  }
+}
+
+/**
+ * Exchanges the refresh token for a new access token. Concurrent callers share one request.
+ * Resolves null when the token was rejected (logged out); rejects with OfflineError when there is no signal,
+ * so a field worker who opens the app without signal keeps the session and their unsent work.
+ */
 export function refreshAccessToken(): Promise<string | null> {
   const refresh = tokenStore.refresh;
   if (!refresh) return Promise.resolve(null);
@@ -24,7 +36,8 @@ export function refreshAccessToken(): Promise<string | null> {
         tokenStore.set(data.access, data.refresh ?? refresh);
         return data.access;
       })
-      .catch(() => {
+      .catch((err: unknown) => {
+        if (axios.isAxiosError(err) && !err.response) throw new OfflineError();
         tokenStore.clear();
         return null;
       })
@@ -56,6 +69,7 @@ api.interceptors.response.use(
 
 /** Turns DRF error payloads ({detail}, {field: [msg]}, [msg]) into one readable string. */
 export function apiErrorMessage(err: unknown, fallback = "Something went wrong. Please try again."): string {
+  if (err instanceof OfflineError) return err.message;
   if (!axios.isAxiosError(err)) return fallback;
   if (!err.response) return "Cannot reach the server. Check your connection.";
   if (err.response.status === 429) return "Too many requests. Please wait a moment and try again.";

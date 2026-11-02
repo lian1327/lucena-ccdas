@@ -1,0 +1,67 @@
+CCADSS Step 18 - Field view for crews on site (installable phone app)
+=====================================================================
+
+What it adds
+- /field : phone-first screens for field staff, division chiefs, department heads and barangay personnel
+  1. "Mga trabaho ko"   jobs I can work on (mine first, then my division), by urgency or by distance
+  2. "Dumating na ako"  on-site check-in with phone location; the first one counts as the office's first response
+  3. "Kunan ang before" in-app camera only (no gallery), sent as the site inspection
+  4. "Tapos na"         after photos + what was done -> supervisor validates (never the same person)
+  5. "Hindi pa matapos?" reason (materials, equipment, weather, wrong office, national road...) -> alerts the chief/head
+                        (wrong office / national road also alerts the PACD)
+- Works without signal: actions and photos are saved on the phone (IndexedDB) and sent in order when the signal returns.
+  Without signal at start-up the app no longer logs the user out; it waits for the connection.
+- Installable: "Add to Home Screen" from Chrome on /field (manifest + service worker; production build only).
+- Photos taken with the in-app camera at the site get a green "live" flag; far / old / reused photos are still red/amber.
+- Staff sidebar has a "Field app" link. Field staff who log in on a phone land on /field.
+
+Files (copy over the project, same paths)
+backend/
+  apps/cases/models.py            Case.blocked_* fields, SiteVisit model
+  apps/cases/services.py          arrive(), report_blocker(); blocker cleared on complete_work; live flag pass-through
+  apps/cases/scoping.py           "arrive" and "blocker" permissions; field_jobs_q()
+  apps/cases/serializers_staff.py ArriveSerializer, BlockerSerializer, FieldJobSerializer, SiteVisitSerializer, live meta
+  apps/cases/views_staff.py       POST concerns/<id>/arrive/, POST concerns/<id>/blocker/, GET field/jobs/
+  apps/cases/urls_staff.py
+  apps/cases/evidence.py          "live" (good) flag
+  apps/cases/admin.py             SiteVisit in the admin
+  apps/notifications/models.py    StaffAlert kind "blocked"
+  tests/test_field.py             16 new tests
+  tests/make_report.py            field tests in the report
+frontend/
+  index.html, public/_headers, public/manifest.webmanifest, public/sw.js,
+  public/icon-192.png, public/icon-512.png, public/icon-maskable-512.png, public/apple-touch-icon.png
+  src/router.tsx, src/styles.css
+  src/api/client.ts (OfflineError), src/api/field.ts, src/api/types.ts (FIELD_ROLES), src/api/schema.d.ts
+  src/auth/AuthContext.tsx, src/auth/ProtectedRoute.tsx, src/components/FullPageSpinner.tsx
+  src/layouts/FieldLayout.tsx, src/layouts/StaffLayout.tsx
+  src/features/field/ (outbox.ts, useOutbox.ts, LiveCamera.tsx, geo.ts)
+  src/pages/field/ (FieldJobsPage.tsx, FieldJobPage.tsx)
+
+Install (PowerShell)
+  cd backend
+  python manage.py makemigrations cases notifications
+  python manage.py migrate
+  python manage.py test tests            # 164 tests, all should pass
+  python tests/make_report.py            # refreshes reports/test_report.md (Chapter 4 evidence)
+  python manage.py runserver
+
+  cd ..\frontend
+  npm run gen:api                        # with runserver running; regenerates schema.d.ts
+  npm run typecheck
+  npm run dev
+
+Try it
+  - Log in as ceo.crew on a phone-sized window (Chrome DevTools > device toolbar) -> /field
+  - Chrome DevTools > Network > "Offline", tap "Dumating na ako" and take a before photo: the wifi icon turns yellow
+    with a count. Switch back to "No throttling": the count clears and the step turns green.
+  - Log in as ceo.rdb.chief: the bell shows "Hindi pa matapos" alerts; the case page shows the visit list.
+
+Notes
+- Location and camera on a real phone need HTTPS (Cloudflare Pages has it). On http://<your-PC-IP>:5173 the phone
+  will not give location; use the deployed site or a tunnel to test on a phone.
+- The service worker only caches the app (HTML/JS/CSS). It never caches API data, photos or personal data.
+  Unsent work stays on that phone until sent; logging out with unsent work shows a warning.
+- Deploy: push as usual; Render runs migrate, Cloudflare Pages rebuilds. No new environment variables.
+- Honest limit (for the defense): the "live camera" mark is the phone's own claim. It earns the green flag only when
+  the photo's location is also at the site; validation by a second person stays the real control.

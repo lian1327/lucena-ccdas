@@ -166,6 +166,22 @@ class Case(models.Model):
     resolution_summary = models.TextField(blank=True)
     resolved_at = models.DateTimeField(null=True, blank=True)
 
+    # Step 18: field crew says the work can't be finished yet (cleared when the work is completed)
+    class BlockReason(models.TextChoices):
+        MATERIALS = "materials", "Kulang ang materyales"
+        EQUIPMENT = "equipment", "Kailangan ng equipment o mas maraming tauhan"
+        WEATHER = "weather", "Masama ang panahon / baha"
+        ACCESS = "access", "Hindi mapasok ang lugar / pribadong lupa"
+        WRONG_OFFICE = "wrong_office", "Hindi sakop ng aming opisina"
+        NATIONAL = "national", "National road o ibang ahensya"
+        NOT_FOUND = "not_found", "Hindi makita ang problema sa lugar"
+        OTHER = "other", "Iba pa"
+
+    blocked_reason = models.CharField(max_length=16, choices=BlockReason.choices, blank=True)
+    blocked_note = models.CharField(max_length=500, blank=True)
+    blocked_at = models.DateTimeField(null=True, blank=True)
+    blocked_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+
     class Meta:
         ordering = ["-assigned_at"]
 
@@ -295,3 +311,27 @@ class AccomplishmentReport(models.Model):
         if not (self.started_at and self.finished_at) or self.finished_at <= self.started_at:
             return None
         return round(self.headcount * (self.finished_at - self.started_at).total_seconds() / 3600, 1)
+
+
+class SiteVisit(models.Model):
+    """
+    Step 18: a field worker's "Dumating na ako" check-in, with the phone's location.
+    The first visit counts as the office's first response (stops the response clock).
+    arrived_at is the phone's time (the check-in may have waited offline); recorded_at is when the server got it.
+    """
+    case = models.ForeignKey(Case, on_delete=models.CASCADE, related_name="visits")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="site_visits")
+    arrived_at = models.DateTimeField()
+    recorded_at = models.DateTimeField(auto_now_add=True)
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    accuracy_m = models.FloatField(null=True, blank=True)
+    distance_m = models.FloatField(null=True, blank=True, help_text="Distance from the reported pin.")
+    is_far = models.BooleanField(default=False)
+    sent_offline = models.BooleanField(default=False, help_text="Saved on the phone without signal, sent later.")
+
+    class Meta:
+        ordering = ["-arrived_at"]
+
+    def __str__(self):
+        return f"Visit {self.case.concern.reference_no} by {self.user} @ {self.arrived_at:%Y-%m-%d %H:%M}"

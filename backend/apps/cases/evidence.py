@@ -13,6 +13,7 @@ Then each photo is checked against the case:
   STALE           camera time is more than EVIDENCE_MAX_AGE_DAYS before upload                  (amber)
   NO_GPS          no location at all                                                           (amber)
   NO_SITE         the report itself has no pin, so distance can't be checked                  (info)
+  LIVE            taken with the in-app camera (field view), with a location near the pin       (good)
 
 Red flags don't block submission (the field can be wrong for honest reasons: GPS drift under a roof,
 a phone with location off). They block a one-click approval: the validator must write why they approve anyway,
@@ -43,6 +44,7 @@ FLAGS = {
     "stale": ("amber", f"Lumang litrato (higit {MAX_AGE_DAYS} araw bago i-upload)"),
     "no_gps": ("amber", "Walang lokasyon ang litrato"),
     "no_site": ("info", "Walang pin ang report; hindi masukat ang layo"),
+    "live": ("good", "Kinunan gamit ang camera ng CCADSS sa mismong lugar"),
 }
 
 
@@ -160,7 +162,7 @@ def build_metadata(fileobj, meta):
     else:
         out.update(latitude=None, longitude=None, gps_source="none", gps_accuracy_m=None)
     taken = _dt(meta.get("exif_time")) or f_time
-    out.update(taken_at=taken, time_source="exif" if taken else "upload")
+    out.update(taken_at=taken, time_source="exif" if taken else "upload", live=bool(meta.get("live")))
     return out
 
 
@@ -203,6 +205,10 @@ def check(att, case=None, before_hashes=(), scan_reuse=True):
                 flags.append("reused")
                 att.caption = (att.caption or f"Kapareho ng litrato sa {ref}")[:150]
                 break
+    # "live" is the phone's claim that the camera was opened from the app (not the gallery). It is only a
+    # positive signal, and only when the photo also has a location at the site.
+    if getattr(att, "_live", False) and att.distance_m is not None and "far" not in flags and "stale" not in flags:
+        flags.append("live")
     att.flags = flags
     return att
 

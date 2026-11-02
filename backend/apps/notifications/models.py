@@ -88,6 +88,7 @@ class StaffAlert(models.Model):
         SENT_BACK = "sent_back", "Work returned by supervisor"
         ESCALATED = "escalated", "Escalated to you"
         DISPUTED = "disputed", "Citizen says not fixed"
+        BLOCKED = "blocked", "Field crew can't finish yet"
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="alerts")
     kind = models.CharField(max_length=16, choices=Kind.choices)

@@ -12,7 +12,7 @@ from apps.notifications.models import Notification, StaffAlert
 from apps.priority.services import compute_priority
 
 from . import deadlines, evidence
-from .models import AccomplishmentReport, Case, CaseNote, Endorsement, EndorsementFollowUp, PriorityLevel
+from .models import AccomplishmentReport, Case, CaseNote, Endorsement, EndorsementFollowUp, PriorityLevel, SiteVisit
 
 S = Concern.Status
 FOLLOW_UP_DAYS = 7
@@ -62,6 +62,7 @@ def _attach(concern, user, photos, kind=ConcernAttachment.Kind.RESOLUTION, meta=
             taken_at=m["taken_at"], time_source=m["time_source"], phash=m["phash"],
         )
         att.uploaded_at = timezone.now()
+        att._live = m.get("live", False)
         evidence.check(att, case, before_hashes)
         att.save()
         saved.append(att)
@@ -388,7 +389,9 @@ def complete_work(concern, user, *, remarks, photos, photo_meta=(), before_photo
     case.work_completed_at = now
     case.work_completed_by = user
     case.completion_remarks = remarks
-    case.save(update_fields=["work_completed_at", "work_completed_by", "completion_remarks"])
+    case.blocked_reason, case.blocked_note, case.blocked_at, case.blocked_by = "", "", None, None
+    case.save(update_fields=["work_completed_at", "work_completed_by", "completion_remarks",
+                             "blocked_reason", "blocked_note", "blocked_at", "blocked_by"])
     _move(concern, user, S.IN_PROGRESS, "Natapos na ang trabaho; hinihintay ang beripikasyon ng supervisor.", is_public=False)
     reds = evidence.red_flags(after + list(concern.attachments.filter(kind=ConcernAttachment.Kind.BEFORE)))
     warn = f" ⚠ Photo checks: {', '.join(evidence.FLAGS[r][1] for r in reds)}." if reds else ""
@@ -710,3 +713,70 @@ def unlink_duplicate(concern, user):
     if master:
         compute_priority(master)
     compute_priority(concern)
+
+
+# ---------------- Field view (Step 18) ----------------
+
+ARRIVE_MAX_DELAY = timedelta(hours=48)  # an offline check-in older than this is not believable as "arrival"
+
+
+@transaction.atomic
+def arrive(concern, user, *, latitude=None, longitude=None, accuracy=None, at=None):
+    """
+    "Dumating na ako": the field worker is at the site. Records time and phone location; the first visit
+    counts as the office's first response (stops the response clock) and tells the citizen.
+    `at` is the phone's time when the check-in was saved offline and sent later.
+    """
+    case = concern.case
+    now = timezone.now()
+    at = at or now
+    if at > now + timedelta(minutes=10):
+        raise WorkflowError("Nasa hinaharap ang oras ng pagdating. Itama ang oras ng cellphone.")
+    if at < now - ARRIVE_MAX_DELAY:
+        raise WorkflowError("Masyadong luma ang check-in (higit 48 oras). Mag-check in ulit sa lugar.")
+    if case.routed_at and at < case.routed_at - timedelta(minutes=10):
+        raise WorkflowError("Mas maaga ang check-in kaysa sa pagtanggap ng opisina sa kaso.")
+    distance = None
+    far = False
+    if latitude is not None and longitude is not None and concern.latitude is not None:
+        distance = round(evidence.haversine_m(float(latitude), float(longitude),
+                                              float(concern.latitude), float(concern.longitude)), 1)
+        far = distance > evidence.MAX_DISTANCE_M + min(accuracy or 0, 100)
+    visit = SiteVisit.objects.create(
+        case=case, user=user, arrived_at=at, latitude=evidence.to_decimal(latitude),
+        longitude=evidence.to_decimal(longitude), accuracy_m=accuracy, distance_m=distance, is_far=far,
+        sent_offline=at < now - timedelta(minutes=5),
+    )
+    where = (f"{round(distance)} m mula sa pin" if distance is not None
+             else "walang lokasyon ng cellphone" if latitude is None else "walang pin ang report")
+    _note(case, user, f"Dumating sa lugar ({where}){' ⚠ malayo sa pin' if far else ''}"
+                      f"{'; ipinadala nang may signal na' if visit.sent_offline else ''}.")
+    if not case.responded_at:
+        case.responded_at = at
+        case.responded_by = user
+        case.response_remarks = "Dumating ang field team sa lugar."
+        case.save(update_fields=["responded_at", "responded_by", "response_remarks"])
+        _move(concern, user, S.IN_PROGRESS, "Nasa lugar na ang field team ng opisina.")
+    return visit
+
+
+@transaction.atomic
+def report_blocker(concern, user, *, reason, remarks=""):
+    """
+    "Hindi pa maayos": the crew can't finish yet. Tells the office leads so they can extend the deadline,
+    re-route or endorse. Internal only; the citizen sees nothing until the office decides.
+    """
+    case = concern.case
+    case.blocked_reason = reason
+    case.blocked_note = remarks
+    case.blocked_at = timezone.now()
+    case.blocked_by = user
+    case.save(update_fields=["blocked_reason", "blocked_note", "blocked_at", "blocked_by"])
+    label = Case.BlockReason(reason).label
+    _note(case, user, f"Hindi pa matapos: {label}. {remarks}".strip())
+    leads = [u for u in notify.office_leads(case) if u.pk != user.pk]
+    if reason in (Case.BlockReason.WRONG_OFFICE, Case.BlockReason.NATIONAL):
+        leads += list(notify.pacd_staff())  # re-routing and endorsement are the PACD's call
+    notify.alert(leads, StaffAlert.Kind.BLOCKED, concern, f"Hindi pa matapos: {concern.reference_no}",
+                 f"{label}. {remarks}".strip()[:300], exclude=user)
+    return case

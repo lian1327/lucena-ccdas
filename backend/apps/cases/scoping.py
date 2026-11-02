@@ -145,6 +145,9 @@ def permissions_for(u, c):
         "respond": not readonly and _is_worker(u, c) and not (case and case.responded_at),
         "inspect": not readonly and _is_worker(u, c) and not (case and case.work_completed_at),
         "complete": not readonly and _is_worker(u, c) and not (case and case.work_completed_at),
+        # Field view (Step 18)
+        "arrive": not readonly and _is_worker(u, c) and not (case and case.work_completed_at),
+        "blocker": not readonly and _is_worker(u, c) and not (case and case.work_completed_at),
         "validate": False,
         "extend": not readonly and open_ and bool(case) and bool(case.due_at) and not case.extended_at
         and (accepted or brgy_level or external)
@@ -174,3 +177,29 @@ def permissions_for(u, c):
         else:
             p["validate"] = case.work_completed_at is not None and not_doer and (admin or head or chief)
     return p
+
+
+def field_jobs_q(user):
+    """
+    Cases this person can do field work on right now (mirrors _is_worker): accepted, assigned or in progress,
+    work not yet reported. Field staff see their own and their division's; chiefs their division; heads their office.
+    """
+    from .models import Case
+
+    base = Q(status__in=[S.ASSIGNED, S.IN_PROGRESS], case__work_completed_at__isnull=True, duplicate_of__isnull=True)
+    city = Q(case__level=Case.Level.CITY, case__accepted_at__isnull=False)
+    if is_admin(user):
+        return base & (city | Q(case__level=Case.Level.BARANGAY))
+    if user.role == R.BARANGAY and user.barangay_id:
+        return base & Q(case__level=Case.Level.BARANGAY, barangay_id=user.barangay_id)
+    if user.role == R.DEPT_HEAD and user.department_id:
+        return base & city & Q(case__department_id=user.department_id)
+    if user.role == R.DIVISION_CHIEF and user.division_id:
+        return base & city & (Q(case__division_id=user.division_id)
+                              | Q(case__department_id=user.department_id, case__division__isnull=True))
+    if user.role == R.DEPT_STAFF:
+        mine = Q(case__assigned_to=user)
+        if user.division_id:
+            mine |= Q(case__division_id=user.division_id)
+        return base & city & mine
+    return Q(pk__in=[])

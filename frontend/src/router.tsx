@@ -5,10 +5,11 @@ import { useAuth } from "@/auth/AuthContext";
 
 import { FullPageSpinner } from "@/components/FullPageSpinner";
 
-import { STAFF_ROLES } from "@/api/types";
+import { FIELD_ROLES, STAFF_ROLES } from "@/api/types";
 import { ProtectedRoute } from "@/auth/ProtectedRoute";
 import { PublicLayout } from "@/layouts/PublicLayout";
 import { StaffLayout } from "@/layouts/StaffLayout";
+import { FieldLayout } from "@/layouts/FieldLayout";
 import { LoginPage } from "@/pages/auth/LoginPage";
 import { ForbiddenPage, NotFoundPage } from "@/pages/ErrorPages";
 import { HomePage } from "@/pages/public/HomePage";
@@ -23,6 +24,8 @@ import { DashboardPage } from "@/pages/staff/DashboardPage";
 import { EncodePage } from "@/pages/staff/EncodePage";
 
 const MapPage = lazy(() => import("@/pages/staff/MapPage"));
+const FieldJobsPage = lazy(() => import("@/pages/field/FieldJobsPage"));
+const FieldJobPage = lazy(() => import("@/pages/field/FieldJobPage"));
 const AnalyticsHome = lazy(() => import("@/pages/staff/AnalyticsHome"));
 const OfficePerformance = lazy(() =>
   import("@/pages/staff/OfficePerformancePage").then((m) => ({ default: m.OfficePerformancePage })),
@@ -61,6 +64,20 @@ export const router = createBrowserRouter([
       { path: "/login", element: <LoginPage /> },
       { path: "/forbidden", element: <ForbiddenPage /> },
       { path: "*", element: <NotFoundPage /> },
+    ],
+  },
+  {
+    // Field view (Step 18): phone-first screens for the people who do the work on site
+    element: <ProtectedRoute roles={FIELD_ROLES} />,
+    children: [
+      {
+        path: "/field",
+        element: <FieldLayout />,
+        children: [
+          { index: true, element: lazyEl(<FieldJobsPage />) },
+          { path: "jobs/:id", element: lazyEl(<FieldJobPage />) },
+        ],
+      },
     ],
   },
   {

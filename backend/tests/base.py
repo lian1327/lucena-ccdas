@@ -86,6 +86,12 @@ class CCADSSTestCase(TestCase):
         super().tearDownClass()
         shutil.rmtree(TMP_MEDIA, ignore_errors=True)
 
+    def setUp(self):
+        super().setUp()
+        from django.core.cache import cache
+
+        cache.clear()  # cached public stats / executive report must not leak between tests
+
     def user(self, username):
         return self.u[username]
 

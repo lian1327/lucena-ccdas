@@ -126,7 +126,7 @@ export function SiteFooter() {
       {proto && (
         <div className="gwt-footer py-3">
           <div className="container small d-flex flex-column flex-md-row justify-content-between gap-1">
-            <span>© {new Date().getFullYear()} {site.org_name} · Capstone research</span>
+            <span>© {new Date().getFullYear()} {site.org_name} · Faculty research</span>
             <span>{MAP_CREDIT}</span>
           </div>
         </div>

@@ -219,6 +219,10 @@ class Concern(models.Model):
                                       help_text="Keyed hash of the submitting network address (burst checks only).")
     review_flags = models.JSONField(default=list, blank=True, help_text="Screening signals, see apps.concerns.trust.FLAGS.")
 
+    is_practice = models.BooleanField(
+        default=False, db_index=True,
+        help_text="Practice case for training, UAT and usability sessions. Reset with: manage.py practice_data --reset",
+    )
     is_synthetic = models.BooleanField(
         default=False, db_index=True, help_text="Generated demo/test data. Purge with generate_synthetic_data --purge.",
     )

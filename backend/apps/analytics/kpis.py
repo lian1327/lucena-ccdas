@@ -48,13 +48,27 @@ def _rate(num, den):
     return round(num / den, 4) if den else None
 
 
-def _cases(dept_ids=None):
+# Columns never needed for KPIs. The barangay polygon alone is ~10 KB of JSON per row.
+HEAVY = ("concern__barangay__boundary_geojson", "department__screening_checklist", "screening",
+         "concern__ai_top", "concern__description", "concern__location_description", "concern__citizen_feedback",
+         "inspection_findings", "action_plan", "completion_remarks", "resolution_summary", "response_remarks")
+
+
+def _cases(dept_ids=None, since=None):
+    """
+    since: only cases that can affect KPIs from that date on (still open, or routed / validated / answered by the
+    citizen since then). Without it every case ever is loaded, which grows without bound.
+    """
     qs = Case.objects.select_related("concern__category", "concern__subcategory", "concern__barangay",
                                      "priority_level", "department", "division") \
         .filter(level=Case.Level.CITY, department__kind=Department.Kind.INTERNAL,
-                concern__duplicate_of__isnull=True)
+                concern__duplicate_of__isnull=True) \
+        .defer(*HEAVY)  # polygons/JSON/text decoded per row made the scorecard O(n) in JSON parsing
     if dept_ids is not None:
         qs = qs.filter(department_id__in=dept_ids)
+    if since is not None:
+        qs = qs.filter(Q(concern__status__in=OPEN) | Q(routed_at__gte=since) | Q(validated_at__gte=since)
+                       | Q(concern__citizen_confirmed_at__gte=since))
     return qs
 
 
@@ -90,7 +104,20 @@ def quality_lookup(concern_ids):
     }
 
 
-def compute(cases, start, end, now=None, q=None):
+def first_visits(case_ids):
+    """Step 18/19: first on-site check-in per case, {case_id: arrived_at}. Chunked to stay under SQL parameter limits."""
+    from django.db.models import Min
+
+    from apps.cases.models import SiteVisit
+
+    ids, out = list(case_ids), {}
+    for i in range(0, len(ids), 900):
+        for row in SiteVisit.objects.filter(case_id__in=ids[i:i + 900]).values("case_id").annotate(first=Min("arrived_at")):
+            out[row["case_id"]] = row["first"]
+    return out
+
+
+def compute(cases, start, end, now=None, q=None, visits=None):
     """KPI dict for an iterable of Case objects (one office, one division, or the whole city)."""
     now = now or timezone.now()
     cases = list(cases)
@@ -114,6 +141,11 @@ def compute(cases, start, end, now=None, q=None):
     answered = [k for k in cases if k.concern.citizen_confirmed_at and start <= k.concern.citizen_confirmed_at < end]
     not_fixed = [k for k in answered if k.concern.citizen_confirmation == "not_fixed"]
     days = [(k.validated_at - k.routed_at).total_seconds() / 86400 for k in resolved if k.routed_at]
+    # time to site: routed → first field check-in (only cases handled through the field view have one)
+    visits = visits if visits is not None else first_visits([k.id for k in routed if getattr(k, "id", None)])
+    accepted = [k for k in routed if getattr(k, "accepted_at", None)]
+    to_site = [(visits[k.id] - k.routed_at).total_seconds() / 3600 for k in accepted
+               if getattr(k, "id", None) in visits and visits[k.id] >= k.routed_at]
 
     out = {
         "received": len(routed),
@@ -126,6 +158,9 @@ def compute(cases, start, end, now=None, q=None):
         "p1_make_safe_rate": _rate(len(p1_ok), len(p1)),
         "median_days": round(statistics.median(days), 1) if days else None,
         "p90_days": round(statistics.quantiles(days, n=10)[-1], 1) if len(days) >= 10 else None,
+        "site_checkins": len(to_site),
+        "site_checkin_rate": _rate(len(to_site), len(accepted)),
+        "median_hours_to_site": round(statistics.median(to_site), 1) if to_site else None,
         "backlog": len(open_now),
         "overdue": len(overdue),
         "aging_30": len(aging30),
@@ -230,23 +265,24 @@ def scorecard(start, end, dept_ids=None):
     """One row per internal office + a city-wide row."""
     now = timezone.now()
     by_dept = defaultdict(list)
-    all_cases = list(_cases(dept_ids))
+    all_cases = list(_cases(dept_ids, since=start))
     for k in all_cases:
         by_dept[k.department_id].append(k)
     depts = Department.objects.filter(kind=Department.Kind.INTERNAL, is_active=True)
     if dept_ids is not None:
         depts = depts.filter(id__in=dept_ids)
     q = quality_lookup([k.concern_id for k in all_cases if k.validated_at and start <= k.validated_at < end])
+    visits = first_visits([k.id for k in all_cases if k.routed_at and start <= k.routed_at < end])
     rows = []
     for d in depts.order_by("name"):
-        m = compute(by_dept.get(d.id, []), start, end, now, q)
+        m = compute(by_dept.get(d.id, []), start, end, now, q, visits)
         if m["received"] == 0 and m["resolved"] == 0 and m["backlog"] == 0:
             continue
         rows.append({"department_id": d.id, "code": d.code, "name": d.name, **m})
     rows.sort(key=lambda r: (r["index"] is None, -(r["index"] or 0)))
     for i, r in enumerate(rows, 1):
         r["rank"] = i if r["index"] is not None else None
-    city = compute(all_cases, start, end, now, q)
+    city = compute(all_cases, start, end, now, q, visits)
     return rows, city
 
 
@@ -276,7 +312,8 @@ def monthly_trend(cases, months=12, now=None):
 
 def office_detail(dept, start, end):
     now = timezone.now()
-    cases = list(_cases([dept.id]))
+    year_ago = timezone.localtime(now).replace(day=1, hour=0, minute=0, second=0, microsecond=0) - timedelta(days=370)
+    cases = list(_cases([dept.id], since=min(start, year_ago)))
     q = quality_lookup([k.concern_id for k in cases if k.validated_at and start <= k.validated_at < end])
     m = compute(cases, start, end, now, q)
     divisions = []
@@ -298,7 +335,7 @@ def office_detail(dept, start, end):
     period_cases = [k for k in cases if k.routed_at and start <= k.routed_at < end]
     issues = Counter((k.concern.subcategory.name if k.concern.subcategory else k.concern.category.name) for k in period_cases)
     worst = sorted((k for k in open_now if k.due_at and k.due_at < now), key=lambda k: k.due_at)[:10]
-    city_cases = list(_cases())
+    city_cases = list(_cases(since=year_ago))
     staff_load = Counter((k.assigned_to.get_full_name() or k.assigned_to.username) for k in open_now if k.assigned_to)
     return {
         "department": {"id": dept.id, "code": dept.code, "name": dept.name},

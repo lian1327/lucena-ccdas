@@ -86,6 +86,8 @@ class PublicPurokListView(PublicMixin, generics.ListAPIView):
     pagination_class = None
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):  # schema generation has no URL kwargs
+            return Purok.objects.none()
         return Purok.objects.filter(barangay_id=self.kwargs["pk"]).order_by("is_zone", "name")
 
 

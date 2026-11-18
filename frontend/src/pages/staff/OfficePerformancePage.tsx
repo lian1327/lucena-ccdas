@@ -71,7 +71,8 @@ export function OfficePerformancePage() {
       <Row className="g-3 mb-3">
         <Col xs={6} lg={2}><KpiTile label="On-time (ARTA)" value={pct(k.on_time_rate)}
           sub={diff == null ? "" : `${diff >= 0 ? "+" : ""}${diff} pts vs city`} tone={misses(k.on_time_rate, 0.85) ? "danger" : undefined} /></Col>
-        <Col xs={6} lg={2}><KpiTile label="Unang aksyon" value={pct(k.response_rate)} sub={`city ${pct(c.response_rate)}`} /></Col>
+        <Col xs={6} lg={2}><KpiTile label="Unang aksyon" value={pct(k.response_rate)}
+          sub={`city ${pct(c.response_rate)} · sa lugar: ${k.median_hours_to_site != null ? `${k.median_hours_to_site} oras (median)` : "—"}`} /></Col>
         <Col xs={6} lg={2}><KpiTile label="P1 make-safe ≤4h" value={pct(k.p1_make_safe_rate)} sub={`${k.p1_cases} P1`} /></Col>
         <Col xs={6} lg={2}><KpiTile label="Pagtanggap ≤1 WD" value={pct(k.acceptance_rate)} sub={`${k.returned} ibinalik sa PACD`} /></Col>
         <Col xs={6} lg={2}><KpiTile label="Bukas / overdue" value={`${k.backlog} / ${k.overdue}`} sub={`${k.aging_30} >30 araw`} tone={k.overdue ? "danger" : undefined} /></Col>

@@ -30,6 +30,7 @@ MODULES = {
     "test_system": "Deployment – health, site mode, scheduler",
     "test_trust": "Module 1 – Report screening (false reports)",
     "test_field": "Module 2 – Field view (check-in, blockers, live photos)",
+    "test_step19": "Modules 2, 4, 6 – Priority rise, ongoing duplicates, time to site, practice data",
 }
 LINE = re.compile(r"^(test_\w+) \((tests\.(test_\w+)\.(\w+)\.test_\w+)\)(?:\n.*?)? \.\.\. (ok|FAIL|ERROR|skipped.*)$", re.M)
 
@@ -49,8 +50,10 @@ def main():
     (OUT / "test_run.log").write_text(log, encoding="utf-8")
     sys.path.insert(0, str(ROOT))
 
+    # Django request logging (e.g. "WARNING django.request: Forbidden") can land between "... " and "ok"
+    parsed = re.sub(r"(\.\.\. )(?:\d{4}-\d\d-\d\d [\d:,]+ [A-Z]+ [^\n]*\n)+", r"\1", log)
     rows = []
-    for i, m in enumerate(LINE.finditer(log), 1):
+    for i, m in enumerate(LINE.finditer(parsed), 1):
         test, dotted, mod, cls, res = m.groups()
         doc = ""
         try:

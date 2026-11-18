@@ -7,7 +7,7 @@ import { timeAgo } from "@/utils/format";
 const ICON: Record<string, string> = {
   new_case: "inbox", assigned: "person-check", returned: "arrow-return-left", danger: "exclamation-octagon",
   for_validation: "clipboard-check", sent_back: "arrow-counterclockwise", escalated: "arrow-up-circle",
-  disputed: "hand-thumbs-down",
+  disputed: "hand-thumbs-down", blocked: "exclamation-diamond", priority_up: "graph-up-arrow", rereport: "arrow-repeat",
 };
 
 /** Staff header bell: what now needs *my* action. Opening an alert marks it read and goes to the case. */

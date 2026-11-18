@@ -70,8 +70,17 @@ export function AcceptPanel({ c }: P) {
   const anyNo = checklist.some((q) => answers[q] === false);
   const levelCode = levels.data?.find((l) => l.id === level)?.code;
   const dueInfo = k.acceptance_due_at ? `Tanggapin o ibalik bago ${fmtDateTime(k.acceptance_due_at)}.` : "";
+  const rise = k.priority_rise_to;
 
   return (
+    <>
+    {rise && (
+      <Alert variant="warning" className="small py-2">
+        <i className="bi bi-graph-up-arrow me-1" aria-hidden />
+        Mas marami nang nag-report mula nang ipasa ito. Mungkahi ngayon: <strong>{rise.code} {rise.name_fil || rise.name}</strong>.
+        Piliin ang antas sa ibaba bago tanggapin.
+      </Alert>
+    )}
     <Panel title={`Pagtanggap ng ${k.department}`} icon="inbox" tone="primary"
       hint={<>Suriin kung sakop talaga ng opisina at kumpirmahin ang antas ng prayoridad. {dueInfo}</>}>
       {checklist.length > 0 && (
@@ -134,6 +143,7 @@ export function AcceptPanel({ c }: P) {
         </Button>
       )}
     </Panel>
+    </>
   );
 }
 
@@ -144,8 +154,10 @@ export function PriorityPanel({ c }: P) {
   const [editing, setEditing] = useState(false);
   const [level, setLevel] = useState<number | null>(k?.priority_level?.id ?? null);
   const [reason, setReason] = useState("");
+  const [keeping, setKeeping] = useState(false);
   if (!k?.priority_level || (k.level === "city" && !k.accepted_at)) return null;
   const l = k.priority_level;
+  const rise = k.priority_rise_to;
   const overdue = !k.responded_at && k.response_due_at && new Date(k.response_due_at) < new Date();
 
   return (
@@ -169,13 +181,31 @@ export function PriorityPanel({ c }: P) {
           {k.breaches.map((b) => <div key={b}>• {b}</div>)}
         </Alert>
       )}
+      {rise && !editing && (
+        <Alert variant="warning" className="small py-2 mt-2 mb-0">
+          <i className="bi bi-graph-up-arrow me-1" aria-hidden />
+          Mas marami nang nag-report ng parehong problema. Mungkahi ngayon: <strong>{rise.code} {rise.name_fil || rise.name}</strong>
+          {k.priority_rise_at && <> (mula {fmtDateTime(k.priority_rise_at)})</>}.
+          {c.permissions.set_priority && (
+            <div className="d-flex gap-2 mt-2">
+              <Button size="sm" variant="warning" onClick={() => {
+                setLevel(rise.id); setKeeping(false); setReason("Mas maraming nag-report ng parehong problema"); setEditing(true);
+              }}>Itaas sa {rise.code}</Button>
+              <Button size="sm" variant="outline-secondary" onClick={() => {
+                setLevel(l.id); setKeeping(true); setReason(""); setEditing(true);
+              }}>Panatilihin ang {l.code}</Button>
+            </div>
+          )}
+        </Alert>
+      )}
       {c.permissions.set_priority && (editing ? (
         <div className="mt-3">
-          <PriorityPicker value={level} onChange={setLevel} />
-          <Form.Control size="sm" className="mb-2" placeholder="Dahilan (kailangan)" value={reason} onChange={(e) => setReason(e.target.value)} />
-          <SubmitButton pending={set.isPending} disabled={!level || level === l.id || !reason.trim()} variant="outline-primary"
-            onClick={() => set.mutate({ priority_level: level!, reason }, { onSuccess: () => { setEditing(false); setReason(""); } })}>
-            I-save ang antas
+          {!keeping && <PriorityPicker value={level} onChange={setLevel} />}
+          <Form.Control size="sm" className="mb-2" placeholder={keeping ? "Bakit hindi itataas? (kailangan)" : "Dahilan (kailangan)"}
+            value={reason} onChange={(e) => setReason(e.target.value)} />
+          <SubmitButton pending={set.isPending} disabled={!level || (level === l.id && !keeping) || !reason.trim()} variant="outline-primary"
+            onClick={() => set.mutate({ priority_level: level!, reason }, { onSuccess: () => { setEditing(false); setKeeping(false); setReason(""); } })}>
+            {keeping ? `Panatilihin ang ${l.code}` : "I-save ang antas"}
           </SubmitButton>
           <ErrorText err={set.error} />
         </div>

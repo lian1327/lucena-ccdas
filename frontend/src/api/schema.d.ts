@@ -1553,6 +1553,10 @@ export interface components {
             blocked_at?: string | null;
             readonly blocked_by: string | null;
             readonly visits: components["schemas"]["SiteVisit"][];
+            /** @description More reports since routing: the score suggests this level. */
+            readonly priority_rise_to: components["schemas"]["PriorityLevel"];
+            /** Format: date-time */
+            priority_rise_at?: string | null;
         };
         /**
          * @description * `city` - City office
@@ -2096,6 +2100,15 @@ export interface components {
             median_days: number | null;
             /** Format: double */
             p90_days: number | null;
+            /** @description Accepted cases with an on-site check-in from the field view. */
+            site_checkins: number;
+            /** Format: double */
+            site_checkin_rate: number | null;
+            /**
+             * Format: double
+             * @description Routed → first on-site check-in, hours.
+             */
+            median_hours_to_site: number | null;
             backlog: number;
             overdue: number;
             aging_30: number;
@@ -2425,6 +2438,15 @@ export interface components {
             median_days: number | null;
             /** Format: double */
             p90_days: number | null;
+            /** @description Accepted cases with an on-site check-in from the field view. */
+            site_checkins: number;
+            /** Format: double */
+            site_checkin_rate: number | null;
+            /**
+             * Format: double
+             * @description Routed → first on-site check-in, hours.
+             */
+            median_hours_to_site: number | null;
             backlog: number;
             overdue: number;
             aging_30: number;
@@ -3020,9 +3042,11 @@ export interface components {
          *     * `escalated` - Escalated to you
          *     * `disputed` - Citizen says not fixed
          *     * `blocked` - Field crew can't finish yet
+         *     * `priority_up` - More reports: priority may need raising
+         *     * `rereport` - Reported again after work was done
          * @enum {string}
          */
-        StaffAlertKindEnum: "new_case" | "assigned" | "returned" | "danger" | "for_validation" | "sent_back" | "escalated" | "disputed" | "blocked";
+        StaffAlertKindEnum: "new_case" | "assigned" | "returned" | "danger" | "for_validation" | "sent_back" | "escalated" | "disputed" | "blocked" | "priority_up" | "rereport";
         StaffAlertList: {
             unread: number;
             urgent_unread: number;

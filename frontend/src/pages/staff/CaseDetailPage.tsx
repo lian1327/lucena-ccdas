@@ -195,6 +195,15 @@ export function CaseDetailPage() {
       </div>
       <h1 className="h4 fw-bold">{c.title}</h1>
       <Stepper c={c} />
+      {c.case?.priority_rise_to && c.case.priority_level && (
+        <Alert variant="warning" className="py-2 small d-flex align-items-center gap-2">
+          <i className="bi bi-graph-up-arrow fs-5" aria-hidden />
+          <span>
+            Mas marami nang nag-report ng parehong problema. Mungkahing antas ngayon: <strong>{c.case.priority_rise_to.code} {c.case.priority_rise_to.name_fil || c.case.priority_rise_to.name}</strong>{" "}
+            (kasalukuyan: {c.case.priority_level.code}). Magpasya sa panel na <em>{c.case.accepted_at || c.case.level !== "city" ? "Prayoridad at unang aksyon" : "Pagtanggap"}</em>.
+          </span>
+        </Alert>
+      )}
 
       <Row className="g-3">
         <Col lg={7} className="order-last order-lg-first">

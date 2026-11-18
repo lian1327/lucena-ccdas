@@ -89,6 +89,8 @@ class StaffAlert(models.Model):
         ESCALATED = "escalated", "Escalated to you"
         DISPUTED = "disputed", "Citizen says not fixed"
         BLOCKED = "blocked", "Field crew can't finish yet"
+        PRIORITY_UP = "priority_up", "More reports: priority may need raising"
+        REREPORT = "rereport", "Reported again after work was done"
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="alerts")
     kind = models.CharField(max_length=16, choices=Kind.choices)

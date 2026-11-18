@@ -79,6 +79,13 @@ def run_jobs():
         "retried": ns.retry_due,
         "status_synced": ns.sync_statuses,
     }
+    def warm_executive():  # so the Mayor's first page load never waits on a cold, slow free server
+        from apps.analytics.views import executive_payload
+
+        executive_payload(refresh=True)
+        return 1
+
+    jobs["executive_cache"] = warm_executive
     if timezone.localtime().hour == 2 or not cache.get("priority_recomputed"):  # once a day is enough
         jobs["priorities"] = recompute_open_concerns
         cache.set("priority_recomputed", True, 60 * 60 * 20)

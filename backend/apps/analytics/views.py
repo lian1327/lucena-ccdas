@@ -6,6 +6,7 @@ Office performance analytics. Access:
 """
 import csv
 
+from django.core.cache import cache
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils.dateparse import parse_date
@@ -62,6 +63,9 @@ class KpiSerializer(serializers.Serializer):
     p1_make_safe_rate = serializers.FloatField(allow_null=True)
     median_days = serializers.FloatField(allow_null=True)
     p90_days = serializers.FloatField(allow_null=True)
+    site_checkins = serializers.IntegerField(help_text="Accepted cases with an on-site check-in from the field view.")
+    site_checkin_rate = serializers.FloatField(allow_null=True)
+    median_hours_to_site = serializers.FloatField(allow_null=True, help_text="Routed → first on-site check-in, hours.")
     backlog = serializers.IntegerField()
     overdue = serializers.IntegerField()
     aging_30 = serializers.IntegerField()
@@ -226,7 +230,7 @@ class OfficeScorecardCSV(APIView):
         w = csv.writer(resp)
         w.writerow([f"CCADSS Office Performance — {label}"])
         cols = ["rank", "code", "name", "index", "grade", "received", "resolved", "on_time_rate", "response_rate",
-                "acceptance_rate", "p1_make_safe_rate", "median_days", "backlog", "overdue", "aging_30",
+                "acceptance_rate", "p1_make_safe_rate", "median_days", "median_hours_to_site", "site_checkin_rate", "backlog", "overdue", "aging_30",
                 "extension_rate", "escalation_rate", "reopen_rate", "returned",
                 "proof_rate", "overrides", "recurrence_rate", "citizen_answered", "citizen_not_fixed", "flags"]
         w.writerow(cols)
@@ -631,10 +635,26 @@ class ExecutiveView(APIView):
     @extend_schema(parameters=[OpenApiParameter("month", str, description="YYYY-MM")], responses=ExecutiveSerializer,
                    operation_id="analytics_executive")
     def get(self, request):
-        data = executive.overview(request.query_params.get("month"))
+        return Response(executive_payload(request.query_params.get("month")))
+
+
+EXEC_CACHE_SECONDS = 15 * 60
+
+
+def executive_payload(month=None, refresh=False):
+    """
+    The executive report is the heaviest computation in the system (24 months × categories × barangays), and its
+    numbers are monthly, so it is cached for 15 minutes and pre-computed by the scheduled job.
+    """
+    key = f"exec:v1:{month or 'default'}"
+    data = None if refresh else cache.get(key)
+    if data is None:
+        data = executive.overview(month)
         rows, city = kpis.scorecard(data["start"], data["end"], None)
-        acc = executive.accomplishment(request.query_params.get("month"))
-        return Response({**data, "offices": rows, "city": city, "accomplishment": acc})
+        acc = executive.accomplishment(month)
+        data = {**data, "offices": rows, "city": city, "accomplishment": acc}
+        cache.set(key, data, EXEC_CACHE_SECONDS)
+    return data
 
 
 class ExecutiveBarangayCSV(APIView):

@@ -1,0 +1,87 @@
+CCADSS Step 19 - Priority rise, ongoing duplicates, time to site, practice data
+=================================================================================
+Built on your GitHub repo (lian1327/lucena-ccdas, commit 3bf5163, "with progressive web app capability"),
+so these files match your code exactly.
+
+What it adds
+1. Priority rise after routing. When more DIFFERENT people report the same problem after a case was routed,
+   and the score now suggests a more urgent level (e.g. P3 -> P2), the office gets a "Mas maraming report"
+   alert once per level, the case shows a yellow banner, and the Priority panel offers
+   "Itaas sa P2" or "Panatilihin ang P3" (both need a reason). Nothing changes the citizen's target date
+   by itself; the office decides. The flag clears when the level is set, kept, or confirmed on acceptance.
+2. Duplicates of ongoing work. A new report of the same problem (same category, within 100 m) now links to a
+   case that is already routed or in progress, however old. Before, after 14 days it became a new case.
+   If the crew already reported the work done and a new report comes in before validation, the chief/head
+   gets a "Ini-report ulit" alert: check the site before validating.
+3. Time to site in the office scorecard: median hours from routing to the first field check-in, and the share
+   of accepted cases with a check-in. Shown on the office Performance page and in the CSV export.
+4. Practice data: python manage.py practice_data --reset creates 11 practice cases, one for each UAT step and
+   the usability tasks (resolved case for "Naayos ba talaga?", PACD triage, wrong office, field job, work
+   waiting for validation, national road, reused photo, barangay case...). It prints which reference number
+   to use for which test. Practice cases never send SMS/email and refuse to run when SITE_MODE=official.
+5. ALSO INCLUDED - Step 16b scale fix. It was never applied to your repo: the office scorecard and executive
+   report still loaded every case ever (12 s and 16 s at 35,000 reports). Same files as the Step 16b zip.
+6. Fixes: API type generation warnings (enum names, purok list), test report parser (Django request warnings
+   hid 19 tests from the report), "Capstone research" -> "Faculty research" in the footer and privacy notice.
+7. CCADSS-demo-accounts.txt: rewritten with a "what each role can see and do" table, the field app, the
+   practice data and the updated demo script.
+
+Files (copy over the project, same paths)
+backend/apps/analytics/kpis.py            time to site; Step 16b since= window and deferred heavy fields
+backend/apps/analytics/views.py           KPI fields; Step 16b executive cache
+backend/apps/cases/models.py              Case.priority_rise_to, priority_rise_at
+backend/apps/cases/serializers_staff.py   priority_rise_to in case detail
+backend/apps/cases/services.py            check_priority_rise(), on_new_duplicate(), case_leads()
+backend/apps/concerns/models.py           Concern.is_practice
+backend/apps/concerns/services.py         duplicate window for routed / in-progress cases
+backend/apps/concerns/views_public.py     schema fix only
+backend/apps/concerns/management/commands/practice_data.py   NEW
+backend/apps/notifications/models.py      alert kinds priority_up, rereport
+backend/config/system.py                  Step 16b: cron pre-computes the executive report
+backend/tests/base.py                     Step 16b: cache cleared between tests
+backend/tests/test_step19.py              NEW, 10 tests
+backend/tests/make_report.py              parser fix + Step 19 area
+frontend/src/api/schema.d.ts
+frontend/src/features/cases/ScreeningPanels.tsx      raise / keep buttons, hint on the accept panel
+frontend/src/pages/staff/CaseDetailPage.tsx          yellow banner
+frontend/src/pages/staff/OfficePerformancePage.tsx   time to site
+frontend/src/features/notifications/AlertBell.tsx    icons for the new alerts
+frontend/src/components/gov/SiteFooter.tsx, frontend/src/pages/public/PrivacyPage.tsx   wording
+CCADSS-demo-accounts.txt   (keep it OUT of Git, see below)
+
+ONE MANUAL EDIT: backend/config/settings.py (not in the zip, so your local settings stay as they are).
+Inside SPECTACULAR_SETTINGS -> "ENUM_NAME_OVERRIDES", add these two lines after "NotificationChannelEnum":
+        "BlockReasonEnum": "apps.cases.models.Case.BlockReason",
+        "EvidenceLevelEnum": ["red", "amber", "info", "good"],
+
+Install (PowerShell)
+  cd backend
+  python manage.py makemigrations cases concerns notifications
+  python manage.py migrate
+  python manage.py test tests                 # 174 tests, all should pass
+  python tests/make_report.py                 # 174/174 -> reports/test_report.md
+  python manage.py practice_data --reset      # before each UAT or usability session
+  python manage.py runserver
+  cd ..\frontend
+  npm run gen:api                             # with runserver running
+  npm run typecheck
+
+Try it
+  - ceo.head: open the practice case "Sirang tulay daw", then submit 9 reports of the same problem at the same
+    pin with different mobile numbers -> yellow banner + bell alert "Mas maraming report ... (P3 -> P2?)".
+  - ceo.crew on /field: check in on the practice field job; Performance -> City Engineering Office shows
+    "sa lugar: X oras (median)".
+
+IMPORTANT - your repository is PUBLIC
+  - github.com/lian1327/lucena-ccdas can be opened by anyone. It contains CCADSS-demo-accounts.txt with the
+    demo password, and all the unpublished research code.
+  - Make it private: GitHub -> repo -> Settings -> General -> Danger Zone -> Change visibility -> Private.
+    Render and Cloudflare Pages keep working with a private repo. (Private repos use Actions minutes;
+    the cron is paused anyway until approval.)
+  - Stop tracking the accounts file (it is already in .gitignore):
+        git rm --cached CCADSS-demo-accounts.txt
+        git commit -m "Stop tracking demo accounts file"
+    The old copy stays in Git history, so if the site was ever deployed with demo users, run
+    python manage.py demo_users --rotate against the server database (DEPLOY.md step 4).
+  - backend/requirements.txt is saved as UTF-16 (PowerShell's "pip freeze >" does that). Save it as UTF-8
+    so every tool reads it:   pip freeze | Out-File -Encoding utf8 requirements.txt

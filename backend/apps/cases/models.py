@@ -130,6 +130,10 @@ class Case(models.Model):
     # Priority (urgency) — sets response target and caps the resolution target within ARTA
     priority_level = models.ForeignKey(PriorityLevel, null=True, blank=True, on_delete=models.PROTECT, related_name="cases")
     priority_reason = models.CharField(max_length=300, blank=True)
+    # Step 19: more people reported the same problem after routing, so the score now suggests a more urgent level.
+    # The office decides (Set priority); the flag clears when the level is set or confirmed.
+    priority_rise_to = models.ForeignKey(PriorityLevel, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    priority_rise_at = models.DateTimeField(null=True, blank=True)
     response_due_at = models.DateTimeField(null=True, blank=True)
     responded_at = models.DateTimeField(null=True, blank=True)
     responded_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")

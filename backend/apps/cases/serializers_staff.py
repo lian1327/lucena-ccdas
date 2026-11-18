@@ -294,6 +294,8 @@ class CaseInfoSerializer(serializers.ModelSerializer):
     breaches = serializers.SerializerMethodField()
     reports = AccomplishmentReportSerializer(many=True, read_only=True)
     evidence = serializers.SerializerMethodField()
+    priority_rise_to = PriorityLevelSerializer(read_only=True, default=None,
+                                               help_text="More reports since routing: the score suggests this level.")
     blocked_reason_display = serializers.CharField(source="get_blocked_reason_display")
     blocked_by = serializers.SerializerMethodField()
     visits = serializers.SerializerMethodField()
@@ -314,6 +316,7 @@ class CaseInfoSerializer(serializers.ModelSerializer):
             "priority_level", "priority_reason", "response_due_at", "responded_at", "responded_by", "response_remarks",
             "breaches", "reports", "evidence",
             "blocked_reason", "blocked_reason_display", "blocked_note", "blocked_at", "blocked_by", "visits",
+            "priority_rise_to", "priority_rise_at",
         ]
 
     def get_assigned_to(self, obj) -> str | None:

@@ -5,6 +5,7 @@ from datetime import timedelta
 
 from django.conf import settings
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 
 from apps.priority.services import compute_priority
@@ -22,8 +23,8 @@ def haversine_m(lat1, lng1, lat2, lng2):
 
 def find_master_duplicate(concern):
     """
-    Earliest open, non-duplicate concern of the same category within DUPLICATE_RADIUS_M
-    and DUPLICATE_WINDOW_DAYS. Uses a bounding-box prefilter in SQL, exact haversine in Python.
+    Earliest open, non-duplicate concern of the same category within DUPLICATE_RADIUS_M, filed within
+    DUPLICATE_WINDOW_DAYS or already routed to an office (any age). Bounding-box prefilter in SQL, exact haversine in Python.
     """
     cfg = getattr(settings, "DUPLICATE_DETECTION", {})
     radius_m = cfg.get("RADIUS_M", 100)
@@ -34,12 +35,16 @@ def find_master_duplicate(concern):
 
     dlat = radius_m / 111_320
     dlng = radius_m / (111_320 * max(math.cos(math.radians(float(concern.latitude))), 0.01))
+    # Recent open reports (14 days), or any case the office is already working on regardless of age:
+    # a pothole reported again while the repair has been in progress for a month is the same problem, not a new case.
+    recent_or_active = Q(created_at__gte=timezone.now() - timedelta(days=window_days)) | \
+        Q(status__in=[Concern.Status.ASSIGNED, Concern.Status.IN_PROGRESS])
     candidates = (
         Concern.objects.filter(
+            recent_or_active,
             category_id=concern.category_id,
             status__in=Concern.OPEN_STATUSES,
             duplicate_of__isnull=True,
-            created_at__gte=timezone.now() - timedelta(days=window_days),
             latitude__range=(float(concern.latitude) - dlat, float(concern.latitude) + dlat),
             longitude__range=(float(concern.longitude) - dlng, float(concern.longitude) + dlng),
         )
@@ -127,6 +132,10 @@ def on_concern_submitted(concern, user=None):
 
     trust.assess(concern)  # screening signals for the PACD (Step 17); never rejects anything
     compute_priority(concern)
+    if master:
+        from apps.cases.services import on_new_duplicate
+
+        on_new_duplicate(master, concern, user)  # Step 19: raise the level? reported again after "done"?
     if concern.danger_now and not master:
         from apps.notifications.models import StaffAlert
         from apps.notifications.services import alert, pacd_staff

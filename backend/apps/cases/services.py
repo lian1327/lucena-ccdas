@@ -236,6 +236,7 @@ def accept(concern, user, *, priority_level, screening=None, division=None, prio
         case.priority_reason = priority_reason
         _apply_clocks(case)  # clock still runs from receipt, not from acceptance
         _note(case, user, f"Priority {old.code if old else '—'} → {priority_level.code}: {priority_reason}")
+    case.priority_rise_to, case.priority_rise_at = None, None  # the office has now decided the level
     case.save()
     _note(case, user, f"Tinanggap ng {case.department.code}. {remarks}".strip())
     msg = f"Tinanggap na ng {case.department.name}. Antas: {priority_level.name_fil or priority_level.name}. " \
@@ -271,8 +272,13 @@ def return_to_pacd(concern, user, *, reason):
 def set_priority(concern, user, *, priority_level, reason):
     case = concern.case
     if case.priority_level_id == priority_level.id:
+        if case.priority_rise_to_id:  # "keep the current level" is also a decision
+            case.priority_rise_to, case.priority_rise_at = None, None
+            case.save(update_fields=["priority_rise_to", "priority_rise_at"])
+            _note(case, user, f"Pinanatili ang priority {priority_level.code}: {reason}")
         return case
     old = case.priority_level
+    case.priority_rise_to, case.priority_rise_at = None, None
     case.priority_level = priority_level
     case.priority_reason = reason
     _apply_clocks(case, keep_extension=True)
@@ -703,6 +709,7 @@ def link_duplicate(concern, master, user):
         d.save(update_fields=["duplicate_of"])
     compute_priority(master)
     compute_priority(concern)
+    on_new_duplicate(master, concern, user)
 
 
 @transaction.atomic
@@ -780,3 +787,56 @@ def report_blocker(concern, user, *, reason, remarks=""):
     notify.alert(leads, StaffAlert.Kind.BLOCKED, concern, f"Hindi pa matapos: {concern.reference_no}",
                  f"{label}. {remarks}".strip()[:300], exclude=user)
     return case
+
+
+# ---------------- More reports of the same problem (Step 19) ----------------
+
+def case_leads(case):
+    """Who decides for this case: the office leads (city level) or the barangay personnel (barangay level)."""
+    from apps.accounts.models import User
+
+    if case.level == Case.Level.BARANGAY:
+        return list(User.objects.filter(is_active=True, role=User.Role.BARANGAY, barangay_id=case.concern.barangay_id))
+    return notify.office_leads(case)
+
+
+def check_priority_rise(concern, user=None):
+    """
+    The priority LEVEL is suggested once, when the case is routed, and the office confirms it on acceptance.
+    When more people report the same problem afterwards, the score keeps rising but the level did not.
+    Now: if the score suggests a more urgent level than the case has, flag it and tell the office once per level.
+    The office decides (Set priority); nothing changes the citizen's target date on its own.
+    """
+    case = getattr(concern, "case", None)  # reverse one-to-one: None when the concern was never routed
+    if not case or not case.priority_level_id or concern.status not in Concern.OPEN_STATUSES:
+        return None
+    new = suggest_priority(concern)
+    if not new or new.sort_order >= case.priority_level.sort_order or case.priority_rise_to_id == new.id:
+        return None
+    if case.priority_rise_to_id and case.priority_rise_to.sort_order <= new.sort_order:
+        return None  # already flagged for this level or a more urgent one
+    old = case.priority_level
+    case.priority_rise_to, case.priority_rise_at = new, timezone.now()
+    case.save(update_fields=["priority_rise_to", "priority_rise_at"])
+    detail = getattr(concern, "priority", None)
+    reporters = 1 + (detail.duplicate_count if detail else 0)
+    text = (f"Tumaas ang priority score sa {float(concern.priority_score):.0f} ({reporters} na magkakaibang nag-report). "
+            f"Mungkahing antas: {new.code} {new.name}; kasalukuyan: {old.code}.")
+    _note(case, None, text)
+    notify.alert(case_leads(case), StaffAlert.Kind.PRIORITY_UP, concern,
+                 f"Mas maraming report: {concern.reference_no} ({old.code} → {new.code}?)", text,
+                 urgent=new.code == "P1", exclude=user)
+    return new
+
+
+def on_new_duplicate(master, duplicate, user=None):
+    """A new report was linked to an open case: re-check its level, and warn if the work was already reported done."""
+    master.refresh_from_db()
+    check_priority_rise(master, user)
+    case = getattr(master, "case", None)
+    if case and case.work_completed_at and not case.validated_at:
+        text = (f"May bagong report ({duplicate.reference_no}) matapos iulat na tapos na ang trabaho. "
+                f"Suriin muna ang lugar bago i-validate.")
+        _note(case, None, text)
+        notify.alert(case_leads(case), StaffAlert.Kind.REREPORT, master,
+                     f"Ini-report ulit: {master.reference_no}", text, urgent=False, exclude=user)

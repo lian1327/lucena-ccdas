@@ -37,7 +37,7 @@ export function PrivacyPage() {
       <h2 className="h5 fw-bold">Para saan ito ginagamit</h2>
       {proto ? (
         <ul>
-          <li>Para subukan at suriin ang sistema bilang bahagi ng isang capstone na pananaliksik</li>
+          <li>Para subukan at suriin ang sistema bilang bahagi ng isang pananaliksik ng faculty ng Kolehiyo</li>
           <li>Para sa mga pinagsama-samang istatistika na walang nakikilalang tao</li>
           <li>
             Para maiwasan ang pekeng report: itinatago ang mobile number, email at network address bilang naka-encrypt

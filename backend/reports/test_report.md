@@ -1,6 +1,6 @@
 # CCADSS automated test report
 
-Run on November 18, 2026 20:11 · Django test runner · 174 tests in 50.774 s · **162 passed, 12 not passed**
+Run on November 18, 2026 20:35 · Django test runner · 193 tests in 20.609 s · **193 passed, 0 not passed**
 
 ## By area
 
@@ -13,13 +13,14 @@ Run on November 18, 2026 20:11 · Django test runner · 174 tests in 50.774 s ·
 | Module 2 – Proof of work | 12 | 12 |
 | Module 2 – Field view (check-in, blockers, live photos) | 16 | 16 |
 | Module 5 – GIS (purok tagging) | 7 | 7 |
-| Module 1 – Notifications (SMS/email/alerts) | 29 | 18 |
+| Module 1 – Notifications (SMS/email/alerts) | 29 | 29 |
 | Module 4 – Priority Scoring | 4 | 4 |
 | Module 1 – Citizen Reporting Portal | 10 | 10 |
 | Security – Role-based access | 11 | 11 |
 | Modules 2, 4, 6 – Priority rise, ongoing duplicates, time to site, practice data | 10 | 10 |
+| Modules 1, 2, 6 – Road endorsement, AI markers, ocular verification, job acceptance, public report | 19 | 19 |
 | Deployment – health, site mode, scheduler | 8 | 8 |
-| Module 1 – Report screening (false reports) | 18 | 17 |
+| Module 1 – Report screening (false reports) | 18 | 18 |
 | Module 2 – Case Management | 13 | 13 |
 
 ## Test cases
@@ -97,21 +98,21 @@ Run on November 18, 2026 20:11 · Django test runner · 174 tests in 50.774 s ·
 | TC-069 | Module 5 – GIS (purok tagging) | Point inside | Pass |
 | TC-070 | Module 5 – GIS (purok tagging) | Report is tagged from the pin | Pass |
 | TC-071 | Module 5 – GIS (purok tagging) | Snaps within 30m | Pass |
-| TC-072 | Module 1 – Notifications (SMS/email/alerts) | Closing after citizen confirms sends nothing more | Error |
-| TC-073 | Module 1 – Notifications (SMS/email/alerts) | Each duplicate reporter gets their own update | Error |
-| TC-074 | Module 1 – Notifications (SMS/email/alerts) | Extension notifies with new date | Error |
+| TC-072 | Module 1 – Notifications (SMS/email/alerts) | Closing after citizen confirms sends nothing more | Pass |
+| TC-073 | Module 1 – Notifications (SMS/email/alerts) | Each duplicate reporter gets their own update | Pass |
+| TC-074 | Module 1 – Notifications (SMS/email/alerts) | Extension notifies with new date | Pass |
 | TC-075 | Module 1 – Notifications (SMS/email/alerts) | Muted sends nothing | Pass |
 | TC-076 | Module 1 – Notifications (SMS/email/alerts) | No sms for anonymous opted out or synthetic | Pass |
-| TC-077 | Module 1 – Notifications (SMS/email/alerts) | One message per milestone through the lifecycle | Error |
-| TC-078 | Module 1 – Notifications (SMS/email/alerts) | Received sms and email on submit | Error |
-| TC-079 | Module 1 – Notifications (SMS/email/alerts) | Rejection explains why | Error |
-| TC-080 | Module 1 – Notifications (SMS/email/alerts) | Same update is never sent twice | Error |
-| TC-081 | Module 1 – Notifications (SMS/email/alerts) | Log is masked and role limited | Error |
-| TC-082 | Module 1 – Notifications (SMS/email/alerts) | Night report waits then worker sends | Error |
+| TC-077 | Module 1 – Notifications (SMS/email/alerts) | One message per milestone through the lifecycle | Pass |
+| TC-078 | Module 1 – Notifications (SMS/email/alerts) | Received sms and email on submit | Pass |
+| TC-079 | Module 1 – Notifications (SMS/email/alerts) | Rejection explains why | Pass |
+| TC-080 | Module 1 – Notifications (SMS/email/alerts) | Same update is never sent twice | Pass |
+| TC-081 | Module 1 – Notifications (SMS/email/alerts) | Log is masked and role limited | Pass |
+| TC-082 | Module 1 – Notifications (SMS/email/alerts) | Night report waits then worker sends | Pass |
 | TC-083 | Module 1 – Notifications (SMS/email/alerts) | Window | Pass |
 | TC-084 | Module 1 – Notifications (SMS/email/alerts) | Failed sms is retried with backoff and capped | Pass |
-| TC-085 | Module 1 – Notifications (SMS/email/alerts) | Purge blanks old recipients | Error |
-| TC-086 | Module 1 – Notifications (SMS/email/alerts) | Reminder after three days once | Error |
+| TC-085 | Module 1 – Notifications (SMS/email/alerts) | Purge blanks old recipients | Pass |
+| TC-086 | Module 1 – Notifications (SMS/email/alerts) | Reminder after three days once | Pass |
 | TC-087 | Module 1 – Notifications (SMS/email/alerts) | Missing key never calls out | Pass |
 | TC-088 | Module 1 – Notifications (SMS/email/alerts) | Network error is a failure | Pass |
 | TC-089 | Module 1 – Notifications (SMS/email/alerts) | Success reply is parsed | Pass |
@@ -161,44 +162,174 @@ Run on November 18, 2026 20:11 · Django test runner · 174 tests in 50.774 s ·
 | TC-133 | Modules 2, 4, 6 – Priority rise, ongoing duplicates, time to site, practice data | More reporters flag a higher level and alert the office once | Pass |
 | TC-134 | Modules 2, 4, 6 – Priority rise, ongoing duplicates, time to site, practice data | Setting or keeping the level clears the flag | Pass |
 | TC-135 | Modules 2, 4, 6 – Priority rise, ongoing duplicates, time to site, practice data | Scorecard reports median hours to site | Pass |
-| TC-136 | Deployment – health, site mode, scheduler | Sample data hidden from public numbers | Pass |
-| TC-137 | Deployment – health, site mode, scheduler | Sample data never alerts staff | Pass |
-| TC-138 | Deployment – health, site mode, scheduler | Sample data shown and flagged | Pass |
-| TC-139 | Deployment – health, site mode, scheduler | Cron disabled without a token | Pass |
-| TC-140 | Deployment – health, site mode, scheduler | Cron needs the token | Pass |
-| TC-141 | Deployment – health, site mode, scheduler | Health | Pass |
-| TC-142 | Deployment – health, site mode, scheduler | Site mode prototype | Pass |
-| TC-143 | Deployment – health, site mode, scheduler | Unknown mode falls back to prototype | Pass |
-| TC-144 | Module 1 – Report screening (false reports) | Many anonymous duplicates count as two | Pass |
-| TC-145 | Module 1 – Report screening (false reports) | Camera gps far from pin | Pass |
-| TC-146 | Module 1 – Report screening (false reports) | Camera gps near pin is clean | Pass |
-| TC-147 | Module 1 – Report screening (false reports) | Live capture at the site is a good sign | Pass |
-| TC-148 | Module 1 – Report screening (false reports) | Old photo date | Pass |
-| TC-149 | Module 1 – Report screening (false reports) | Phone location far away is not called far | Pass |
-| TC-150 | Module 1 – Report screening (false reports) | Plain photo without camera data is not flagged | Pass |
-| TC-151 | Module 1 – Report screening (false reports) | Same photo for a different place is red | Pass |
-| TC-152 | Module 1 – Report screening (false reports) | Same photo shared by neighbours is only info | Pass |
-| TC-153 | Module 1 – Report screening (false reports) | Flags reach the staff api | Pass |
-| TC-154 | Module 1 – Report screening (false reports) | Photo meta travels with the upload and report stays submitted | Pass |
-| TC-155 | Module 1 – Report screening (false reports) | Anonymous reports have no key | Pass |
-| TC-156 | Module 1 – Report screening (false reports) | Burst from one network | Pass |
-| TC-157 | Module 1 – Report screening (false reports) | Three unfounded then flagged | Pass |
-| TC-158 | Module 1 – Report screening (false reports) | Field staff can mark unfounded through the api | Pass |
-| TC-159 | Module 1 – Report screening (false reports) | Needs a note and tells the reporter | Error |
-| TC-160 | Module 1 – Report screening (false reports) | Only the original counts against the reporter | Pass |
-| TC-161 | Module 1 – Report screening (false reports) | Report card | Pass |
-| TC-162 | Module 2 – Case Management | Answer only once | Pass |
-| TC-163 | Module 2 – Case Management | Duplicate reporter can reopen the shared case | Pass |
-| TC-164 | Module 2 – Case Management | Not fixed reopens and clears validation | Pass |
-| TC-165 | Module 2 – Case Management | Window closes after 30 days | Pass |
-| TC-166 | Module 2 – Case Management | Overdue case escalates one level at a time | Pass |
-| TC-167 | Module 2 – Case Management | Extension after deadline lapsed is refused | Pass |
-| TC-168 | Module 2 – Case Management | One extension only and within limit | Pass |
-| TC-169 | Module 2 – Case Management | Changing priority needs a reason | Pass |
-| TC-170 | Module 2 – Case Management | Full path submitted to closed | Pass |
-| TC-171 | Module 2 – Case Management | Internal steps are hidden from the public timeline | Pass |
-| TC-172 | Module 2 – Case Management | Invalid transition is refused | Pass |
-| TC-173 | Module 2 – Case Management | Screening questions must be answered | Pass |
-| TC-174 | Module 2 – Case Management | Wrong office returns to pacd | Pass |
+| TC-136 | Modules 1, 2, 6 – Road endorsement, AI markers, ocular verification, job acceptance, public report | Citizen photo declared ai is red and never live | Pass |
+| TC-137 | Modules 1, 2, 6 – Road endorsement, AI markers, ocular verification, job acceptance, public report | Markers in file bytes | Pass |
+| TC-138 | Modules 1, 2, 6 – Road endorsement, AI markers, ocular verification, job acceptance, public report | Staff photo with ai marker is red and not ocular | Pass |
+| TC-139 | Modules 1, 2, 6 – Road endorsement, AI markers, ocular verification, job acceptance, public report | Check in at the site verifies | Pass |
+| TC-140 | Modules 1, 2, 6 – Road endorsement, AI markers, ocular verification, job acceptance, public report | Check in far away does not | Pass |
+| TC-141 | Modules 1, 2, 6 – Road endorsement, AI markers, ocular verification, job acceptance, public report | Clean before photo at the site verifies | Pass |
+| TC-142 | Modules 1, 2, 6 – Road endorsement, AI markers, ocular verification, job acceptance, public report | Unfounded after a visit is measured | Pass |
+| TC-143 | Modules 1, 2, 6 – Road endorsement, AI markers, ocular verification, job acceptance, public report | Other office cannot reply | Pass |
+| TC-144 | Modules 1, 2, 6 – Road endorsement, AI markers, ocular verification, job acceptance, public report | Team replies in public | Pass |
+| TC-145 | Modules 1, 2, 6 – Road endorsement, AI markers, ocular verification, job acceptance, public report | Work summary only after validation and without names | Pass |
+| TC-146 | Modules 1, 2, 6 – Road endorsement, AI markers, ocular verification, job acceptance, public report | Off the national road no suggestion | Pass |
+| TC-147 | Modules 1, 2, 6 – Road endorsement, AI markers, ocular verification, job acceptance, public report | Osm import keeps national routes only | Pass |
+| TC-148 | Modules 1, 2, 6 – Road endorsement, AI markers, ocular verification, job acceptance, public report | Road damage on national road suggests dpwh | Pass |
+| TC-149 | Modules 1, 2, 6 – Road endorsement, AI markers, ocular verification, job acceptance, public report | Streetlight on national road suggests meralco | Pass |
+| TC-150 | Modules 1, 2, 6 – Road endorsement, AI markers, ocular verification, job acceptance, public report | Arriving counts as accepting | Pass |
+| TC-151 | Modules 1, 2, 6 – Road endorsement, AI markers, ocular verification, job acceptance, public report | Chief is reminded once when not accepted in time | Pass |
+| TC-152 | Modules 1, 2, 6 – Road endorsement, AI markers, ocular verification, job acceptance, public report | Not reminded before the time | Pass |
+| TC-153 | Modules 1, 2, 6 – Road endorsement, AI markers, ocular verification, job acceptance, public report | Only the assigned lead can accept | Pass |
+| TC-154 | Modules 1, 2, 6 – Road endorsement, AI markers, ocular verification, job acceptance, public report | Reassigning resets acceptance | Pass |
+| TC-155 | Deployment – health, site mode, scheduler | Sample data hidden from public numbers | Pass |
+| TC-156 | Deployment – health, site mode, scheduler | Sample data never alerts staff | Pass |
+| TC-157 | Deployment – health, site mode, scheduler | Sample data shown and flagged | Pass |
+| TC-158 | Deployment – health, site mode, scheduler | Cron disabled without a token | Pass |
+| TC-159 | Deployment – health, site mode, scheduler | Cron needs the token | Pass |
+| TC-160 | Deployment – health, site mode, scheduler | Health | Pass |
+| TC-161 | Deployment – health, site mode, scheduler | Site mode prototype | Pass |
+| TC-162 | Deployment – health, site mode, scheduler | Unknown mode falls back to prototype | Pass |
+| TC-163 | Module 1 – Report screening (false reports) | Many anonymous duplicates count as two | Pass |
+| TC-164 | Module 1 – Report screening (false reports) | Camera gps far from pin | Pass |
+| TC-165 | Module 1 – Report screening (false reports) | Camera gps near pin is clean | Pass |
+| TC-166 | Module 1 – Report screening (false reports) | Live capture at the site is a good sign | Pass |
+| TC-167 | Module 1 – Report screening (false reports) | Old photo date | Pass |
+| TC-168 | Module 1 – Report screening (false reports) | Phone location far away is not called far | Pass |
+| TC-169 | Module 1 – Report screening (false reports) | Plain photo without camera data is not flagged | Pass |
+| TC-170 | Module 1 – Report screening (false reports) | Same photo for a different place is red | Pass |
+| TC-171 | Module 1 – Report screening (false reports) | Same photo shared by neighbours is only info | Pass |
+| TC-172 | Module 1 – Report screening (false reports) | Flags reach the staff api | Pass |
+| TC-173 | Module 1 – Report screening (false reports) | Photo meta travels with the upload and report stays submitted | Pass |
+| TC-174 | Module 1 – Report screening (false reports) | Anonymous reports have no key | Pass |
+| TC-175 | Module 1 – Report screening (false reports) | Burst from one network | Pass |
+| TC-176 | Module 1 – Report screening (false reports) | Three unfounded then flagged | Pass |
+| TC-177 | Module 1 – Report screening (false reports) | Field staff can mark unfounded through the api | Pass |
+| TC-178 | Module 1 – Report screening (false reports) | Needs a note and tells the reporter | Pass |
+| TC-179 | Module 1 – Report screening (false reports) | Only the original counts against the reporter | Pass |
+| TC-180 | Module 1 – Report screening (false reports) | Report card | Pass |
+| TC-181 | Module 2 – Case Management | Answer only once | Pass |
+| TC-182 | Module 2 – Case Management | Duplicate reporter can reopen the shared case | Pass |
+| TC-183 | Module 2 – Case Management | Not fixed reopens and clears validation | Pass |
+| TC-184 | Module 2 – Case Management | Window closes after 30 days | Pass |
+| TC-185 | Module 2 – Case Management | Overdue case escalates one level at a time | Pass |
+| TC-186 | Module 2 – Case Management | Extension after deadline lapsed is refused | Pass |
+| TC-187 | Module 2 – Case Management | One extension only and within limit | Pass |
+| TC-188 | Module 2 – Case Management | Changing priority needs a reason | Pass |
+| TC-189 | Module 2 – Case Management | Full path submitted to closed | Pass |
+| TC-190 | Module 2 – Case Management | Internal steps are hidden from the public timeline | Pass |
+| TC-191 | Module 2 – Case Management | Invalid transition is refused | Pass |
+| TC-192 | Module 2 – Case Management | Screening questions must be answered | Pass |
+| TC-193 | Module 2 – Case Management | Wrong office returns to pacd | Pass |
+
+## Code coverage (statement)
+
+```
+Name                                                           Stmts   Miss  Cover
+----------------------------------------------------------------------------------
+apps/accounts/admin.py                                            11      0   100%
+apps/accounts/apps.py                                              4      0   100%
+apps/accounts/management/commands/demo_users.py                   45     45     0%
+apps/accounts/models.py                                           20      1    95%
+apps/accounts/permissions.py                                      13      0   100%
+apps/accounts/serializers.py                                      26      1    96%
+apps/accounts/tests.py                                             1      1     0%
+apps/accounts/urls.py                                              4      0   100%
+apps/accounts/views.py                                            11      1    91%
+apps/analytics/accountability.py                                 143    128    10%
+apps/analytics/admin.py                                            1      0   100%
+apps/analytics/apps.py                                             4      0   100%
+apps/analytics/executive.py                                      323     68    79%
+apps/analytics/kpis.py                                           197     73    63%
+apps/analytics/models.py                                           1      0   100%
+apps/analytics/tests.py                                            1      1     0%
+apps/analytics/urls.py                                             3      0   100%
+apps/analytics/views.py                                          495     81    84%
+apps/cases/admin.py                                               42      0   100%
+apps/cases/apps.py                                                 4      0   100%
+apps/cases/credentials.py                                         30      3    90%
+apps/cases/deadlines.py                                           44      4    91%
+apps/cases/evidence.py                                           170     31    82%
+apps/cases/management/commands/escalate_overdue.py                 7      7     0%
+apps/cases/models.py                                             235     15    94%
+apps/cases/scoping.py                                             94     14    85%
+apps/cases/serializers_staff.py                                  679     83    88%
+apps/cases/services.py                                           651    123    81%
+apps/cases/tests.py                                                1      1     0%
+apps/cases/urls_staff.py                                           7      0   100%
+apps/cases/views.py                                                1      1     0%
+apps/cases/views_staff.py                                        331    136    59%
+apps/classification/admin.py                                       1      0   100%
+apps/classification/apps.py                                        6      0   100%
+apps/classification/models.py                                      1      0   100%
+apps/classification/tests.py                                       1      1     0%
+apps/classification/views.py                                       1      1     0%
+apps/classifier/apps.py                                            5      0   100%
+apps/classifier/management/commands/classify_reports.py           29     29     0%
+apps/classifier/management/commands/sync_models.py                25     25     0%
+apps/classifier/management/commands/train_classifier.py           64     64     0%
+apps/classifier/models.py                                         19      1    95%
+apps/classifier/pipeline.py                                      222    172    23%
+apps/classifier/services.py                                       52     42    19%
+apps/classifier/text.py                                           14      0   100%
+apps/classifier/urls.py                                            3      0   100%
+apps/classifier/views.py                                         109     30    72%
+apps/concerns/admin.py                                            32      0   100%
+apps/concerns/apps.py                                              4      0   100%
+apps/concerns/management/commands/practice_data.py               161      5    97%
+apps/concerns/management/commands/seed_reference_data.py          68      0   100%
+apps/concerns/management/commands/trust_report.py                 20     20     0%
+apps/concerns/management/commands/upload_media.py                 27     27     0%
+apps/concerns/models.py                                          219      7    97%
+apps/concerns/serializers.py                                     260     16    94%
+apps/concerns/services.py                                        159     44    72%
+apps/concerns/tests.py                                             1      1     0%
+apps/concerns/trust.py                                           124     10    92%
+apps/concerns/urls_public.py                                       4      0   100%
+apps/concerns/views.py                                             1      1     0%
+apps/concerns/views_public.py                                    153     13    92%
+apps/geo/admin.py                                                 13      0   100%
+apps/geo/apps.py                                                   4      0   100%
+apps/geo/geometry.py                                              69      9    87%
+apps/geo/hotspots.py                                              31     23    26%
+apps/geo/locate.py                                                30     11    63%
+apps/geo/management/commands/import_boundaries.py                 57     57     0%
+apps/geo/management/commands/import_roads.py                      41      7    83%
+apps/geo/models.py                                                47      3    94%
+apps/geo/roads.py                                                 14      1    93%
+apps/geo/tests.py                                                  1      1     0%
+apps/geo/urls_staff.py                                             3      0   100%
+apps/geo/views.py                                                  1      1     0%
+apps/geo/views_staff.py                                          222    106    52%
+apps/notifications/admin.py                                       13      0   100%
+apps/notifications/apps.py                                         7      0   100%
+apps/notifications/conf.py                                        18      1    94%
+apps/notifications/management/commands/send_notifications.py      22     22     0%
+apps/notifications/management/commands/sms_check.py               20     20     0%
+apps/notifications/messages.py                                    78      4    95%
+apps/notifications/models.py                                      85      5    94%
+apps/notifications/providers.py                                   92     21    77%
+apps/notifications/serializers.py                                 43      0   100%
+apps/notifications/services.py                                   226     25    89%
+apps/notifications/signals.py                                      8      0   100%
+apps/notifications/sms.py                                         29      2    93%
+apps/notifications/tests.py                                        1      1     0%
+apps/notifications/urls.py                                         3      0   100%
+apps/notifications/views.py                                       76     19    75%
+apps/priority/admin.py                                             7      0   100%
+apps/priority/apps.py                                              4      0   100%
+apps/priority/models.py                                           13      1    92%
+apps/priority/services.py                                         57      5    91%
+apps/priority/tests.py                                             1      1     0%
+apps/priority/views.py                                             1      1     0%
+apps/reports/admin.py                                              1      0   100%
+apps/reports/apps.py                                               6      0   100%
+apps/reports/models.py                                             1      0   100%
+apps/reports/tests.py                                              1      1     0%
+apps/reports/views.py                                              1      1     0%
+----------------------------------------------------------------------------------
+TOTAL                                                           6731   1676    75%
+
+23 empty files skipped.
+```
 
 Scope note: automated tests verify functional correctness (ISO/IEC 25010 functional suitability, security). Usability (SUS), UAT and performance are evaluated separately with users.

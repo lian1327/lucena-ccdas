@@ -4,6 +4,7 @@ more often than the rest — the real-world accuracy of the screening signals.
 
     python manage.py trust_report                 # all real (non-synthetic) reports
     python manage.py trust_report --since 2027-06-01
+    python manage.py trust_report --ocular-only   # only outcomes checked by staff at the site (Step 20)
 """
 from datetime import datetime
 
@@ -18,10 +19,13 @@ class Command(BaseCommand):
 
     def add_arguments(self, p):
         p.add_argument("--since", help="YYYY-MM-DD")
+        p.add_argument("--ocular-only", action="store_true", help="Only reports verified by staff at the site.")
 
     def handle(self, *a, **o):
         since = timezone.make_aware(datetime.fromisoformat(o["since"])) if o.get("since") else None
-        r = trust.report_card(since)
+        r = trust.report_card(since, ocular_only=o.get("ocular_only", False))
+        if o.get("ocular_only"):
+            self.stdout.write("Only reports whose outcome was checked by staff at the site.")
         rate = f"{r['unfounded_rate']:.1%}" if r["unfounded_rate"] is not None else "—"
         self.stdout.write(f"Decided reports: {r['decided']} · unfounded: {r['unfounded']} ({rate})")
         self.stdout.write(f"{'flag':18} {'reports':>8} {'unfounded':>10} {'rate':>7}")

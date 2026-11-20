@@ -61,3 +61,34 @@ def bbox(geom):
             xs.append(x)
             ys.append(y)
     return min(ys), max(ys), min(xs), max(xs)
+
+
+
+def _lines(geom):
+    if not geom:
+        return []
+    if geom["type"] == "LineString":
+        return [geom["coordinates"]]
+    if geom["type"] == "MultiLineString":
+        return geom["coordinates"]
+    return []
+
+
+def line_distance_m(geom, lat, lng):
+    """Distance in meters from a point to a (multi)line string."""
+    kx = M_PER_DEG_LAT * math.cos(math.radians(lat))
+    best = float("inf")
+    for line in _lines(geom):
+        for (x1, y1), (x2, y2) in zip(line, line[1:]):
+            ax, ay = (x1 - lng) * kx, (y1 - lat) * M_PER_DEG_LAT
+            bx, by = (x2 - lng) * kx, (y2 - lat) * M_PER_DEG_LAT
+            dx, dy = bx - ax, by - ay
+            t = max(0.0, min(1.0, -(ax * dx + ay * dy) / ((dx * dx + dy * dy) or 1e-12)))
+            best = min(best, math.hypot(ax + t * dx, ay + t * dy))
+    return best
+
+
+def line_bbox(geom):
+    pts = [p for line in _lines(geom) for p in line]
+    xs, ys = [p[0] for p in pts], [p[1] for p in pts]
+    return min(ys), max(ys), min(xs), max(xs)

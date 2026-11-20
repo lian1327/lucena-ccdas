@@ -66,6 +66,13 @@ class KpiSerializer(serializers.Serializer):
     site_checkins = serializers.IntegerField(help_text="Accepted cases with an on-site check-in from the field view.")
     site_checkin_rate = serializers.FloatField(allow_null=True)
     median_hours_to_site = serializers.FloatField(allow_null=True, help_text="Routed → first on-site check-in, hours.")
+    ocular_verified = serializers.IntegerField(help_text="Accepted cases verified at the site by office staff.")
+    ocular_rate = serializers.FloatField(allow_null=True)
+    median_hours_to_ocular = serializers.FloatField(allow_null=True)
+    unfounded_on_site = serializers.IntegerField(help_text="Of the ocular-verified cases, closed as unfounded.")
+    unfounded_on_site_rate = serializers.FloatField(allow_null=True)
+    jobs_accepted = serializers.IntegerField()
+    median_hours_to_accept = serializers.FloatField(allow_null=True, help_text="Lead assigned → 'Tanggapin', hours.")
     backlog = serializers.IntegerField()
     overdue = serializers.IntegerField()
     aging_30 = serializers.IntegerField()
@@ -230,7 +237,8 @@ class OfficeScorecardCSV(APIView):
         w = csv.writer(resp)
         w.writerow([f"CCADSS Office Performance — {label}"])
         cols = ["rank", "code", "name", "index", "grade", "received", "resolved", "on_time_rate", "response_rate",
-                "acceptance_rate", "p1_make_safe_rate", "median_days", "median_hours_to_site", "site_checkin_rate", "backlog", "overdue", "aging_30",
+                "acceptance_rate", "p1_make_safe_rate", "median_days", "median_hours_to_site", "site_checkin_rate",
+                "ocular_rate", "unfounded_on_site_rate", "median_hours_to_accept", "backlog", "overdue", "aging_30",
                 "extension_rate", "escalation_rate", "reopen_rate", "returned",
                 "proof_rate", "overrides", "recurrence_rate", "citizen_answered", "citizen_not_fixed", "flags"]
         w.writerow(cols)

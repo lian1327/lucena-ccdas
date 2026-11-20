@@ -14,6 +14,7 @@ import { useOutbox } from "@/features/field/useOutbox";
 import { dueLabel, fmtDateTime } from "@/utils/format";
 
 const ACTION_LABEL: Record<FieldAction, string> = {
+  "take-job": "Tinanggap ang trabaho",
   arrive: "Dumating sa lugar",
   inspect: "Before na litrato",
   complete: "Tapos na ang trabaho",
@@ -80,6 +81,7 @@ function JobView({ job }: { job: FieldJob }) {
         )}
       </section>
 
+      {job.assigned_to_me && !job.worker_accepted_at && <TakeJob job={job} />}
       <ol className="field-steps">
         <Step n={1} title="Dumating sa lugar" done={!!job.arrived_at} queued={waiting.has("arrive")}
           doneText={job.arrived_at ? `Dumating ${fmtDateTime(job.arrived_at)}` : undefined}>
@@ -293,6 +295,28 @@ function BlockerPanel({ job, queued, run }: { job: FieldJob; queued: boolean; ru
         </div>
       </Collapse>
       {job.blocked_reason && !open && <Badge bg="warning" text="dark" className="mt-2">{job.blocked_reason_display}</Badge>}
+    </section>
+  );
+}
+
+
+function TakeJob({ job }: { job: FieldJob }) {
+  const qc = useQueryClient();
+  const { busy, go, msg } = useAction();
+  const { user } = useAuth();
+  return (
+    <section className="field-panel mt-3 border-primary">
+      <div className="fw-semibold mb-1">Bagong trabaho para sa iyo</div>
+      <p className="small text-secondary mb-2">Tanggapin para malaman ng supervisor na hawak mo na ito.</p>
+      <Button size="lg" className="w-100" disabled={busy} onClick={() => go(async () => {
+        const r = await submitOrQueue({ userId: user!.id, concernId: job.id, ref: job.reference_no, action: "take-job",
+          label: "Tinanggap ang trabaho", json: {} });
+        if (!r.queued) qc.invalidateQueries({ queryKey: ["staff"] });
+        return r;
+      }, "Tinanggap mo ang trabaho.")}>
+        {busy ? <Spinner size="sm" /> : <><i className="bi bi-hand-thumbs-up me-2" aria-hidden />Tanggapin</>}
+      </Button>
+      {msg}
     </section>
   );
 }

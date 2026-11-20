@@ -125,6 +125,8 @@ export const useVerify = (id: number) =>
   useCaseAction<{ category: string; subcategory: string | null; severity: Severity; remarks?: string }>(id, "verify");
 export const useRoute = (id: number) =>
   useCaseAction<{ level: "city" | "barangay"; department?: number | null; division?: number | null; remarks?: string }>(id, "route");
+export const useTakeJob = (id: number) => useCaseAction<Record<string, never>>(id, "take-job");
+export const usePublicReply = (id: number) => useCaseAction<{ message: string }>(id, "public-reply");
 export const useEndorse = (id: number) =>
   useCaseAction<{ agency: number; letter_reference?: string; contact_person?: string; remarks?: string }>(id, "endorse");
 export const useAccept = (id: number) =>

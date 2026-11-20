@@ -41,3 +41,32 @@ class Purok(models.Model):
 
     def __str__(self):
         return f"{self.name}, {self.barangay.name}"
+
+
+class Road(models.Model):
+    """
+    Step 20: road lines used to tell who maintains what at a pin, e.g. a streetlight on a national road is the
+    electric utility's (endorse), on a city or barangay road it is the City's (route to GSO).
+    Imported from the DPWH road inventory or OpenStreetMap with: manage.py import_roads <file.geojson>
+    """
+
+    class Kind(models.TextChoices):
+        NATIONAL = "national", "National road"
+        CITY = "city", "City road"
+        BARANGAY = "barangay", "Barangay road"
+
+    name = models.CharField(max_length=160, blank=True)
+    ref = models.CharField(max_length=40, blank=True, help_text="Route number, e.g. N1")
+    kind = models.CharField(max_length=12, choices=Kind.choices, default=Kind.NATIONAL, db_index=True)
+    geometry = models.JSONField(help_text="GeoJSON LineString/MultiLineString, WGS84 (lng, lat).")
+    source = models.CharField(max_length=80, blank=True, help_text="DPWH road inventory, OpenStreetMap, …")
+    min_lat = models.FloatField(db_index=True)
+    max_lat = models.FloatField(db_index=True)
+    min_lng = models.FloatField(db_index=True)
+    max_lng = models.FloatField(db_index=True)
+
+    class Meta:
+        ordering = ["kind", "name"]
+
+    def __str__(self):
+        return f"{self.name or self.ref or 'Road'} ({self.get_kind_display()})"

@@ -791,6 +791,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/staff/concerns/{id}/public-reply/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Staff case inbox and workflow. Visibility and every action are decided in scoping.py. */
+        post: operations["v1_staff_concerns_public_reply_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/staff/concerns/{id}/reject/": {
         parameters: {
             query?: never;
@@ -904,6 +921,23 @@ export interface paths {
         get: operations["v1_staff_concerns_similar_list"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/concerns/{id}/take-job/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Staff case inbox and workflow. Visibility and every action are decided in scoping.py. */
+        post: operations["v1_staff_concerns_take_job_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1557,6 +1591,21 @@ export interface components {
             readonly priority_rise_to: components["schemas"]["PriorityLevel"];
             /** Format: date-time */
             priority_rise_at?: string | null;
+            /**
+             * Format: date-time
+             * @description When the current lead was assigned.
+             */
+            person_assigned_at?: string | null;
+            /** Format: date-time */
+            worker_accepted_at?: string | null;
+            readonly worker_accepted_by: string | null;
+            /** Format: date-time */
+            ocular_verified_at?: string | null;
+            readonly ocular_verified_by: string | null;
+            ocular_method?: components["schemas"]["OcularMethodEnum"] | components["schemas"]["BlankEnum"];
+            ocular_method_display: string;
+            /** @description How the public sees who did the work. */
+            readonly team_label: string;
         };
         /**
          * @description * `city` - City office
@@ -1751,6 +1800,15 @@ export interface components {
             contact_person?: string;
             remarks?: string;
         };
+        EndorseSuggestion: {
+            agency_id: number;
+            agency_code: string;
+            agency_name: string;
+            road: string;
+            /** Format: double */
+            distance_m: number;
+            reason: string;
+        };
         Endorsement: {
             readonly id: number;
             agency: string;
@@ -1893,6 +1951,10 @@ export interface components {
         };
         /** @description Everything the field view needs for one job, in one small payload (works on slow mobile data). */
         FieldJob: {
+            /** Format: date-time */
+            worker_accepted_at?: string;
+            /** Format: date-time */
+            ocular_verified_at?: string;
             readonly id: number;
             readonly reference_no: string;
             title: string;
@@ -2109,6 +2171,22 @@ export interface components {
              * @description Routed → first on-site check-in, hours.
              */
             median_hours_to_site: number | null;
+            /** @description Accepted cases verified at the site by office staff. */
+            ocular_verified: number;
+            /** Format: double */
+            ocular_rate: number | null;
+            /** Format: double */
+            median_hours_to_ocular: number | null;
+            /** @description Of the ocular-verified cases, closed as unfounded. */
+            unfounded_on_site: number;
+            /** Format: double */
+            unfounded_on_site_rate: number | null;
+            jobs_accepted: number;
+            /**
+             * Format: double
+             * @description Lead assigned → 'Tanggapin', hours.
+             */
+            median_hours_to_accept: number | null;
             backlog: number;
             overdue: number;
             aging_30: number;
@@ -2389,6 +2467,12 @@ export interface components {
         NotificationStatusEnum: "queued" | "sent" | "delivered" | "failed" | "skipped";
         /** @enum {unknown} */
         NullEnum: null;
+        /**
+         * @description * `checkin` - Check-in sa lugar
+         *     * `photo` - Before na litrato sa lugar
+         * @enum {string}
+         */
+        OcularMethodEnum: "checkin" | "photo";
         OfficeDetail: {
             period: components["schemas"]["Period"];
             department: components["schemas"]["DeptRef"];
@@ -2447,6 +2531,22 @@ export interface components {
              * @description Routed → first on-site check-in, hours.
              */
             median_hours_to_site: number | null;
+            /** @description Accepted cases verified at the site by office staff. */
+            ocular_verified: number;
+            /** Format: double */
+            ocular_rate: number | null;
+            /** Format: double */
+            median_hours_to_ocular: number | null;
+            /** @description Of the ocular-verified cases, closed as unfounded. */
+            unfounded_on_site: number;
+            /** Format: double */
+            unfounded_on_site_rate: number | null;
+            jobs_accepted: number;
+            /**
+             * Format: double
+             * @description Lead assigned → 'Tanggapin', hours.
+             */
+            median_hours_to_accept: number | null;
             backlog: number;
             overdue: number;
             aging_30: number;
@@ -2561,6 +2661,8 @@ export interface components {
             follow_up: boolean;
             arrive: boolean;
             blocker: boolean;
+            take_job: boolean;
+            public_reply: boolean;
         };
         PersonActions: {
             accepted: number;
@@ -2712,6 +2814,10 @@ export interface components {
             /** @description Fishpond / port / dumpsite / riceland, not a residential purok. */
             is_zone?: boolean;
         };
+        PublicReplyRequest: {
+            /** @description Shown on the citizen's tracking page under the team's name. */
+            message: string;
+        };
         PublicStats: {
             totals: components["schemas"]["PublicStatsTotals"];
             by_category: components["schemas"]["PublicStatsCategory"][];
@@ -2795,6 +2901,15 @@ export interface components {
             readonly confirm_needs_mobile: boolean;
             /** @description 'on' / 'off' when the reporter left a mobile number, 'none' otherwise. The number itself is never shown. */
             readonly sms_updates: string;
+            /** @description Step 20: what the team did, in their words, after the supervisor validated it. Team and office only. */
+            readonly work_summary: components["schemas"]["PublicWorkSummary"] | null;
+        };
+        PublicWorkSummary: {
+            /** @description Team and office, e.g. 'Road, Drainage & Bridges Division, City Engineering Office' */
+            done_by: string;
+            /** Format: date */
+            done_on: string | null;
+            what_was_done: string;
         };
         /**
          * @description * `pin` - From the map pin
@@ -3044,9 +3159,10 @@ export interface components {
          *     * `blocked` - Field crew can't finish yet
          *     * `priority_up` - More reports: priority may need raising
          *     * `rereport` - Reported again after work was done
+         *     * `not_accepted` - Job not yet accepted by the field lead
          * @enum {string}
          */
-        StaffAlertKindEnum: "new_case" | "assigned" | "returned" | "danger" | "for_validation" | "sent_back" | "escalated" | "disputed" | "blocked" | "priority_up" | "rereport";
+        StaffAlertKindEnum: "new_case" | "assigned" | "returned" | "danger" | "for_validation" | "sent_back" | "escalated" | "disputed" | "blocked" | "priority_up" | "rereport" | "not_accepted";
         StaffAlertList: {
             unread: number;
             urgent_unread: number;
@@ -3152,6 +3268,8 @@ export interface components {
             readonly permissions: components["schemas"]["Permissions"];
             readonly suggested_route: components["schemas"]["SuggestedRoute"];
             readonly suggested_priority: components["schemas"]["PriorityLevel"] | null;
+            /** @description Step 20: the pin is on a national road, so another agency maintains it (PACD decides). */
+            readonly endorse_suggestion: components["schemas"]["EndorseSuggestion"] | null;
             purok?: number | null;
             purok_name?: string;
             purok_source?: components["schemas"]["PurokSourceEnum"] | components["schemas"]["BlankEnum"];
@@ -4714,6 +4832,42 @@ export interface operations {
             };
         };
     };
+    v1_staff_concerns_public_reply_create: {
+        parameters: {
+            query?: {
+                barangay?: number;
+                category?: string;
+                include_duplicates?: boolean;
+                /** @description Search reference no., title, landmark, description */
+                q?: string;
+                /** @description Inbox view (default: open) */
+                tab?: "all" | "closed" | "endorsed" | "for_acceptance" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
+            };
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this concern. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublicReplyRequest"];
+                "multipart/form-data": components["schemas"]["PublicReplyRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["PublicReplyRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffConcernDetail"];
+                };
+            };
+        };
+    };
     v1_staff_concerns_reject_create: {
         parameters: {
             query?: {
@@ -4960,6 +5114,36 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PaginatedSimilarReportList"];
+                };
+            };
+        };
+    };
+    v1_staff_concerns_take_job_create: {
+        parameters: {
+            query?: {
+                barangay?: number;
+                category?: string;
+                include_duplicates?: boolean;
+                /** @description Search reference no., title, landmark, description */
+                q?: string;
+                /** @description Inbox view (default: open) */
+                tab?: "all" | "closed" | "endorsed" | "for_acceptance" | "mine" | "open" | "overdue" | "to_route" | "triage" | "validation";
+            };
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this concern. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffConcernDetail"];
                 };
             };
         };

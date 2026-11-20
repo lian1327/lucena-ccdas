@@ -232,6 +232,12 @@ class PublicTimelineSerializer(serializers.ModelSerializer):
         fields = ["status", "status_display", "remarks", "created_at"]
 
 
+class PublicWorkSummarySerializer(serializers.Serializer):
+    done_by = serializers.CharField(help_text="Team and office, e.g. 'Road, Drainage & Bridges Division, City Engineering Office'")
+    done_on = serializers.DateField(allow_null=True)
+    what_was_done = serializers.CharField()
+
+
 class PublicTrackSerializer(serializers.ModelSerializer):
     """Only non-personal fields. No reporter data, no staff names, no internal notes."""
 
@@ -251,6 +257,8 @@ class PublicTrackSerializer(serializers.ModelSerializer):
     can_confirm = serializers.SerializerMethodField()
     confirm_needs_mobile = serializers.SerializerMethodField()
     sms_updates = serializers.SerializerMethodField()
+    work_summary = serializers.SerializerMethodField(
+        help_text="Step 20: what the team did, in their words, after the supervisor validated it. Team and office only.")
 
     class Meta:
         model = Concern
@@ -260,7 +268,7 @@ class PublicTrackSerializer(serializers.ModelSerializer):
             "assigned_office", "linked_to_reference", "created_at", "resolved_at", "timeline",
             "resolution_photos", "target_date", "deadline_extended", "endorsed_to", "priority_level",
             "before_photos", "citizen_confirmation", "can_confirm", "confirm_needs_mobile",
-            "sms_updates",
+            "sms_updates", "work_summary",
         ]
 
     def get_assigned_office(self, obj) -> str | None:
@@ -320,6 +328,16 @@ class PublicTrackSerializer(serializers.ModelSerializer):
         if not obj.reporter_contact:
             return "none"
         return "on" if obj.notify_sms else "off"
+
+    @extend_schema_field(PublicWorkSummarySerializer(allow_null=True))
+    def get_work_summary(self, obj):
+        from apps.cases.services import team_label
+
+        case = self._case(obj)
+        if not case or not case.validated_at or not case.completion_remarks:
+            return None
+        return {"done_by": team_label(case), "done_on": timezone.localtime(case.work_completed_at).date().isoformat()
+                if case.work_completed_at else None, "what_was_done": case.completion_remarks}
 
     @extend_schema_field(PublicTimelineSerializer(many=True))
     def get_timeline(self, obj):

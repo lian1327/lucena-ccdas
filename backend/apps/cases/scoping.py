@@ -148,6 +148,12 @@ def permissions_for(u, c):
         # Field view (Step 18)
         "arrive": not readonly and _is_worker(u, c) and not (case and case.work_completed_at),
         "blocker": not readonly and _is_worker(u, c) and not (case and case.work_completed_at),
+        # Step 20
+        "take_job": not readonly and open_ and bool(case) and case.assigned_to_id == u.id
+        and not case.worker_accepted_at and not case.work_completed_at,
+        "public_reply": not readonly and bool(case) and not external and not is_dup and bool(case.accepted_at or brgy_level)
+        and (admin or head or chief or _is_worker(u, c) or (brgy and brgy_level)
+             or (u.role == R.DEPT_STAFF and u.id in (case.assigned_to_id, case.work_completed_by_id))),
         "validate": False,
         "extend": not readonly and open_ and bool(case) and bool(case.due_at) and not case.extended_at
         and (accepted or brgy_level or external)

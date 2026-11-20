@@ -264,6 +264,23 @@ class EndorsementSerializer(serializers.ModelSerializer):
         return bool(obj.next_follow_up_at and obj.next_follow_up_at <= timezone.now())
 
 
+class EmptySerializer(serializers.Serializer):
+    """Actions without input."""
+
+
+class PublicReplySerializer(serializers.Serializer):
+    message = serializers.CharField(max_length=600, help_text="Shown on the citizen's tracking page under the team's name.")
+
+
+class EndorseSuggestionSerializer(serializers.Serializer):
+    agency_id = serializers.IntegerField()
+    agency_code = serializers.CharField()
+    agency_name = serializers.CharField()
+    road = serializers.CharField()
+    distance_m = serializers.FloatField()
+    reason = serializers.CharField()
+
+
 class SiteVisitSerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField()
 
@@ -294,6 +311,10 @@ class CaseInfoSerializer(serializers.ModelSerializer):
     breaches = serializers.SerializerMethodField()
     reports = AccomplishmentReportSerializer(many=True, read_only=True)
     evidence = serializers.SerializerMethodField()
+    worker_accepted_by = serializers.SerializerMethodField()
+    ocular_verified_by = serializers.SerializerMethodField()
+    ocular_method_display = serializers.CharField(source="get_ocular_method_display")
+    team_label = serializers.SerializerMethodField(help_text="How the public sees who did the work.")
     priority_rise_to = PriorityLevelSerializer(read_only=True, default=None,
                                                help_text="More reports since routing: the score suggests this level.")
     blocked_reason_display = serializers.CharField(source="get_blocked_reason_display")
@@ -317,6 +338,8 @@ class CaseInfoSerializer(serializers.ModelSerializer):
             "breaches", "reports", "evidence",
             "blocked_reason", "blocked_reason_display", "blocked_note", "blocked_at", "blocked_by", "visits",
             "priority_rise_to", "priority_rise_at",
+            "person_assigned_at", "worker_accepted_at", "worker_accepted_by",
+            "ocular_verified_at", "ocular_verified_by", "ocular_method", "ocular_method_display", "team_label",
         ]
 
     def get_assigned_to(self, obj) -> str | None:
@@ -349,6 +372,17 @@ class CaseInfoSerializer(serializers.ModelSerializer):
 
     def get_blocked_by(self, obj) -> str | None:
         return _name(obj.blocked_by)
+
+    def get_worker_accepted_by(self, obj) -> str | None:
+        return _name(obj.worker_accepted_by)
+
+    def get_ocular_verified_by(self, obj) -> str | None:
+        return _name(obj.ocular_verified_by)
+
+    def get_team_label(self, obj) -> str:
+        from .services import team_label
+
+        return team_label(obj)
 
     @extend_schema_field(SiteVisitSerializer(many=True))
     def get_visits(self, obj):
@@ -415,6 +449,8 @@ class PermissionsSerializer(serializers.Serializer):
     follow_up = serializers.BooleanField()
     arrive = serializers.BooleanField()
     blocker = serializers.BooleanField()
+    take_job = serializers.BooleanField()
+    public_reply = serializers.BooleanField()
 
 
 class SuggestedRouteSerializer(serializers.Serializer):
@@ -439,6 +475,8 @@ class StaffConcernDetailSerializer(StaffConcernListSerializer):
     permissions = serializers.SerializerMethodField()
     suggested_route = serializers.SerializerMethodField()
     suggested_priority = serializers.SerializerMethodField()
+    endorse_suggestion = serializers.SerializerMethodField(
+        help_text="Step 20: the pin is on a national road, so another agency maintains it (PACD decides).")
     trail = serializers.SerializerMethodField()
     recurrence_of = serializers.CharField(source="recurrence_of.reference_no", default=None)
     purok_name = serializers.CharField(source="purok.name", default=None)
@@ -458,7 +496,7 @@ class StaffConcernDetailSerializer(StaffConcernListSerializer):
             "source_reference", "encoded_by", "external_feedback",
             "verified_by", "verified_at", "acknowledged_at", "resolved_at",
             "duplicate_of", "duplicates", "attachments", "history", "case", "notes",
-            "priority", "permissions", "suggested_route", "suggested_priority",
+            "priority", "permissions", "suggested_route", "suggested_priority", "endorse_suggestion",
             "purok", "purok_name", "purok_source", "category_source",
             "ai_category", "ai_category_name", "ai_subcategory", "ai_subcategory_name", "ai_confidence", "ai_model_version",
             "trail", "citizen_confirmation", "citizen_confirmed_at", "citizen_feedback", "recurrence_of", "recurrences",
@@ -498,6 +536,15 @@ class StaffConcernDetailSerializer(StaffConcernListSerializer):
     @extend_schema_field(TrailStepSerializer(many=True))
     def get_trail(self, obj):
         return accountability_trail(obj)
+
+    @extend_schema_field(EndorseSuggestionSerializer(allow_null=True))
+    def get_endorse_suggestion(self, obj):
+        from .services import endorse_suggestion
+
+        case = getattr(obj, "case", None)
+        if obj.duplicate_of_id or obj.status not in Concern.OPEN_STATUSES or (case and case.level == Case.Level.EXTERNAL):
+            return None
+        return endorse_suggestion(obj)
 
     @extend_schema_field(SuggestedRouteSerializer)
     def get_suggested_route(self, obj):
@@ -561,6 +608,9 @@ class PhotoMetaSerializer(serializers.Serializer):
     device_accuracy = serializers.FloatField(required=False, allow_null=True)
     live = serializers.BooleanField(required=False, default=False,
                                     help_text="Taken with the in-app camera (field view), not picked from the gallery.")
+    ai_marker = serializers.ChoiceField(required=False, allow_null=True,
+                                        choices=["ai_generated", "ai_edited", "credentials"],
+                                        help_text="AI-source / Content Credentials marker found in the original file.")
 
 
 class JSONListField(serializers.JSONField):
@@ -932,10 +982,13 @@ class FieldJobSerializer(serializers.ModelSerializer):
     blocked_reason_display = serializers.CharField(source="case.get_blocked_reason_display", default="")
     blocked_note = serializers.CharField(source="case.blocked_note", default="")
     photos = serializers.SerializerMethodField(help_text="The citizen's report photos.")
+    worker_accepted_at = serializers.DateTimeField(source="case.worker_accepted_at", default=None)
+    ocular_verified_at = serializers.DateTimeField(source="case.ocular_verified_at", default=None)
 
     class Meta:
         model = Concern
         fields = [
+            "worker_accepted_at", "ocular_verified_at",
             "id", "reference_no", "title", "description", "category", "subcategory", "barangay", "purok",
             "location_description", "latitude", "longitude", "danger_now", "status",
             "priority_code", "priority_name", "priority_color", "priority_score", "due_at", "is_overdue",
@@ -967,3 +1020,5 @@ class FieldJobSerializer(serializers.ModelSerializer):
     def get_photos(self, obj):
         return [{"url": a.file.url, "kind": a.kind} for a in obj.attachments.all()
                 if a.kind == ConcernAttachment.Kind.REPORT][:3]
+
+

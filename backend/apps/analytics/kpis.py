@@ -146,6 +146,14 @@ def compute(cases, start, end, now=None, q=None, visits=None):
     accepted = [k for k in routed if getattr(k, "accepted_at", None)]
     to_site = [(visits[k.id] - k.routed_at).total_seconds() / 3600 for k in accepted
                if getattr(k, "id", None) in visits and visits[k.id] >= k.routed_at]
+    # Step 20: ocular verification (staff at the site) and the lead accepting the job
+    ocular = [k for k in accepted if getattr(k, "ocular_verified_at", None)]
+    to_ocular = [(k.ocular_verified_at - k.routed_at).total_seconds() / 3600 for k in ocular
+                 if k.ocular_verified_at >= k.routed_at]
+    unfounded_on_site = [k for k in ocular if getattr(k.concern, "rejection_kind", "") == "unfounded"]
+    taken = [k for k in accepted if getattr(k, "person_assigned_at", None) and getattr(k, "worker_accepted_at", None)]
+    to_accept = [(k.worker_accepted_at - k.person_assigned_at).total_seconds() / 3600 for k in taken
+                 if k.worker_accepted_at >= k.person_assigned_at]
 
     out = {
         "received": len(routed),
@@ -161,6 +169,13 @@ def compute(cases, start, end, now=None, q=None, visits=None):
         "site_checkins": len(to_site),
         "site_checkin_rate": _rate(len(to_site), len(accepted)),
         "median_hours_to_site": round(statistics.median(to_site), 1) if to_site else None,
+        "ocular_verified": len(ocular),
+        "ocular_rate": _rate(len(ocular), len(accepted)),
+        "median_hours_to_ocular": round(statistics.median(to_ocular), 1) if to_ocular else None,
+        "unfounded_on_site": len(unfounded_on_site),
+        "unfounded_on_site_rate": _rate(len(unfounded_on_site), len(ocular)),
+        "jobs_accepted": len(taken),
+        "median_hours_to_accept": round(statistics.median(to_accept), 1) if to_accept else None,
         "backlog": len(open_now),
         "overdue": len(overdue),
         "aging_30": len(aging30),

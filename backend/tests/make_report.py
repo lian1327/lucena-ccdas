@@ -31,6 +31,7 @@ MODULES = {
     "test_trust": "Module 1 – Report screening (false reports)",
     "test_field": "Module 2 – Field view (check-in, blockers, live photos)",
     "test_step19": "Modules 2, 4, 6 – Priority rise, ongoing duplicates, time to site, practice data",
+    "test_step20": "Modules 1, 2, 6 – Road endorsement, AI markers, ocular verification, job acceptance, public report",
 }
 LINE = re.compile(r"^(test_\w+) \((tests\.(test_\w+)\.(\w+)\.test_\w+)\)(?:\n.*?)? \.\.\. (ok|FAIL|ERROR|skipped.*)$", re.M)
 

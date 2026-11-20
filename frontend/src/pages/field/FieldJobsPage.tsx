@@ -82,6 +82,7 @@ function JobCard({ j, distance }: { j: FieldJob; distance: number | null }) {
         </div>
         <div className="mt-2 d-flex flex-wrap gap-1">
           {j.danger_now && <Badge bg="danger">May panganib</Badge>}
+          {j.assigned_to_me && !j.worker_accepted_at && <Badge bg="warning" text="dark">Bago: tanggapin</Badge>}
           {j.assigned_to_me ? <Badge bg="primary">Sa iyo</Badge> : j.assigned_to && <Badge bg="light" text="dark">{j.assigned_to}</Badge>}
           {j.arrived_at && <Badge bg="success"><i className="bi bi-geo-fill me-1" aria-hidden />Dumating</Badge>}
           {j.before_count > 0 && <Badge bg="success">Before ✓</Badge>}

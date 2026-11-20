@@ -68,12 +68,13 @@ class SiteInfoView(_Open):
 
 def run_jobs():
     """Everything a scheduler would run. Each job is isolated so one failure doesn't stop the rest."""
-    from apps.cases.services import escalate_overdue
+    from apps.cases.services import escalate_overdue, remind_unaccepted
     from apps.notifications import services as ns
     from apps.priority.services import recompute_open_concerns
 
     jobs = {
         "escalated": escalate_overdue,
+        "accept_reminders": remind_unaccepted,
         "reminders": ns.queue_reminders,
         "sent": ns.send_due,
         "retried": ns.retry_due,

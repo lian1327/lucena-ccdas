@@ -20,6 +20,7 @@ import {
   RoutePanel,
   ValidatePanel,
   VerifyPanel,
+  PublicReplyPanel, TakeJobPanel,
 } from "@/features/cases/ActionPanels";
 import { AcceptPanel, PriorityPanel, RespondPanel } from "@/features/cases/ScreeningPanels";
 import { ErrorText, Panel, Stepper } from "@/features/cases/ui";
@@ -194,6 +195,17 @@ export function CaseDetailPage() {
         <span className="ms-auto small text-secondary">{c.reference_no}</span>
       </div>
       <h1 className="h4 fw-bold">{c.title}</h1>
+      {c.case && c.case.level !== "external" && c.case.accepted_at && (
+        c.case.ocular_verified_at ? (
+          <Badge bg="success" className="mb-2 fw-normal" title={`${c.case.ocular_method_display} · ${c.case.ocular_verified_by ?? ""}`}>
+            <i className="bi bi-geo-alt-fill me-1" aria-hidden />Napatunayan sa lugar · {fmtDateTime(c.case.ocular_verified_at)}
+          </Badge>
+        ) : (
+          <Badge bg="light" text="dark" className="mb-2 fw-normal border">
+            <i className="bi bi-geo-alt me-1" aria-hidden />Hindi pa napupuntahan ng opisina
+          </Badge>
+        )
+      )}
       <Stepper c={c} />
       {c.case?.priority_rise_to && c.case.priority_level && (
         <Alert variant="warning" className="py-2 small d-flex align-items-center gap-2">
@@ -327,6 +339,7 @@ export function CaseDetailPage() {
               <strong>Ibinalik ng opisina:</strong> {k.return_reason}
             </Alert>
           )}
+          <TakeJobPanel c={c} />
           <Hotline8888Panel c={c} />
           <VerifyPanel c={c} />
           <AcceptPanel c={c} />
@@ -341,6 +354,7 @@ export function CaseDetailPage() {
           <PriorityPanel c={c} />
           <DeadlinePanel c={c} />
           <OutcomePanel c={c} />
+          <PublicReplyPanel c={c} />
           <DuplicatesPanel c={c} />
           <NotesPanel c={c} />
           {c.priority && (

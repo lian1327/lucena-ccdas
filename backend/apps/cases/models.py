@@ -152,6 +152,23 @@ class Case(models.Model):
     action_plan = models.TextField(blank=True)
     scheduled_for = models.DateField(null=True, blank=True)
 
+    # Step 20: the assigned lead accepts the job on the field view ("Tanggapin"); a reminder goes to the
+    # chief when nobody accepts in time. Reported per office, not per person.
+    person_assigned_at = models.DateTimeField(null=True, blank=True, help_text="When the current lead was assigned.")
+    worker_accepted_at = models.DateTimeField(null=True, blank=True)
+    worker_accepted_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    accept_reminded_at = models.DateTimeField(null=True, blank=True)
+
+    # Step 20: "Napatunayan sa lugar" - office staff were at the site (check-in within OCULAR_RADIUS_M of the pin,
+    # or a clean before photo taken there). Ground truth for the screening signals and the unfounded rate.
+    class OcularMethod(models.TextChoices):
+        CHECKIN = "checkin", "Check-in sa lugar"
+        PHOTO = "photo", "Before na litrato sa lugar"
+
+    ocular_verified_at = models.DateTimeField(null=True, blank=True)
+    ocular_verified_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    ocular_method = models.CharField(max_length=10, choices=OcularMethod.choices, blank=True)
+
     work_completed_at = models.DateTimeField(null=True, blank=True)
     work_completed_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
     completion_remarks = models.TextField(blank=True)

@@ -132,6 +132,20 @@ export function TrackPage() {
               </div>
             )}
 
+            {c.work_summary && (
+              <div className="mb-4 p-3 rounded border bg-body-tertiary">
+                <h3 className="h6 mb-1">
+                  <i className="bi bi-tools me-1" aria-hidden />
+                  Ano ang ginawa
+                </h3>
+                <p className="mb-1">{c.work_summary.what_was_done}</p>
+                <div className="small text-secondary">
+                  {c.work_summary.done_by}
+                  {c.work_summary.done_on && <> · {new Date(c.work_summary.done_on).toLocaleDateString("fil-PH", { dateStyle: "medium" })}</>}
+                </div>
+              </div>
+            )}
+
             <ConfirmFix c={c} />
             <SmsPreference c={c} />
 

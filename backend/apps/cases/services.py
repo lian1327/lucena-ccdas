@@ -12,7 +12,9 @@ from apps.notifications.models import Notification, StaffAlert
 from apps.priority.services import compute_priority
 
 from . import deadlines, evidence
-from .models import AccomplishmentReport, Case, CaseNote, Endorsement, EndorsementFollowUp, PriorityLevel, SiteVisit
+from .models import (
+    AccomplishmentReport, Case, CaseNote, Department, Endorsement, EndorsementFollowUp, PriorityLevel, SiteVisit,
+)
 
 S = Concern.Status
 FOLLOW_UP_DAYS = 7
@@ -63,9 +65,13 @@ def _attach(concern, user, photos, kind=ConcernAttachment.Kind.RESOLUTION, meta=
         )
         att.uploaded_at = timezone.now()
         att._live = m.get("live", False)
+        att._ai_marker = m.get("ai_marker")
         evidence.check(att, case, before_hashes)
         att.save()
         saved.append(att)
+        if case and kind == ConcernAttachment.Kind.BEFORE and att.distance_m is not None \
+                and att.distance_m <= OCULAR_RADIUS_M and not evidence.has_red(att.flags):
+            mark_ocular(case, user, Case.OcularMethod.PHOTO, att.uploaded_at)
     return saved
 
 
@@ -333,7 +339,10 @@ def assign_person(concern, user, *, person, remarks=""):
     case.assigned_by = user
     if not case.division_id and person.division_id:
         case.division_id = person.division_id
-    case.save(update_fields=["assigned_to", "assigned_by", "division"])
+    case.person_assigned_at = timezone.now()
+    case.worker_accepted_at = case.worker_accepted_by = case.accept_reminded_at = None
+    case.save(update_fields=["assigned_to", "assigned_by", "division", "person_assigned_at",
+                             "worker_accepted_at", "worker_accepted_by", "accept_reminded_at"])
     _note(case, user, f"Itinalaga kay {_name(person)}. {remarks}".strip())
     due = f" Target: {timezone.localtime(case.due_at):%b %d}." if case.due_at else ""
     notify.alert([person], StaffAlert.Kind.ASSIGNED, concern, f"Itinalaga sa iyo: {concern.reference_no}",
@@ -754,6 +763,11 @@ def arrive(concern, user, *, latitude=None, longitude=None, accuracy=None, at=No
         longitude=evidence.to_decimal(longitude), accuracy_m=accuracy, distance_m=distance, is_far=far,
         sent_offline=at < now - timedelta(minutes=5),
     )
+    if case.assigned_to_id == user.id and not case.worker_accepted_at:
+        case.worker_accepted_at, case.worker_accepted_by = at, user  # arriving at the site is accepting the job
+        case.save(update_fields=["worker_accepted_at", "worker_accepted_by"])
+    if distance is not None and distance <= OCULAR_RADIUS_M + min(accuracy or 0, 50):
+        mark_ocular(case, user, Case.OcularMethod.CHECKIN, at)
     where = (f"{round(distance)} m mula sa pin" if distance is not None
              else "walang lokasyon ng cellphone" if latitude is None else "walang pin ang report")
     _note(case, user, f"Dumating sa lugar ({where}){' ⚠ malayo sa pin' if far else ''}"
@@ -840,3 +854,102 @@ def on_new_duplicate(master, duplicate, user=None):
         _note(case, None, text)
         notify.alert(case_leads(case), StaffAlert.Kind.REREPORT, master,
                      f"Ini-report ulit: {master.reference_no}", text, urgent=False, exclude=user)
+
+
+
+# ---------------- Ocular verification, job acceptance, public accountability (Step 20) ----------------
+
+OCULAR_RADIUS_M = 150
+# how long a P-level job may wait for the lead's "Tanggapin" before the chief is reminded (wall-clock hours)
+ACCEPT_WITHIN_HOURS = {"P1": 1, "P2": 4, "P3": 24, "P4": 48}
+
+
+def mark_ocular(case, user, method, at=None):
+    """First proof that office staff were at the site. Never moved once set."""
+    if case.ocular_verified_at:
+        return False
+    case.ocular_verified_at, case.ocular_verified_by, case.ocular_method = at or timezone.now(), user, method
+    case.save(update_fields=["ocular_verified_at", "ocular_verified_by", "ocular_method"])
+    return True
+
+
+@transaction.atomic
+def take_job(concern, user):
+    """'Tanggapin': the assigned lead accepts the job. Others in the division can still help; the lead answers for it."""
+    case = concern.case
+    if case.assigned_to_id != user.id:
+        raise WorkflowError("Ang naka-assign na lead lamang ang puwedeng tumanggap ng trabahong ito.")
+    if case.worker_accepted_at:
+        return case
+    case.worker_accepted_at, case.worker_accepted_by = timezone.now(), user
+    case.save(update_fields=["worker_accepted_at", "worker_accepted_by"])
+    _note(case, user, "Tinanggap ang trabaho.")
+    return case
+
+
+def remind_unaccepted(now=None):
+    """Cron: remind the chief/head once when an assigned job has not been accepted in time. Returns reminders sent."""
+    now = now or timezone.now()
+    sent = 0
+    qs = (Case.objects.filter(assigned_to__isnull=False, worker_accepted_at__isnull=True, accept_reminded_at__isnull=True,
+                              person_assigned_at__isnull=False, work_completed_at__isnull=True,
+                              concern__status__in=Concern.OPEN_STATUSES, concern__is_synthetic=False)
+          .select_related("concern", "priority_level", "assigned_to", "department", "division"))
+    for case in qs:
+        hours = ACCEPT_WITHIN_HOURS.get(case.priority_level.code if case.priority_level else "P3", 24)
+        if now - case.person_assigned_at < timedelta(hours=hours):
+            continue
+        case.accept_reminded_at = now
+        case.save(update_fields=["accept_reminded_at"])
+        concern = case.concern
+        notify.alert([u for u in case_leads(case) if u.pk != case.assigned_to_id], StaffAlert.Kind.NOT_ACCEPTED,
+                     concern, f"Hindi pa tinatanggap: {concern.reference_no}",
+                     f"Naka-assign kay {_name(case.assigned_to)} mula {timezone.localtime(case.person_assigned_at):%b %d %H:%M}; "
+                     f"hindi pa tinatanggap sa field app.", urgent=bool(case.priority_level and case.priority_level.code == "P1"))
+        sent += 1
+    return sent
+
+
+def team_label(case):
+    """Who did the work, as the public sees it: the team and office, never a person's name."""
+    if case.level == Case.Level.BARANGAY:
+        return f"Barangay {case.concern.barangay.name}"
+    parts = [case.division.name if case.division_id else None, case.department.name if case.department_id else None]
+    return ", ".join(p for p in parts if p) or "Pamahalaang Lungsod"
+
+
+@transaction.atomic
+def public_reply(concern, user, *, message):
+    """The team that handled the case answers the citizen in public (e.g. after 'Hindi naayos'). Shown on the tracking page."""
+    case = concern.case
+    text = message.strip()
+    if not text:
+        raise WorkflowError("Isulat ang sagot.")
+    _public_entry(concern, user, f"Tugon ng {team_label(case)}: {text}")
+    _note(case, user, f"Pampublikong sagot: {text}")
+    return case
+
+
+def endorse_suggestion(concern):
+    """
+    Who maintains it at this pin, when it is not the City: a streetlight on a national road -> electric utility;
+    road damage or drainage on a national road -> DPWH. Only a suggestion; the PACD decides.
+    """
+    from apps.geo.roads import nearest_road
+
+    rules = {"streetlight": "ELEC", "road_damage": "DPWH", "drainage": "DPWH"}
+    code = rules.get(concern.category.code if concern.category_id else "")
+    if not code or concern.latitude is None:
+        return None
+    road, distance = nearest_road(concern.latitude, concern.longitude)
+    if not road:
+        return None
+    agency = Department.objects.filter(code=code, kind=Department.Kind.EXTERNAL, is_active=True).first()
+    if not agency:
+        return None
+    road_name = road.name or road.ref or "national road"
+    return {
+        "agency_id": agency.id, "agency_code": agency.code, "agency_name": agency.name,
+        "road": road_name, "distance_m": distance,
+        "reason": f"Nasa {road_name} (national road, {distance:.0f} m mula sa pin): sakop ng {agency.name}.",
+    }

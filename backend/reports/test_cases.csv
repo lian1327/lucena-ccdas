@@ -70,21 +70,21 @@ TC-068,Module 5 – GIS (purok tagging),LocateTests,Far point has no purok,,Pass
 TC-069,Module 5 – GIS (purok tagging),LocateTests,Point inside,,Pass
 TC-070,Module 5 – GIS (purok tagging),LocateTests,Report is tagged from the pin,,Pass
 TC-071,Module 5 – GIS (purok tagging),LocateTests,Snaps within 30m,,Pass
-TC-072,Module 1 – Notifications (SMS/email/alerts),CitizenNotificationTests,Closing after citizen confirms sends nothing more,,Error
-TC-073,Module 1 – Notifications (SMS/email/alerts),CitizenNotificationTests,Each duplicate reporter gets their own update,,Error
-TC-074,Module 1 – Notifications (SMS/email/alerts),CitizenNotificationTests,Extension notifies with new date,,Error
+TC-072,Module 1 – Notifications (SMS/email/alerts),CitizenNotificationTests,Closing after citizen confirms sends nothing more,,Pass
+TC-073,Module 1 – Notifications (SMS/email/alerts),CitizenNotificationTests,Each duplicate reporter gets their own update,,Pass
+TC-074,Module 1 – Notifications (SMS/email/alerts),CitizenNotificationTests,Extension notifies with new date,,Pass
 TC-075,Module 1 – Notifications (SMS/email/alerts),CitizenNotificationTests,Muted sends nothing,,Pass
 TC-076,Module 1 – Notifications (SMS/email/alerts),CitizenNotificationTests,No sms for anonymous opted out or synthetic,,Pass
-TC-077,Module 1 – Notifications (SMS/email/alerts),CitizenNotificationTests,One message per milestone through the lifecycle,,Error
-TC-078,Module 1 – Notifications (SMS/email/alerts),CitizenNotificationTests,Received sms and email on submit,,Error
-TC-079,Module 1 – Notifications (SMS/email/alerts),CitizenNotificationTests,Rejection explains why,,Error
-TC-080,Module 1 – Notifications (SMS/email/alerts),CitizenNotificationTests,Same update is never sent twice,,Error
-TC-081,Module 1 – Notifications (SMS/email/alerts),LogApiTests,Log is masked and role limited,,Error
-TC-082,Module 1 – Notifications (SMS/email/alerts),QuietHoursTests,Night report waits then worker sends,,Error
+TC-077,Module 1 – Notifications (SMS/email/alerts),CitizenNotificationTests,One message per milestone through the lifecycle,,Pass
+TC-078,Module 1 – Notifications (SMS/email/alerts),CitizenNotificationTests,Received sms and email on submit,,Pass
+TC-079,Module 1 – Notifications (SMS/email/alerts),CitizenNotificationTests,Rejection explains why,,Pass
+TC-080,Module 1 – Notifications (SMS/email/alerts),CitizenNotificationTests,Same update is never sent twice,,Pass
+TC-081,Module 1 – Notifications (SMS/email/alerts),LogApiTests,Log is masked and role limited,,Pass
+TC-082,Module 1 – Notifications (SMS/email/alerts),QuietHoursTests,Night report waits then worker sends,,Pass
 TC-083,Module 1 – Notifications (SMS/email/alerts),QuietHoursTests,Window,,Pass
 TC-084,Module 1 – Notifications (SMS/email/alerts),RetryAndReminderTests,Failed sms is retried with backoff and capped,,Pass
-TC-085,Module 1 – Notifications (SMS/email/alerts),RetryAndReminderTests,Purge blanks old recipients,,Error
-TC-086,Module 1 – Notifications (SMS/email/alerts),RetryAndReminderTests,Reminder after three days once,,Error
+TC-085,Module 1 – Notifications (SMS/email/alerts),RetryAndReminderTests,Purge blanks old recipients,,Pass
+TC-086,Module 1 – Notifications (SMS/email/alerts),RetryAndReminderTests,Reminder after three days once,,Pass
 TC-087,Module 1 – Notifications (SMS/email/alerts),SemaphoreTests,Missing key never calls out,,Pass
 TC-088,Module 1 – Notifications (SMS/email/alerts),SemaphoreTests,Network error is a failure,,Pass
 TC-089,Module 1 – Notifications (SMS/email/alerts),SemaphoreTests,Success reply is parsed,,Pass
@@ -134,42 +134,61 @@ TC-132,"Modules 2, 4, 6 – Priority rise, ongoing duplicates, time to site, pra
 TC-133,"Modules 2, 4, 6 – Priority rise, ongoing duplicates, time to site, practice data",PriorityRiseTests,More reporters flag a higher level and alert the office once,,Pass
 TC-134,"Modules 2, 4, 6 – Priority rise, ongoing duplicates, time to site, practice data",PriorityRiseTests,Setting or keeping the level clears the flag,,Pass
 TC-135,"Modules 2, 4, 6 – Priority rise, ongoing duplicates, time to site, practice data",TimeToSiteTests,Scorecard reports median hours to site,,Pass
-TC-136,"Deployment – health, site mode, scheduler",SampleDataTests,Sample data hidden from public numbers,,Pass
-TC-137,"Deployment – health, site mode, scheduler",SampleDataTests,Sample data never alerts staff,,Pass
-TC-138,"Deployment – health, site mode, scheduler",SampleDataTests,Sample data shown and flagged,,Pass
-TC-139,"Deployment – health, site mode, scheduler",SystemEndpointTests,Cron disabled without a token,,Pass
-TC-140,"Deployment – health, site mode, scheduler",SystemEndpointTests,Cron needs the token,,Pass
-TC-141,"Deployment – health, site mode, scheduler",SystemEndpointTests,Health,,Pass
-TC-142,"Deployment – health, site mode, scheduler",SystemEndpointTests,Site mode prototype,,Pass
-TC-143,"Deployment – health, site mode, scheduler",SystemEndpointTests,Unknown mode falls back to prototype,,Pass
-TC-144,Module 1 – Report screening (false reports),AnonymousCapTests,Many anonymous duplicates count as two,,Pass
-TC-145,Module 1 – Report screening (false reports),PhotoSignalTests,Camera gps far from pin,,Pass
-TC-146,Module 1 – Report screening (false reports),PhotoSignalTests,Camera gps near pin is clean,,Pass
-TC-147,Module 1 – Report screening (false reports),PhotoSignalTests,Live capture at the site is a good sign,,Pass
-TC-148,Module 1 – Report screening (false reports),PhotoSignalTests,Old photo date,,Pass
-TC-149,Module 1 – Report screening (false reports),PhotoSignalTests,Phone location far away is not called far,,Pass
-TC-150,Module 1 – Report screening (false reports),PhotoSignalTests,Plain photo without camera data is not flagged,,Pass
-TC-151,Module 1 – Report screening (false reports),PhotoSignalTests,Same photo for a different place is red,,Pass
-TC-152,Module 1 – Report screening (false reports),PhotoSignalTests,Same photo shared by neighbours is only info,,Pass
-TC-153,Module 1 – Report screening (false reports),PublicSubmitTests,Flags reach the staff api,,Pass
-TC-154,Module 1 – Report screening (false reports),PublicSubmitTests,Photo meta travels with the upload and report stays submitted,,Pass
-TC-155,Module 1 – Report screening (false reports),ReporterSignalTests,Anonymous reports have no key,,Pass
-TC-156,Module 1 – Report screening (false reports),ReporterSignalTests,Burst from one network,,Pass
-TC-157,Module 1 – Report screening (false reports),ReporterSignalTests,Three unfounded then flagged,,Pass
-TC-158,Module 1 – Report screening (false reports),UnfoundedOutcomeTests,Field staff can mark unfounded through the api,,Pass
-TC-159,Module 1 – Report screening (false reports),UnfoundedOutcomeTests,Needs a note and tells the reporter,,Error
-TC-160,Module 1 – Report screening (false reports),UnfoundedOutcomeTests,Only the original counts against the reporter,,Pass
-TC-161,Module 1 – Report screening (false reports),UnfoundedOutcomeTests,Report card,,Pass
-TC-162,Module 2 – Case Management,CitizenConfirmTests,Answer only once,,Pass
-TC-163,Module 2 – Case Management,CitizenConfirmTests,Duplicate reporter can reopen the shared case,,Pass
-TC-164,Module 2 – Case Management,CitizenConfirmTests,Not fixed reopens and clears validation,,Pass
-TC-165,Module 2 – Case Management,CitizenConfirmTests,Window closes after 30 days,,Pass
-TC-166,Module 2 – Case Management,EscalationTests,Overdue case escalates one level at a time,,Pass
-TC-167,Module 2 – Case Management,ExtensionTests,Extension after deadline lapsed is refused,,Pass
-TC-168,Module 2 – Case Management,ExtensionTests,One extension only and within limit,,Pass
-TC-169,Module 2 – Case Management,LifecycleTests,Changing priority needs a reason,,Pass
-TC-170,Module 2 – Case Management,LifecycleTests,Full path submitted to closed,,Pass
-TC-171,Module 2 – Case Management,LifecycleTests,Internal steps are hidden from the public timeline,,Pass
-TC-172,Module 2 – Case Management,LifecycleTests,Invalid transition is refused,,Pass
-TC-173,Module 2 – Case Management,LifecycleTests,Screening questions must be answered,,Pass
-TC-174,Module 2 – Case Management,LifecycleTests,Wrong office returns to pacd,,Pass
+TC-136,"Modules 1, 2, 6 – Road endorsement, AI markers, ocular verification, job acceptance, public report",AiMarkerTests,Citizen photo declared ai is red and never live,,Pass
+TC-137,"Modules 1, 2, 6 – Road endorsement, AI markers, ocular verification, job acceptance, public report",AiMarkerTests,Markers in file bytes,,Pass
+TC-138,"Modules 1, 2, 6 – Road endorsement, AI markers, ocular verification, job acceptance, public report",AiMarkerTests,Staff photo with ai marker is red and not ocular,,Pass
+TC-139,"Modules 1, 2, 6 – Road endorsement, AI markers, ocular verification, job acceptance, public report",OcularTests,Check in at the site verifies,,Pass
+TC-140,"Modules 1, 2, 6 – Road endorsement, AI markers, ocular verification, job acceptance, public report",OcularTests,Check in far away does not,,Pass
+TC-141,"Modules 1, 2, 6 – Road endorsement, AI markers, ocular verification, job acceptance, public report",OcularTests,Clean before photo at the site verifies,,Pass
+TC-142,"Modules 1, 2, 6 – Road endorsement, AI markers, ocular verification, job acceptance, public report",OcularTests,Unfounded after a visit is measured,,Pass
+TC-143,"Modules 1, 2, 6 – Road endorsement, AI markers, ocular verification, job acceptance, public report",PublicAccountabilityTests,Other office cannot reply,,Pass
+TC-144,"Modules 1, 2, 6 – Road endorsement, AI markers, ocular verification, job acceptance, public report",PublicAccountabilityTests,Team replies in public,,Pass
+TC-145,"Modules 1, 2, 6 – Road endorsement, AI markers, ocular verification, job acceptance, public report",PublicAccountabilityTests,Work summary only after validation and without names,,Pass
+TC-146,"Modules 1, 2, 6 – Road endorsement, AI markers, ocular verification, job acceptance, public report",RoadTests,Off the national road no suggestion,,Pass
+TC-147,"Modules 1, 2, 6 – Road endorsement, AI markers, ocular verification, job acceptance, public report",RoadTests,Osm import keeps national routes only,,Pass
+TC-148,"Modules 1, 2, 6 – Road endorsement, AI markers, ocular verification, job acceptance, public report",RoadTests,Road damage on national road suggests dpwh,,Pass
+TC-149,"Modules 1, 2, 6 – Road endorsement, AI markers, ocular verification, job acceptance, public report",RoadTests,Streetlight on national road suggests meralco,,Pass
+TC-150,"Modules 1, 2, 6 – Road endorsement, AI markers, ocular verification, job acceptance, public report",TakeJobTests,Arriving counts as accepting,,Pass
+TC-151,"Modules 1, 2, 6 – Road endorsement, AI markers, ocular verification, job acceptance, public report",TakeJobTests,Chief is reminded once when not accepted in time,,Pass
+TC-152,"Modules 1, 2, 6 – Road endorsement, AI markers, ocular verification, job acceptance, public report",TakeJobTests,Not reminded before the time,,Pass
+TC-153,"Modules 1, 2, 6 – Road endorsement, AI markers, ocular verification, job acceptance, public report",TakeJobTests,Only the assigned lead can accept,,Pass
+TC-154,"Modules 1, 2, 6 – Road endorsement, AI markers, ocular verification, job acceptance, public report",TakeJobTests,Reassigning resets acceptance,,Pass
+TC-155,"Deployment – health, site mode, scheduler",SampleDataTests,Sample data hidden from public numbers,,Pass
+TC-156,"Deployment – health, site mode, scheduler",SampleDataTests,Sample data never alerts staff,,Pass
+TC-157,"Deployment – health, site mode, scheduler",SampleDataTests,Sample data shown and flagged,,Pass
+TC-158,"Deployment – health, site mode, scheduler",SystemEndpointTests,Cron disabled without a token,,Pass
+TC-159,"Deployment – health, site mode, scheduler",SystemEndpointTests,Cron needs the token,,Pass
+TC-160,"Deployment – health, site mode, scheduler",SystemEndpointTests,Health,,Pass
+TC-161,"Deployment – health, site mode, scheduler",SystemEndpointTests,Site mode prototype,,Pass
+TC-162,"Deployment – health, site mode, scheduler",SystemEndpointTests,Unknown mode falls back to prototype,,Pass
+TC-163,Module 1 – Report screening (false reports),AnonymousCapTests,Many anonymous duplicates count as two,,Pass
+TC-164,Module 1 – Report screening (false reports),PhotoSignalTests,Camera gps far from pin,,Pass
+TC-165,Module 1 – Report screening (false reports),PhotoSignalTests,Camera gps near pin is clean,,Pass
+TC-166,Module 1 – Report screening (false reports),PhotoSignalTests,Live capture at the site is a good sign,,Pass
+TC-167,Module 1 – Report screening (false reports),PhotoSignalTests,Old photo date,,Pass
+TC-168,Module 1 – Report screening (false reports),PhotoSignalTests,Phone location far away is not called far,,Pass
+TC-169,Module 1 – Report screening (false reports),PhotoSignalTests,Plain photo without camera data is not flagged,,Pass
+TC-170,Module 1 – Report screening (false reports),PhotoSignalTests,Same photo for a different place is red,,Pass
+TC-171,Module 1 – Report screening (false reports),PhotoSignalTests,Same photo shared by neighbours is only info,,Pass
+TC-172,Module 1 – Report screening (false reports),PublicSubmitTests,Flags reach the staff api,,Pass
+TC-173,Module 1 – Report screening (false reports),PublicSubmitTests,Photo meta travels with the upload and report stays submitted,,Pass
+TC-174,Module 1 – Report screening (false reports),ReporterSignalTests,Anonymous reports have no key,,Pass
+TC-175,Module 1 – Report screening (false reports),ReporterSignalTests,Burst from one network,,Pass
+TC-176,Module 1 – Report screening (false reports),ReporterSignalTests,Three unfounded then flagged,,Pass
+TC-177,Module 1 – Report screening (false reports),UnfoundedOutcomeTests,Field staff can mark unfounded through the api,,Pass
+TC-178,Module 1 – Report screening (false reports),UnfoundedOutcomeTests,Needs a note and tells the reporter,,Pass
+TC-179,Module 1 – Report screening (false reports),UnfoundedOutcomeTests,Only the original counts against the reporter,,Pass
+TC-180,Module 1 – Report screening (false reports),UnfoundedOutcomeTests,Report card,,Pass
+TC-181,Module 2 – Case Management,CitizenConfirmTests,Answer only once,,Pass
+TC-182,Module 2 – Case Management,CitizenConfirmTests,Duplicate reporter can reopen the shared case,,Pass
+TC-183,Module 2 – Case Management,CitizenConfirmTests,Not fixed reopens and clears validation,,Pass
+TC-184,Module 2 – Case Management,CitizenConfirmTests,Window closes after 30 days,,Pass
+TC-185,Module 2 – Case Management,EscalationTests,Overdue case escalates one level at a time,,Pass
+TC-186,Module 2 – Case Management,ExtensionTests,Extension after deadline lapsed is refused,,Pass
+TC-187,Module 2 – Case Management,ExtensionTests,One extension only and within limit,,Pass
+TC-188,Module 2 – Case Management,LifecycleTests,Changing priority needs a reason,,Pass
+TC-189,Module 2 – Case Management,LifecycleTests,Full path submitted to closed,,Pass
+TC-190,Module 2 – Case Management,LifecycleTests,Internal steps are hidden from the public timeline,,Pass
+TC-191,Module 2 – Case Management,LifecycleTests,Invalid transition is refused,,Pass
+TC-192,Module 2 – Case Management,LifecycleTests,Screening questions must be answered,,Pass
+TC-193,Module 2 – Case Management,LifecycleTests,Wrong office returns to pacd,,Pass

@@ -9,7 +9,7 @@ import axios from "axios";
 
 import { api, apiErrorMessage, OfflineError } from "@/api/client";
 
-export type FieldAction = "arrive" | "inspect" | "complete" | "blocker";
+export type FieldAction = "arrive" | "inspect" | "complete" | "blocker" | "take-job";
 
 type FormEntry = { key: string; value: string } | { key: string; blob: Blob; filename: string };
 

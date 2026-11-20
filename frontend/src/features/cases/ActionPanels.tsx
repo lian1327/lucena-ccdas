@@ -14,7 +14,7 @@ import {
   useComplete,
   useDepartments,
   useDivisions,
-  useEndorse,
+  useEndorse, usePublicReply, useTakeJob,
   useEscalate,
   useExtend,
   useFeedback8888,
@@ -156,8 +156,9 @@ export function RoutePanel({ c }: P) {
 export function EndorsePanel({ c, compact }: P & { compact?: boolean }) {
   const agencies = useDepartments("external");
   const endorse = useEndorse(c.id);
-  const [open, setOpen] = useState(!compact);
-  const [agency, setAgency] = useState<number | null>(null);
+  const suggestion = c.endorse_suggestion;
+  const [open, setOpen] = useState(!compact || !!suggestion);
+  const [agency, setAgency] = useState<number | null>(suggestion?.agency_id ?? null);
   const [letter, setLetter] = useState("");
   const [contact, setContact] = useState("");
   if (!c.permissions.endorse) return null;
@@ -170,6 +171,12 @@ export function EndorsePanel({ c, compact }: P & { compact?: boolean }) {
   return (
     <Panel title="I-endorso sa ibang ahensya" icon="box-arrow-up-right"
       hint="Para sa national roads (DPWH), linya ng kuryente, tubig, atbp. Patuloy itong susubaybayan ng LGU.">
+      {suggestion && (
+        <Alert variant="info" className="small py-2">
+          <i className="bi bi-signpost-split me-1" aria-hidden />
+          <strong>Mungkahi:</strong> {suggestion.reason} Suriin muna bago i-endorso.
+        </Alert>
+      )}
       <Form.Select className="mb-2" value={agency ?? ""} onChange={(e) => setAgency(Number(e.target.value) || null)} aria-label="Ahensya">
         <option value="">— Ahensya —</option>
         {agencies.data?.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
@@ -630,6 +637,47 @@ export function OutcomePanel({ c }: P) {
           <SubmitButton className="" pending={pending} disabled={!text.trim()} onClick={run}>I-save</SubmitButton>
         </Modal.Footer>
       </Modal>
+    </Panel>
+  );
+}
+
+
+// ---------------- Step 20: lead accepts the job / team answers the citizen ----------------
+export function TakeJobPanel({ c }: P) {
+  const take = useTakeJob(c.id);
+  if (!c.permissions.take_job) return null;
+  return (
+    <Panel title="Bagong trabaho para sa iyo" icon="hand-index-thumb" tone="primary"
+      hint="Tanggapin para malaman ng supervisor na hawak mo na ito. Puwede rin sa Field app.">
+      <SubmitButton pending={take.isPending} onClick={() => take.mutate({})}>Tanggapin ang trabaho</SubmitButton>
+      <ErrorText err={take.error} />
+    </Panel>
+  );
+}
+
+export function PublicReplyPanel({ c }: P) {
+  const reply = usePublicReply(c.id);
+  const [open, setOpen] = useState(false);
+  const [message, setMessage] = useState("");
+  if (!c.permissions.public_reply) return null;
+  const team = c.case?.team_label;
+  if (!open)
+    return (
+      <Button variant="outline-secondary" size="sm" className="w-100 mb-3" onClick={() => setOpen(true)}>
+        <i className="bi bi-chat-square-text me-1" aria-hidden /> Sagutin ang nag-report (makikita sa publiko)
+      </Button>
+    );
+  return (
+    <Panel title="Sagot sa nag-report" icon="chat-square-text"
+      hint={`Lalabas sa tracking page bilang "Tugon ng ${team ?? "opisina"}". Walang pangalan ng tao.`}>
+      <Form.Control as="textarea" rows={3} className="mb-2" maxLength={600} value={message}
+        placeholder="hal. Pansamantalang tapal muna; ang full repair ay sa Disyembre dahil hinihintay ang aspalto."
+        onChange={(e) => setMessage(e.target.value)} />
+      <SubmitButton pending={reply.isPending} disabled={!message.trim()} variant="outline-primary"
+        onClick={() => reply.mutate({ message }, { onSuccess: () => { setMessage(""); setOpen(false); } })}>
+        Ipadala ang sagot
+      </SubmitButton>
+      <ErrorText err={reply.error} />
     </Panel>
   );
 }

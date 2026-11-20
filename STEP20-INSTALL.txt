@@ -1,0 +1,63 @@
+CCADSS Step 20 - Meralco/DPWH road endorsement, AI photo markers, ocular verification,
+                 job acceptance, public work report
+=========================================================================================
+Install Step 19 FIRST (this step is built on top of it).
+
+What it adds
+1. Who maintains it at this pin
+   - New road layer (geo.Road) and command import_roads. When a STREETLIGHT pin is within 25 m of a national road,
+     the PACD sees "Mungkahi: ... sakop ng Meralco" and the endorse form opens with Meralco selected.
+     Road damage / drainage on a national road suggest DPWH the same way. Only a suggestion; the PACD decides.
+   - seed_reference_data --lucena renames the generic "Electric Distribution Utility" to
+     "Meralco (Manila Electric Company)" (only if you haven't renamed it in the admin).
+2. AI-image markers
+   - The browser checks the ORIGINAL photo (before compression) for the AI "digital source type" and Content
+     Credentials (C2PA) markers that many AI tools write; the server checks again.
+   - Citizen photos: red "gawa ng AI", amber "inedit gamit ang AI", info "may Content Credentials".
+     Staff proof photos: red / amber the same way, and an AI-marked photo never earns the live or ocular mark.
+   - Honest limit: a missing marker proves nothing (screenshots and chat apps strip it). The site visit is the test.
+3. "Napatunayan sa lugar" (ocular verification)
+   - Set automatically the first time office staff check in within 150 m of the pin, or upload a clean before
+     photo taken there. Shown as a badge on the case; "Hindi pa napupuntahan ng opisina" otherwise.
+   - Scorecard: % of accepted cases verified on site, unfounded rate after a visit, hours to accept.
+   - trust_report --ocular-only: how well each screening flag predicted "unfounded", using only site-checked
+     outcomes (your Objective 1 precision figure).
+4. "Tanggapin" (job acceptance)
+   - The assigned lead taps Tanggapin in the field app (or on the case page). Arriving at the site also counts.
+     Reassigning resets it. The chief/head gets one "Hindi pa tinatanggap" alert if not accepted within
+     P1 1 h, P2 4 h, P3 24 h, P4 48 h (runs with the 30-minute cron). Reported per office only.
+5. Transparency to the citizen
+   - Tracking page "Ano ang ginawa": the crew's work description, the date, and the team + office
+     (e.g. "Road, Drainage & Bridges Maintenance Division, City Engineering Office"). Only after the supervisor
+     validated it. No staff names.
+   - "Sagutin ang nag-report": the lead, chief or head can post a public reply, shown on the timeline as
+     "Tugon ng <team>: ...". No names.
+
+Install (PowerShell, project root)
+  Expand-Archive -Path "$HOME\Downloads\ccadss-step20.zip" -DestinationPath . -Force
+  Remove-Item "$HOME\Downloads\ccadss-step20.zip"
+  cd backend
+  python manage.py makemigrations cases geo notifications
+  python manage.py migrate
+  python manage.py seed_reference_data --lucena          # renames the utility to Meralco (safe to re-run)
+  python manage.py test tests                            # 193 tests, all should pass
+  python manage.py runserver
+  cd ..\frontend
+  npm run gen:api
+  npm run typecheck
+
+National roads (needed for the suggestion)
+  Best: ask City Engineering / City Planning for the DPWH road inventory of Lucena as GeoJSON, then
+      python manage.py import_roads national_roads.geojson --kind national --source "DPWH road inventory"
+  Or OpenStreetMap: overpass-turbo.eu, run this, Export -> GeoJSON, then import with --osm
+      [out:json];
+      area["name"="Lucena"]["boundary"="administrative"]->.a;
+      way(area.a)["highway"~"trunk|primary|secondary"]["ref"~"^N[0-9]"];
+      out geom;
+      python manage.py import_roads export.geojson --osm --source "OpenStreetMap"
+  Check it with the City: OpenStreetMap is volunteer data. Re-import with --replace when the list changes.
+  On the server: run import_roads from your PC against Neon ($env:DATABASE_URL=...), like demo_users.
+
+Before the pilot, confirm with the City
+  - Is the split by road type only, or also by who owns the pole (Meralco poles on local roads)?
+  - What contact / hotline should the tracking page show for Meralco endorsements?

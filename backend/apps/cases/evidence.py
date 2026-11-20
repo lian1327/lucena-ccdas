@@ -45,6 +45,8 @@ FLAGS = {
     "no_gps": ("amber", "Walang lokasyon ang litrato"),
     "no_site": ("info", "Walang pin ang report; hindi masukat ang layo"),
     "live": ("good", "Kinunan gamit ang camera ng CCADSS sa mismong lugar"),
+    "ai": ("red", "Ayon sa metadata ng file, gawa ng AI ang larawan"),
+    "ai_edit": ("amber", "Ayon sa metadata ng file, inedit gamit ang AI"),
 }
 
 
@@ -163,6 +165,9 @@ def build_metadata(fileobj, meta):
         out.update(latitude=None, longitude=None, gps_source="none", gps_accuracy_m=None)
     taken = _dt(meta.get("exif_time")) or f_time
     out.update(taken_at=taken, time_source="exif" if taken else "upload", live=bool(meta.get("live")))
+    from .credentials import combine, scan_file
+
+    out["ai_marker"] = combine(scan_file(fileobj), meta.get("ai_marker"))
     return out
 
 
@@ -207,7 +212,13 @@ def check(att, case=None, before_hashes=(), scan_reuse=True):
                 break
     # "live" is the phone's claim that the camera was opened from the app (not the gallery). It is only a
     # positive signal, and only when the photo also has a location at the site.
-    if getattr(att, "_live", False) and att.distance_m is not None and "far" not in flags and "stale" not in flags:
+    marker = getattr(att, "_ai_marker", None)
+    if marker == "ai_generated":
+        flags.append("ai")
+    elif marker == "ai_edited":
+        flags.append("ai_edit")
+    if (getattr(att, "_live", False) and att.distance_m is not None and not marker
+            and "far" not in flags and "stale" not in flags):
         flags.append("live")
     att.flags = flags
     return att
@@ -255,3 +266,8 @@ def is_verified_proof(case, atts):
 
 def to_decimal(v):
     return None if v is None else Decimal(str(round(v, 6)))
+
+
+
+def has_red(codes):
+    return any(FLAGS.get(c, ("",))[0] == "red" for c in (codes or []))

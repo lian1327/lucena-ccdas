@@ -36,9 +36,15 @@ FLAGS = {
     "c_far": ("amber", "Ayon sa GPS ng litrato, higit 1 km mula sa pin"),
     "c_old": ("amber", "Ayon sa petsa ng litrato, higit 30 araw bago ang report"),
     "c_live": ("good", "Kinunan ngayon sa mismong lugar"),
+    "c_ai": ("red", "Ayon sa metadata ng file, gawa ng AI ang larawan"),
+    "c_ai_edit": ("amber", "Ayon sa metadata ng file, inedit gamit ang AI"),
+    "c_cred": ("info", "May Content Credentials ang file (hindi pa beripikado ang pirma)"),
     "repeat_unfounded": ("amber", "3+ report ng numerong ito ang walang natagpuan (90 araw)"),
     "burst": ("amber", "Maraming report mula sa iisang network sa loob ng 1 oras"),
 }
+
+
+PHOTO_SUMMARY = ("c_reused", "c_far", "c_old", "c_live", "c_ai", "c_ai_edit", "c_cred")
 
 
 def flag_list(codes):
@@ -97,13 +103,13 @@ def save_citizen_photos(concern, images, metas=(), user=None):
             taken_at=m["taken_at"], time_source=m["time_source"], phash=m["phash"],
         )
         att.uploaded_at = timezone.now()
-        check_photo(att, concern, live=bool(meta.get("live")))
+        check_photo(att, concern, live=bool(meta.get("live")), ai_marker=m.get("ai_marker"))
         att.save()
         saved.append(att)
     return saved
 
 
-def check_photo(att, concern, live=False, now=None):
+def check_photo(att, concern, live=False, now=None, ai_marker=None):
     from apps.cases.evidence import REUSE_HAMMING, hamming, haversine_m
     from apps.concerns.models import ConcernAttachment
 
@@ -118,7 +124,14 @@ def check_photo(att, concern, live=False, now=None):
         flags.append("c_far")
     if att.time_source == "exif" and att.taken_at and now - att.taken_at > timedelta(days=OLD_DAYS):
         flags.append("c_old")
-    if live and att.gps_source == "device" and att.distance_m is not None and att.distance_m <= LIVE_NEAR_M:
+    if ai_marker == "ai_generated":
+        flags.append("c_ai")
+    elif ai_marker == "ai_edited":
+        flags.append("c_ai_edit")
+    elif ai_marker == "credentials":
+        flags.append("c_cred")
+    if (live and ai_marker not in ("ai_generated", "ai_edited") and att.gps_source == "device"
+            and att.distance_m is not None and att.distance_m <= LIVE_NEAR_M):
         flags.append("c_live")
     if att.phash:
         others = (ConcernAttachment.objects.exclude(concern_id=concern.id).exclude(phash="")
@@ -152,7 +165,7 @@ def assess(concern, now=None):
     now = now or timezone.now()
     flags = set()
     for a in concern.attachments.filter(kind="report"):
-        flags.update(f for f in (a.flags or []) if f in ("c_reused", "c_far", "c_old", "c_live"))
+        flags.update(f for f in (a.flags or []) if f in PHOTO_SUMMARY)
     if concern.reporter_key:
         unfounded = (Concern.objects.filter(reporter_key=concern.reporter_key, rejection_kind="unfounded",
                                             history__to_status="rejected",
@@ -173,13 +186,18 @@ def assess(concern, now=None):
     return concern.review_flags
 
 
-def report_card(since=None):
-    """For the study: how often reports are unfounded, and whether flagged reports were unfounded more often."""
+def report_card(since=None, ocular_only=False):
+    """
+    For the study: how often reports are unfounded, and whether flagged reports were unfounded more often.
+    ocular_only (Step 20): only reports whose outcome was established by staff at the site, the ground truth.
+    """
     from apps.concerns.models import Concern
 
-    qs = Concern.objects.filter(is_synthetic=False, duplicate_of__isnull=True)
+    qs = Concern.objects.filter(is_synthetic=False, is_practice=False, duplicate_of__isnull=True)
     if since:
         qs = qs.filter(created_at__gte=since)
+    if ocular_only:
+        qs = qs.filter(case__ocular_verified_at__isnull=False)
     decided = qs.filter(Q(status__in=Concern.DONE_STATUSES) | Q(status=Concern.Status.REJECTED))
     out = {"decided": decided.count(), "unfounded": decided.filter(rejection_kind="unfounded").count(), "by_flag": {}}
     for code in FLAGS:

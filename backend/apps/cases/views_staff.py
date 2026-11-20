@@ -18,7 +18,7 @@ from . import services
 from .models import Case, CaseNote, Department, Division, PriorityLevel
 from .scoping import is_admin, permissions_for, scoped_concerns
 from .serializers_staff import (
-    ArriveSerializer, BlockerSerializer, FieldJobSerializer,
+    ArriveSerializer, BlockerSerializer, EmptySerializer, FieldJobSerializer, PublicReplySerializer,
     AcceptSerializer,
     AssignDivisionSerializer,
     AssignPersonSerializer,
@@ -298,6 +298,17 @@ class StaffConcernViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet
     @action(detail=True, methods=["post"])
     def blocker(self, request, pk=None):
         return self._run("blocker", BlockerSerializer, services.report_blocker)
+
+    # ----- Step 20 -----
+    @extend_schema(request=None, responses=StaffConcernDetailSerializer)
+    @action(detail=True, methods=["post"], url_path="take-job")
+    def take_job(self, request, pk=None):
+        return self._run("take_job", EmptySerializer, services.take_job)
+
+    @extend_schema(request=PublicReplySerializer, responses=StaffConcernDetailSerializer)
+    @action(detail=True, methods=["post"], url_path="public-reply")
+    def public_reply(self, request, pk=None):
+        return self._run("public_reply", PublicReplySerializer, services.public_reply)
 
     @extend_schema(request={"multipart/form-data": ValidateSerializer}, responses=StaffConcernDetailSerializer)
     @action(detail=True, methods=["post"])

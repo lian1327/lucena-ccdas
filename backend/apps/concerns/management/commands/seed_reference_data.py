@@ -303,6 +303,10 @@ class Command(BaseCommand):
         if opts["lucena"]:
             for i, name in enumerate(LUCENA_BARANGAYS, start=1):
                 Barangay.objects.update_or_create(name=name, defaults={"code": f"LUC-{i:03d}"})
+            # Lucena's electric distribution utility (streetlights on national roads are endorsed to it, Step 20).
+            # Only renames the generic entry, so a name already edited in the admin is kept.
+            Department.objects.filter(code="ELEC", name="Electric Distribution Utility").update(
+                name="Meralco (Manila Electric Company)")
             self.stdout.write(self.style.SUCCESS(
                 f"Barangays: {len(LUCENA_BARANGAYS)} (add center coordinates/population in admin)"
             ))
